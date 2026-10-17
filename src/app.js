@@ -112,4 +112,13 @@ $("#less-motion").addEventListener("change", event => document.body.classList.to
 $("#quiet-view").addEventListener("change", event => document.body.classList.toggle("quiet-view", event.target.checked));
 $("#today-date").textContent = new Intl.DateTimeFormat("nl-NL", {weekday:"short",day:"numeric",month:"short"}).format(new Date());
 updateTaskCount();
-\n\n// Offline support is enabled only on secure origins or localhost.\nif ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {\n  window.addEventListener("load", () => {\n    navigator.serviceWorker.register("/service-worker.js").catch(() => {\n      // The prototype remains usable if service workers are unavailable.\n    });\n  }, { once: true });\n}\n
+
+
+// Offline support is enabled only on secure origins or localhost.
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js").catch(() => {
+      // The prototype remains usable if service workers are unavailable.
+    });
+  }, { once: true });
+}
