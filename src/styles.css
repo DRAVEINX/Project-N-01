@@ -31,3 +31,7 @@
 .routine-backup-tools{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1rem}
 .file-pick-label{display:inline-flex;align-items:center;justify-content:center}
 .routine-backup-tools .secondary-button{max-width:100%}
+
+.privacy-panel{margin-top:1rem;display:grid;gap:.8rem}
+.privacy-panel h3,.privacy-panel p{margin:0}
+.danger-button{border-color:rgba(255,120,140,.55)}
