@@ -1107,6 +1107,24 @@ test("daily and weekly staff roster supports photos, editing and deleting throug
   assert.doesNotMatch(features, /localStorage\.setItem/);
 });
 
+test("Windows desktop shell uses isolated browser defaults and includes an installer workflow", async () => {
+  const main = await readFile(new URL("../desktop/main.cjs", import.meta.url), "utf8");
+  const desktopPackage = await readFile(new URL("../desktop/package.json", import.meta.url), "utf8");
+  const prepare = await readFile(new URL("../scripts/prepare-desktop.mjs", import.meta.url), "utf8");
+  const workflow = await readFile(new URL("../.github/workflows/windows.yml", import.meta.url), "utf8");
+  assert.match(main, /contextIsolation: true/);
+  assert.match(main, /nodeIntegration: false/);
+  assert.match(main, /sandbox: true/);
+  assert.match(main, /isInsideRoot\(root, target\)/);
+  assert.match(main, /protocol\.registerSchemesAsPrivileged/);
+  assert.match(main, /setWindowOpenHandler/);
+  assert.match(desktopPackage, /"productName": "Mivoryntra"/);
+  assert.match(desktopPackage, /"target": "nsis"/);
+  assert.match(prepare, /scripts|service-worker\.js/);
+  assert.match(workflow, /runs-on: windows-latest/);
+  assert.match(workflow, /mivoryntra-windows-installer-candidate/);
+});
+
 test("full vault restore has its own confirmation and validates before replacing stored data", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
