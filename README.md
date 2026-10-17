@@ -1,44 +1,50 @@
-# Project N-01
+# Mivoryntra
 
-An independent, accessibility-first daily-life companion for Android phones, Android tablets, and Windows. This is a temporary project codename; the public product name will be selected after trademark, app-store, and domain checks.
+**Working product name:** Mivoryntra. The name is provisional until official trademark, app-store, business-register and domain checks are complete.
 
-## Principles
-- Calm, predictable interfaces with adjustable density and text size.
-- Dutch and English from the start.
-- Core daily-planning and self-support features intended to remain free.
-- Privacy by default: personal notes and feelings are not shared automatically.
-- Accessibility: keyboard support, semantic controls, reduced-motion support, and screen-reader-friendly labels.
-- No medical claims; the app supports daily routines and communication and is not a replacement for professional care.
+Mivoryntra is an accessibility-first daily-life companion prototype for Android phones, Android tablets and Windows. It is designed around a calm interface, clear next steps, Dutch and English language support, and user-controlled storage.
 
-## Current stage
-The current deliverable is a responsive web prototype with a web app manifest and service-worker caching for offline use after the first successful visit when served over HTTPS or localhost. Users can opt in to an encrypted local vault for custom routine templates: they set a passphrase, unlock the vault after reload, and routine changes are written to an AES-256-GCM encrypted envelope. The vault auto-locks after five minutes without activity and when the page is hidden or left. Existing plaintext routine data is deliberately preserved during migration; users must unlock and check the vault, download the encrypted envelope, then separately choose to remove the old plaintext copy. Daily checklist and built-in routine progress are stored unencrypted in browser local storage for the current local date and reset automatically the next day; the settings cleanup control removes this progress. Accessibility preferences also remain unencrypted in browser local storage. Plaintext exports remain possible and are labelled as such. Notes and drawings are temporary and not saved. Do not store sensitive journal, mood, voice, or caregiver data in this prototype. CI status and manual keyboard/screen-reader/offline checks still need verification. This is not yet a native Android or Windows release and is not production-ready.
+## What is implemented in this prototype
+
+- A daily overview, step-by-step routines, custom routine templates and local daily progress.
+- Calm/breathing activities and communication phrase cards with browser text-to-speech.
+- A drawing pad with pointer and keyboard controls, plus explicit PNG export.
+- Optional browser speech-to-text and temporary voice recording. Recording can be played back or downloaded by explicit action; audio is not uploaded or saved by this application.
+- An optional encrypted local vault for custom routines and new personal features.
+- Explicitly saved journal entries and drawings, a weekly appointment planner, mood check-ins, and a trusted-people list. These features write personal content only after a user action and only when the encrypted vault is unlocked.
+- A bilingual launch/splash screen with a first-run introduction, skip controls and reduced-motion support.
+- Install metadata, an offline app shell and an offline fallback page.
+
+## Privacy and current limitations
+
+This is still a **prototype**, not a production-ready or independently security-reviewed personal-data product.
+
+Personal journal entries, saved drawings, mood check-ins, appointments and trusted contacts are stored only through the opt-in local encrypted vault. The vault uses Web Crypto (PBKDF2-SHA-256 and AES-GCM); the passphrase and derived key are not saved by the application. There is no account system, backend or cloud sync. If the vault is locked, these personal features stay hidden until it is unlocked again. Keep the passphrase safe and maintain an encrypted backup; there is no passphrase-recovery service.
+
+Daily checklist progress and accessibility preferences are still stored unencrypted in browser local storage. Existing custom routines may also have a legacy unencrypted copy until the user separately verifies and removes it. Speech-to-text may be processed by the browser or its provider. Do not rely on the prototype for emergency communications or store highly sensitive information until the security review, device testing and recovery design are complete.
 
 ## Run locally
-Requires Node.js 20 or newer.
+
+Requires Node.js 22 or newer.
 
 ```bash
 npm test
 npm run serve
 ```
 
-Then open http://localhost:4173. The serve script uses Node's built-in modules and has no runtime dependencies.
+Then open http://localhost:4173.
 
-## Planned milestones
-1. Accessible prototype and automated smoke tests.
-2. Validate flows with users and accessibility checks.
-3. Add native Android phone/tablet application shell and platform-specific layouts.
-4. Add secure local persistence, export/recovery, and privacy controls.
-5. Build and verify Windows packaging and platform release workflows.
-6. Choose final product name only after availability research.
+## Next release milestones
+
+1. Confirm the CI workflow and test the new secure storage flows end to end.
+2. Manually test keyboard navigation, screen readers, reduced-motion settings and offline behaviour.
+3. Complete formal name checks with BOIP/EUIPO/TMview, app stores and domain registrars.
+4. Complete privacy/security review, recovery and migration design.
+5. Validate Android phone/tablet layouts and TalkBack, then implement and test native packaging and signed releases.
+6. Validate Windows desktop layout, installer, update and uninstall flows.
+
+A green workflow is necessary but not sufficient: features still need real-device, accessibility and privacy checks before a release can be called complete.
 
 ## Project boundaries
-This repository is separate from MoodPress, KlaarKompas, and CreatorNexus. Do not copy over or modify those projects as part of this work.
 
-
-**Local data controls:** Settings provides a confirmation-gated way to clear the app's local routine data, accessibility preferences and encrypted vault. This does not clear browser caches, exported files, or data outside this app.
-
-
-**Encrypted routine storage:** `src/secure-storage.js` and `src/encrypted-vault.js` provide PBKDF2-SHA-256/AES-256-GCM encryption and an in-memory derived-key session. The optional vault is connected to custom routine create/delete/import persistence. The passphrase and derived key are not written to storage; the in-memory session is dropped on lock. Accessibility preferences remain unencrypted, and there is no recovery flow or independent security review. See [`docs/DATA-PROTECTION.md`](docs/DATA-PROTECTION.md) before treating this as suitable for sensitive data.
-
-
-**Routine migration:** `src/routine-migration.js` validates and copies existing routines into the vault without deleting the plaintext source. The UI supports vault setup/unlock, lock, encrypted downloads and a separate confirmation-gated plaintext cleanup action. Five-minute inactivity auto-lock and lock-on-hidden/pagehide are implemented; passphrase recovery and real-device verification remain open.
+This repository remains separate from MoodPress, KlaarKompas, CreatorNexus and Fluxivora Studio.
