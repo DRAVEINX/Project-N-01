@@ -81,6 +81,7 @@
 - [ ] Signed APK/AAB artifacts from verified CI builds
 
 ## Phase 5 — Windows
+- [x] Add a separate Electron desktop shell and Windows NSIS installer-candidate workflow; the installer is unsigned until signing is configured.
 - [ ] Keyboard-first desktop UI
 - [ ] High-DPI and resize testing
 - [ ] Installer, upgrade and uninstall validation
