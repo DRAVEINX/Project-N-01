@@ -90,6 +90,15 @@ test("reminder handling deduplicates notifications and communicates foreground-o
   assert.match(js, /exactDuplicate/);
 });
 
+test("backup merge keeps the newest conflicting version and shows a content-free report", () => {
+  assert.match(js, /lastConflictReport = \[\]/);
+  assert.match(js, /lastConflictReport\.push\(\{category:key,source:incomingWins\?"incoming":"current"/);
+  assert.match(js, /conflictTitle/);
+  assert.match(js, /currentKept/);
+  assert.match(js, /importedKept/);
+  assert.match(js, /function mergeStates\(current, incoming\)/);
+});
+
 test("encrypted backup merge/replace and destructive deletion are available", () => {
   assert.match(js, /export-backup/);
   assert.match(js, /export-recovery-backup/);
