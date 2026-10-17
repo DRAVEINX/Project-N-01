@@ -1,0 +1,33 @@
+name: Project N-01 CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prototype-checks:
+    name: Prototype checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run automated smoke tests
+        run: npm test
+      - name: Check JavaScript syntax
+        run: node --check src/app.js && node --check scripts/serve.mjs
+      - name: Verify expected project files
+        run: |
+          test -f index.html
+          test -f src/styles.css
+          test -f src/app.js
+          test -f README.md
