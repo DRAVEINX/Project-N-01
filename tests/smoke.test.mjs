@@ -181,9 +181,14 @@ test("experimental encryption module uses authenticated AES-GCM and a password K
   assert.doesNotMatch(secureStorage, /localStorage/);
   assert.doesNotMatch(secureStorage, /console\.log/);
 });
-test("encryption helper is clearly marked experimental and not yet integrated", () => {
-  assert.match(secureStorage, /not wired into app data persistence yet/i);
-  assert.doesNotMatch(html, /secure-storage\.js/);
+test("encrypted routine storage has an explicit unlock/lock UI and keeps keys in memory", () => {
+  assert.match(html, /id="migrate-routines-to-vault"/);
+  assert.match(html, /id="lock-encrypted-vault"/);
+  assert.match(html, /id="delete-plaintext-routines"/);
+  assert.match(js, /await activeVault\.save\(\{ routines: customRoutines \}\)/);
+  assert.match(js, /activeVault\.lock\(\)/);
+  assert.match(secureStorage, /openEncryptedJsonSession/);
+  assert.match(secureStorage, /fresh random IV for every save/);
 });
 
 import { webcrypto } from "node:crypto";
@@ -251,6 +256,24 @@ function createMemoryStorage() {
     removeItem(key) { values.delete(key); }
   };
 }
+
+test("encrypted vault keeps a derived key only in the unlocked session and saves routines encrypted", async () => {
+  const storage = createMemoryStorage();
+  const vault = new EncryptedVault(storage, "session-vault");
+  await vault.initialize("een-veilige-testzin-123", { routines: [{ id: "r1", name: "Start", steps: ["Water"] }] });
+  const before = storage.getItem("session-vault");
+  assert.equal(before.includes("Start"), false);
+  await vault.save({ routines: [{ id: "r2", name: "Nieuwe routine", steps: ["Rust"] }] });
+  const after = storage.getItem("session-vault");
+  assert.equal(after.includes("Nieuwe routine"), false);
+  assert.notEqual(after, before);
+  vault.lock();
+  assert.throws(() => vault.read(), /Unlock the vault/);
+  await vault.unlock("een-veilige-testzin-123");
+  assert.equal(vault.read().routines[0].name, "Nieuwe routine");
+  vault.lock();
+  assert.equal(vault.session, null);
+});
 
 test("encrypted vault stores only an envelope and requires unlock to read", async () => {
   const storage = createMemoryStorage();
