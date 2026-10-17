@@ -99,6 +99,12 @@ test("service worker cache version is bumped when shipping updated app assets", 
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v5/);
 });
 
+test("document title follows the active view and updates when language changes", () => {
+  assert.match(js, /function updateDocumentTitle\(\)/);
+  assert.match(js, /document\.title = pageName \? `\$\{pageName\} · Project N-01` : "Project N-01"/);
+  assert.match(js, /updateDocumentTitle\(\);/);
+});
+
 test("reduced motion follows the operating system until the user chooses a preference", () => {
   assert.match(js, /window\.matchMedia\("\\(prefers-reduced-motion: reduce\\)"\)/);
   assert.match(js, /typeof preferences\.reducedMotion === "boolean" \? preferences\.reducedMotion : systemPrefersReducedMotion/);
