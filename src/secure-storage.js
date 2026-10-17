@@ -114,3 +114,45 @@ export const encryptedJsonFormat = Object.freeze({
   iterations: ITERATIONS,
   cipher: "AES-256-GCM"
 });
+
+
+/**
+ * Opens an in-memory encryption session. The returned object keeps the derived
+ * CryptoKey inside a closure (never in storage or exposed to callers) and uses
+ * a fresh random IV for every save. Drop the returned object on lock.
+ */
+export async function openEncryptedJsonSession(envelope, passphrase) {
+  const crypto = webCrypto();
+  validatePassphrase(passphrase);
+  if (!envelope || envelope.format !== FORMAT || envelope.version !== VERSION ||
+      envelope.kdf !== "PBKDF2-SHA-256" || envelope.iterations !== ITERATIONS ||
+      envelope.cipher !== "AES-256-GCM") {
+    throw new Error("Unsupported encrypted data format.");
+  }
+  const salt = fromBase64(envelope.salt, SALT_BYTES);
+  const iv = fromBase64(envelope.iv, IV_BYTES);
+  const ciphertext = fromBase64(envelope.ciphertext);
+  if (ciphertext.length > MAX_CIPHERTEXT_BYTES || ciphertext.length < 16) {
+    throw new Error("Invalid encrypted data size.");
+  }
+  const key = await deriveKey(passphrase, salt);
+  const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv, tagLength: 128 }, key, ciphertext);
+  if (plaintext.byteLength > MAX_PLAINTEXT_BYTES) throw new Error("Decrypted data exceeds the 1 MB limit.");
+  const value = JSON.parse(decoder.decode(plaintext));
+  return {
+    value,
+    async encrypt(nextValue) {
+      const serialized = JSON.stringify(nextValue);
+      if (typeof serialized !== "string") throw new Error("Only JSON-serializable values can be encrypted.");
+      const bytes = encoder.encode(serialized);
+      if (bytes.length > MAX_PLAINTEXT_BYTES) throw new Error("Encrypted data exceeds the 1 MB limit.");
+      const nextIv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+      const nextCiphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: nextIv, tagLength: 128 }, key, bytes);
+      return {
+        format: FORMAT, version: VERSION, kdf: "PBKDF2-SHA-256", iterations: ITERATIONS,
+        cipher: "AES-256-GCM", salt: envelope.salt, iv: toBase64(nextIv),
+        ciphertext: toBase64(new Uint8Array(nextCiphertext))
+      };
+    }
+  };
+}
