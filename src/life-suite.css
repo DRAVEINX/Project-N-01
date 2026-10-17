@@ -126,3 +126,19 @@
 @media(prefers-reduced-motion:reduce) {
   #life-suite-root * { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
 }
+
+
+/* Weekly planning */
+.ls-weekplan-grid { display:grid; grid-template-columns:1fr; gap:.85rem; }
+.ls-plan-day { min-width:0; padding:.9rem; border:1px solid var(--line); border-radius:15px; background:#ffffff03; }
+.ls-plan-day h4 { margin:.1rem 0 .55rem; text-transform:capitalize; }
+.ls-plan-day .ls-card-list { margin-top:.5rem; }
+.ls-plan-done { display:flex; align-items:flex-start; gap:.7rem; cursor:pointer; flex:1; min-width:0; }
+.ls-plan-done input { width:1.2rem; height:1.2rem; flex:0 0 auto; margin:.15rem 0 0; accent-color:var(--mint); }
+.ls-plan-done span { overflow-wrap:anywhere; line-height:1.45; }
+.ls-plan-summary { display:flex; justify-content:space-between; align-items:center; gap:.8rem; padding:.65rem 0; border-bottom:1px solid var(--line); }
+.ls-plan-summary:last-of-type { border-bottom:0; }
+.ls-plan-summary > span { min-width:0; display:grid; gap:.2rem; }
+.ls-plan-summary small { color:var(--mint); }
+@media(min-width:760px) { .ls-weekplan-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(min-width:1180px) { .ls-weekplan-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
