@@ -721,6 +721,13 @@ test("new personal modules use the unlocked encrypted vault and do not write pri
   assert.match(serviceWorker, /"\/src\/next-features.js"/);
 });
 
+test("secure feature module iterates querySelectorAll collections safely", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.doesNotMatch(features, /(?<!\\$)\\$\\([^;\\n]*\\)\\.forEach/);
+  assert.doesNotMatch(features, /(?<!\\$)\\$\\([^;\\n]*\\)\\.filter/);
+  assert.match(features, /\\$\\$\\("\\[data-feature-text\\]"\\)\\.forEach/);
+});
+
 test("Mivoryntra manifest and visible app shell use the new provisional product name", () => {
   assert.match(html, /<title>Mivoryntra/);
   assert.match(html, /<strong>Mivoryntra<\/strong>/);
