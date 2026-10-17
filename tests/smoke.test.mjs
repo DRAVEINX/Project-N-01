@@ -71,3 +71,14 @@ test("preferences persist locally without persisting private notes", () => {
   assert.match(html, /notities worden niet opgeslagen/i);
   assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
 });
+
+test("drawing pad supports pointer and keyboard input without persistent storage", () => {
+  assert.match(html, /id="sketch-canvas"/);
+  assert.match(html, /data-i18n="sketchTitle"/);
+  assert.match(html, /id="clear-sketch"/);
+  assert.match(app, /addEventListener\("pointerdown"/);
+  assert.match(app, /addEventListener\("pointermove"/);
+  assert.match(app, /addEventListener\("keydown"/);
+  assert.match(app, /clearRect\(0, 0, sketchCanvas\.width, sketchCanvas\.height\)/);
+  assert.doesNotMatch(app, /localStorage\.setItem\([^\n]*sketch/i);
+});
