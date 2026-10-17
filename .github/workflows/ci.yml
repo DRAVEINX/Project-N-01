@@ -20,11 +20,11 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Run automated smoke tests
         run: npm test
       - name: Check JavaScript syntax
-        run: node --check src/app.js && node --check src/secure-storage.js && node --check src/encrypted-vault.js && node --check src/routine-migration.js && node --check scripts/serve.mjs && node --check service-worker.js && node --check tests/smoke.test.mjs
+        run: node --check src/app.js && node --check src/secure-storage.js && node --check src/encrypted-vault.js && node --check src/routine-migration.js && node --check scripts/serve.mjs && node --check scripts/prepare-mobile.mjs && node --check service-worker.js && node --check tests/smoke.test.mjs
       - name: Verify expected project files
         run: |
           test -f index.html
@@ -38,6 +38,8 @@ jobs:
           test -f assets/app-icon.svg
           test -f offline.html
           test -f scripts/serve.mjs
+          test -f scripts/prepare-mobile.mjs
+          test -f capacitor.config.json
           test -f tests/smoke.test.mjs
           test -f README.md
 
