@@ -490,7 +490,7 @@
     const profileSelect = $('select[name="active-profile"]');
     if (profileSelect) profileSelect.addEventListener("change",async()=>{state.currentProfileId=profileSelect.value;recordAudit("profile-switched",state.currentProfileId);await saveState(false);renderApp();});
     $$("[data-ls-action]").forEach(el=>el.addEventListener("click",()=>handleAction(el.dataset.lsAction,el.dataset.id,el)));
-    $$("[data-guide-step]").forEach(el=>el.addEventListener("change",async()=>{const guide=state.guides.find(g=>g.id===el.dataset.guideStep);if(!guide)return;const idx=Number(el.dataset.stepIndex);guide.doneSteps=Array.isArray(guide.doneSteps)?guide.doneSteps:[];guide.doneSteps=el.checked?Array.from(new Set(guide.doneSteps.concat(idx))):guide.doneSteps.filter(n=>n!==idx);guide.updatedAt=new Date().toISOString();if(await saveState(false))setStatus(t("saved"));}));
+    $$("[data-guide-step]").forEach(el=>el.addEventListener("change",async()=>{const guide=state.guides.find(g=>g.id===el.dataset.guideStep);if(!guide)return;if(!requireModify("guides",guide)){el.checked=!el.checked;return;}const idx=Number(el.dataset.stepIndex);guide.doneSteps=Array.isArray(guide.doneSteps)?guide.doneSteps:[];guide.doneSteps=el.checked?Array.from(new Set(guide.doneSteps.concat(idx))):guide.doneSteps.filter(n=>n!==idx);guide.updatedAt=new Date().toISOString();if(await saveState(false))setStatus(t("saved"));}));
     const selected = $("#ls-selected-date");
     if (selected) selected.addEventListener("change",()=>{selectedDate=selected.value || localDate(new Date());renderApp();});
     $$("[data-ls-date]").forEach(el=>el.addEventListener("click",()=>{selectedDate=el.dataset.lsDate;calendarMode="day";renderApp();}));
@@ -500,6 +500,7 @@
       const v = formData(appointmentFormEl);
       if (!v.title.trim() || !v.date || !v.start || !v.end || minutes(v.end)<=minutes(v.start)) {setStatus(t("invalid"),true);return;}
       const existing = v.id ? state.appointments.find(a=>a.id===v.id) : null;
+      if(existing && !requireModify("calendar",existing)) return;
       const now = new Date().toISOString();
       const oldSeries = existing ? (existing.seriesId || (existing.repeat==="weekly" ? existing.id : "")) : "";
       const id = v.id || uid("appointment");
@@ -538,6 +539,7 @@
       try {
         const editingId=workerForm.dataset.editId;
         const old=editingId?state.workers.find(w=>w.id===editingId):null;
+        if(old && !requireModify("roster",old)) return;
         const selectedPhoto=workerForm.elements.photo.files[0];
         const photo=selectedPhoto?await readImage(selectedPhoto,350000):(old?old.photo:"");
         const worker={id:editingId||uid("worker"),profileId:old?old.profileId:state.currentProfileId,name:v.name.trim(),role:v.role.trim(),photo:photo,createdAt:old?old.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
@@ -548,13 +550,14 @@
       } catch {setStatus(t("photoTooLarge"),true);}
     });
         const shiftForm = $("#ls-shift-form");
-    if (shiftForm) shiftForm.addEventListener("submit",async event=>{event.preventDefault();const v=formData(shiftForm);if(!v.workerId||!v.date||!v.start||!v.end||minutes(v.end)<=minutes(v.start)){setStatus(t("invalid"),true);return;}const editingId=shiftForm.dataset.editId;const old=editingId?state.shifts.find(s=>s.id===editingId):null;const item={id:editingId||uid("shift"),profileId:old?old.profileId:state.currentProfileId,workerId:v.workerId,date:v.date,start:v.start,end:v.end,createdAt:old?old.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};state.shifts=state.shifts.filter(s=>s.id!==item.id);state.shifts.push(item);delete shiftForm.dataset.editId;recordAudit(old?"shift-updated":"shift-added",v.date);if(await saveState(false))renderApp();});
+    if (shiftForm) shiftForm.addEventListener("submit",async event=>{event.preventDefault();const v=formData(shiftForm);if(!v.workerId||!v.date||!v.start||!v.end||minutes(v.end)<=minutes(v.start)){setStatus(t("invalid"),true);return;}const editingId=shiftForm.dataset.editId;const old=editingId?state.shifts.find(s=>s.id===editingId):null;if(old&&!requireModify("roster",old))return;const item={id:editingId||uid("shift"),profileId:old?old.profileId:state.currentProfileId,workerId:v.workerId,date:v.date,start:v.start,end:v.end,createdAt:old?old.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};state.shifts=state.shifts.filter(s=>s.id!==item.id);state.shifts.push(item);delete shiftForm.dataset.editId;recordAudit(old?"shift-updated":"shift-added",v.date);if(await saveState(false))renderApp();});
     const journalForm=$("#ls-journal-form");
     if(journalForm) journalForm.addEventListener("submit",async event=>{
       event.preventDefault();const v=formData(journalForm);const picked=$('input[name="mood"]:checked');
       if(!v.text.trim()&&!draftJournalAudio&&!picked&&!editingJournalId){setStatus(t("invalid"),true);return;}
       const today=localDate(new Date());
       const old=editingJournalId?state.journal.find(e=>e.id===editingJournalId):null;
+      if(old&&!requireModify("journal",old))return;
       let entry=null;
       if(old){
         old.title=(v.title||"").trim()||(lang==="nl"?"Dagboekmoment":"Journal entry");
@@ -582,6 +585,7 @@
       try {
         const editingId=editingGuideId;
         const old=editingId?state.guides.find(g=>g.id===editingId):null;
+        if(old&&!requireModify("guides",old))return;
         const images=Array.from(guideForm.elements.image.files||[]);
         if(images.length>3||images.some(f=>f.size>3*1024*1024))throw new Error("photo-large");
         let imageData=old?(Array.isArray(old.images)?old.images:(old.image?[old.image]:[])):[];
@@ -623,7 +627,7 @@
       recordAudit("consent-granted",v.viewerId);if(await saveState(false)){renderApp();setStatus(t("consentSaved"));}
     });
     const contactForm=$("#ls-contact-form");
-    if(contactForm) contactForm.addEventListener("submit",async event=>{event.preventDefault();const v=formData(contactForm);if(!v.name.trim()){setStatus(t("invalid"),true);return;}const old=editingContactId?state.contacts.find(c=>c.id===editingContactId):null;const contact={id:old?old.id:uid("contact"),profileId:old?old.profileId:state.currentProfileId,name:v.name.trim(),phone:v.phone.trim(),email:v.email.trim(),emergencyInfo:v.emergencyInfo.trim(),createdAt:old?old.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};state.contacts=state.contacts.filter(c=>c.id!==contact.id);state.contacts.push(contact);editingContactId="";recordAudit(old?"trusted-contact-updated":"trusted-contact-added",v.name);if(await saveState(false))renderApp();});
+    if(contactForm) contactForm.addEventListener("submit",async event=>{event.preventDefault();const v=formData(contactForm);if(!v.name.trim()){setStatus(t("invalid"),true);return;}const old=editingContactId?state.contacts.find(c=>c.id===editingContactId):null;if(old&&!requireModify("help",old))return;const contact={id:old?old.id:uid("contact"),profileId:old?old.profileId:state.currentProfileId,name:v.name.trim(),phone:v.phone.trim(),email:v.email.trim(),emergencyInfo:v.emergencyInfo.trim(),createdAt:old?old.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};state.contacts=state.contacts.filter(c=>c.id!==contact.id);state.contacts.push(contact);editingContactId="";recordAudit(old?"trusted-contact-updated":"trusted-contact-added",v.name);if(await saveState(false))renderApp();});
     const searchForm=$("#ls-search-form");
     if(searchForm) searchForm.addEventListener("submit",event=>{
       event.preventDefault();const query=formData(searchForm).query.trim().toLocaleLowerCase();const results=[];
@@ -706,7 +710,7 @@
     if(action==="month-next"){const d=dateAt(selectedDate);d.setMonth(d.getMonth()+1);selectedDate=localDate(d);renderApp();return;}
     if(action==="mode-day"){calendarMode="day";renderApp();return;}if(action==="mode-week"){calendarMode="week";renderApp();return;}if(action==="mode-month"){calendarMode="month";renderApp();return;}
     if(action==="clear-canvas"){const c=$("#ls-drawing-canvas");if(c){const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);}return;}
-    if(action==="save-drawing"){const c=$("#ls-drawing-canvas");const title=$('input[name="drawing-title"]')?.value.trim();if(!c||!title){setStatus(t("invalid"),true);return;}try{const old=editingDrawingId?state.drawings.find(d=>d.id===editingDrawingId):null;const item={id:old?old.id:uid("drawing"),profileId:old?old.profileId:state.currentProfileId,title:title,image:c.toDataURL("image/jpeg",0.78),date:old?old.date:localDate(new Date()),createdAt:old?old.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};state.drawings=state.drawings.filter(d=>d.id!==item.id);state.drawings.push(item);recordAudit(old?"drawing-updated":"drawing-saved",title);editingDrawingId="";if(await saveState(false))renderApp();}catch{setStatus(t("storageError"),true);}return;}
+    if(action==="save-drawing"){const c=$("#ls-drawing-canvas");const title=$('input[name="drawing-title"]')?.value.trim();if(!c||!title){setStatus(t("invalid"),true);return;}try{const old=editingDrawingId?state.drawings.find(d=>d.id===editingDrawingId):null;if(old&&!requireModify("journal",old))return;const item={id:old?old.id:uid("drawing"),profileId:old?old.profileId:state.currentProfileId,title:title,image:c.toDataURL("image/jpeg",0.78),date:old?old.date:localDate(new Date()),createdAt:old?old.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};state.drawings=state.drawings.filter(d=>d.id!==item.id);state.drawings.push(item);recordAudit(old?"drawing-updated":"drawing-saved",title);editingDrawingId="";if(await saveState(false))renderApp();}catch{setStatus(t("storageError"),true);}return;}
     if(action==="record-journal"||action==="record-guide"){recordingTarget=action==="record-guide"?"guide":"journal";const start=root.querySelector('[data-ls-action="'+action+'"]');if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){setStatus(t("unsupported"),true);return;}try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});recordingChunks=[];mediaRecorder=new MediaRecorder(stream);mediaRecorder.ondataavailable=event=>{if(event.data&&event.data.size)recordingChunks.push(event.data);};mediaRecorder.onstop=async()=>{stream.getTracks().forEach(track=>track.stop());const blob=new Blob(recordingChunks,{type:mediaRecorder.mimeType||"audio/webm"});if(blob.size>1024*1024){setStatus(t("audioTooLarge"),true);if(recordingTarget==="guide")draftGuideAudio="";else draftJournalAudio="";}else{const data=await readFileData(new File([blob],"life-suite-audio.webm",{type:blob.type}),1024*1024);if(recordingTarget==="guide")draftGuideAudio=data;else draftJournalAudio=data;const audio=$(recordingTarget==="guide"?"#ls-guide-audio-preview":"#ls-journal-audio-preview");if(audio){audio.src=data;audio.hidden=false;}const status=$(recordingTarget==="guide"?"#ls-guide-audio-status":"#ls-audio-status");if(status)status.textContent=t("audioReady");}const stop=$('[data-ls-action="stop-recording"]');if(stop)stop.disabled=true;if(start)start.disabled=false;};mediaRecorder.start();if(start)start.disabled=true;const stop=$('[data-ls-action="stop-recording"]');if(stop)stop.disabled=false;setStatus(t("ready"));}catch{setStatus(t("unsupported"),true);}return;}
     if(action==="stop-recording"){if(mediaRecorder&&mediaRecorder.state!=="inactive")mediaRecorder.stop();return;}
     if(action==="contact-help"){const contact=visibleItems("contacts","help")[0];if(!contact){setStatus(t("noContact"),true);return;}if(!contact.phone){setStatus(t("noPhone"),true);return;}if(window.confirm(t("callConfirm")))window.location.href="tel:"+contact.phone.replace(/[^\d+]/g,"");return;}
