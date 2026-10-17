@@ -5,6 +5,19 @@ const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
+
+test("daily task and built-in routine progress persists locally for the current day", () => {
+  assert.match(js, /const dailyProgressKey = "project-n-01-daily-progress-v1"/);
+  assert.match(js, /function localDateKey\(date = new Date\(\)\)/);
+  assert.match(js, /if \(!parsed \|\| parsed\.date !== localDateKey\(\)\) return null/);
+  assert.match(js, /localStorage\.setItem\(dailyProgressKey, JSON\.stringify\(progress\)\)/);
+  assert.match(js, /function restoreDailyProgress\(\)/);
+  assert.match(js, /saveDailyProgress\(\);/);
+  assert.match(js, /encryptedVaultStorageKey, dailyProgressKey/);
+  assert.match(js, /Today’s progress and accessibility preferences are stored unencrypted/);
+  assert.match(js, /De voortgang van vandaag en toegankelijkheidsvoorkeuren worden onversleuteld/);
+});
+
 test("PWA manifest is valid and points to the cached app icon", async () => {
   const manifestText = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
   const manifest = JSON.parse(manifestText);
@@ -108,8 +121,8 @@ test("notes explicitly warn that the prototype does not save them", () => {
 const manifest = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 test("service worker cache version is bumped when shipping updated app assets", () => {
-  assert.match(serviceWorker, /project-n-01-prototype-v9/);
-  assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v8/);
+  assert.match(serviceWorker, /project-n-01-prototype-v10/);
+  assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v9/);
 });
 
 test("encrypted import tracks temporary vault unlock in local scope", () => {
@@ -670,7 +683,7 @@ test("tablet routine cards use two columns while phone layouts stay single-colum
 
 test("offline app shell cache version is refreshed and includes core app assets", async () => {
   const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(serviceWorker, /project-n-01-prototype-v9/);
+  assert.match(serviceWorker, /project-n-01-prototype-v10/);
   for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/manifest.webmanifest", "/assets/app-icon.svg", "/offline.html"]) {
     assert.ok(serviceWorker.includes(JSON.stringify(asset)), `offline shell missing ${asset}`);
   }
