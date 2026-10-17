@@ -377,15 +377,17 @@
   }
   function guideCard(g) {
     const done = Array.isArray(g.doneSteps) ? g.doneSteps : [];
-    const steps = g.steps.map((s,i)=>'<label class="ls-guide-step"><input type="checkbox" data-guide-step="' + esc(g.id) + '" data-step-index="' + i + '"' + (done.indexOf(i)>=0 ? " checked" : "") + '><span>' + esc(s) + '</span></label>').join("");
-    return '<article class="ls-item">' + (g.image ? '<img class="ls-guide-photo" src="' + esc(g.image) + '" alt="' + esc(g.name) + '">' : "") + '<div class="ls-item-top"><div><strong>' + esc(g.name) + '</strong><p>' + esc(g.description || "") + '</p></div>' + button(t("delete"),"delete-guide","secondary-button danger-button",'data-id="' + esc(g.id) + '"') + '</div><div class="ls-guide-steps">' + steps + '</div>' + (g.audio ? '<audio controls preload="none" src="' + esc(g.audio) + '"></audio>' : "") + '<p class="ls-muted">' + esc(done.length) + " / " + esc(g.steps.length) + '</p></article>';
+    const steps = (g.steps||[]).map((s,i)=>'<label class="ls-guide-step"><input type="checkbox" data-guide-step="' + esc(g.id) + '" data-step-index="' + i + '"' + (done.indexOf(i)>=0 ? " checked" : "") + '><span>' + esc(s) + '</span></label>').join("");
+    const imgs=Array.isArray(g.images)?g.images:(g.image?[g.image]:[]);
+    return '<article class="ls-item">' + imgs.map((img,i)=>'<img class="ls-guide-photo" src="' + esc(img) + '" alt="' + esc(g.name) + " " + (i+1) + '">').join("") + '<div class="ls-item-top"><div><strong>' + esc(g.name) + '</strong><p>' + esc(g.description || "") + '</p></div><div class="ls-actions">' + button(t("edit"),"edit-guide","secondary-button",'data-id="' + esc(g.id) + '"') + button(t("delete"),"delete-guide","secondary-button danger-button",'data-id="' + esc(g.id) + '"') + '</div></div><div class="ls-guide-steps">' + steps + '</div>' + (g.audio ? '<audio controls preload="none" src="' + esc(g.audio) + '"></audio>' : "") + '<p class="ls-muted">' + esc(done.length) + " / " + esc((g.steps||[]).length) + '</p></article>';
   }
   function guidesView() {
-    const form = '<form id="ls-guide-form" class="ls-form">' + field(t("guideName"),"name","text","","required maxlength='120'") + textarea(t("guideDescription"),"description","",2,"maxlength='1000'") + textarea(t("guideSteps"),"steps","",5,"required maxlength='4000'") + '<label class="ls-field"><span>' + esc(t("guideImage")) + '</span><input type="file" name="image" accept="image/*" multiple></label><label class="ls-field"><span>' + esc(t("guideAudio")) + '</span><input type="file" name="audio" accept="audio/*"></label><button class="primary-button" type="submit">' + esc(t("addGuide")) + '</button></form>';
+    const editing=editingGuideId?state.guides.find(g=>g.id===editingGuideId):null;
+    const form = '<form id="ls-guide-form" class="ls-form">' + field(t("guideName"),"name","text",editing?editing.name:"","required maxlength='120'") + textarea(t("guideDescription"),"description",editing?editing.description:"",2,"maxlength='1000'") + textarea(t("guideSteps"),"steps",editing?(editing.steps||[]).join("\n"):"",5,"required maxlength='4000'") + '<label class="ls-field"><span>' + esc(t("guideImage")) + '</span><input type="file" name="image" accept="image/*" multiple></label><label class="ls-field"><span>' + esc(t("guideAudio")) + '</span><input type="file" name="audio" accept="audio/*"></label><div class="ls-actions">' + button(t("audioRecord"),"record-guide","secondary-button") + button(t("stopRecord"),"stop-recording","secondary-button",'disabled') + '</div><audio id="ls-guide-audio-preview" controls ' + ((draftGuideAudio||(editing&&editing.audio))?'':'hidden') + ' src="' + esc(draftGuideAudio||(editing&&editing.audio)||"") + '"></audio><p class="ls-muted" id="ls-guide-audio-status" role="status" aria-live="polite"></p><button class="primary-button" type="submit">' + esc(editing?t("edit"):t("addGuide")) + '</button>' + (editing?button(t("cancel"),"cancel-guide-edit","secondary-button"):"") + '</form>';
     const guides = visibleItems("guides","guides");
     return panel(t("guideTitle"),form) + panel(t("guideTitle"),'<div class="ls-card-list">' + (guides.length ? guides.map(guideCard).join("") : '<p class="ls-empty">' + esc(t("noGuides")) + '</p>') + '</div>');
   }
-  function remindersView() {
+    function remindersView() {
     const rows = visibleItems("reminders","calendar").slice().sort((a,b)=>a.when.localeCompare(b.when));
     const form = '<form id="ls-reminder-form" class="ls-form ls-grid">' + field(t("taskTitle"),"title","text","","required maxlength='120'") + field(t("reminderWhen"),"when","datetime-local","","required") + select(t("reminderRepeat"),"repeat",[{value:"none",label:t("noRepeat")},{value:"daily",label:t("daily")},{value:"weekly",label:t("weekly")}],"none") + '<button class="primary-button" type="submit">' + esc(t("addReminder")) + '</button></form>';
     const cards = rows.length ? rows.map(r=>'<article class="ls-item"><div class="ls-item-top"><div><strong>' + esc(r.title) + '</strong><p>' + esc(new Date(r.when).toLocaleString(lang==="nl"?"nl-NL":"en-GB")) + '</p></div>' + button(t("delete"),"delete-reminder","secondary-button danger-button",'data-id="' + esc(r.id) + '"') + '</div>' + button(t("snooze"),"snooze-reminder","secondary-button",'data-id="' + esc(r.id) + '"') + '</article>').join("") : '<p class="ls-empty">' + esc(t("noReminders")) + '</p>';
@@ -520,17 +522,24 @@
       event.preventDefault();const v=formData(guideForm);
       if(!v.name.trim()||!v.steps.trim()){setStatus(t("invalid"),true);return;}
       try {
+        const editingId=editingGuideId;
+        const old=editingId?state.guides.find(g=>g.id===editingId):null;
         const images=Array.from(guideForm.elements.image.files||[]);
-        if(images.some(f=>f.size>3*1024*1024)||images.length>3)throw new Error("photo-large");
-        const imageData=images.length?await readImage(images[0],350000):"";
+        if(images.length>3||images.some(f=>f.size>3*1024*1024))throw new Error("photo-large");
+        let imageData=old?(Array.isArray(old.images)?old.images:(old.image?[old.image]:[])):[];
+        if(images.length)imageData=await Promise.all(images.map(f=>readImage(f,350000)));
         const audioFile=guideForm.elements.audio.files[0];
-        const audio=audioFile?await readFileData(audioFile,1024*1024):"";
-        const guide={id:uid("guide"),profileId:state.currentProfileId,name:v.name.trim(),description:v.description.trim(),steps:v.steps.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).slice(0,50),image:imageData,audio:audio,doneSteps:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-        if(!guide.steps.length)throw new Error("invalid");
-        state.guides.push(guide);recordAudit("guide-created",guide.name);if(await saveState(false))renderApp();
+        const audio=draftGuideAudio||(audioFile?await readFileData(audioFile,1024*1024):(old?old.audio:""));
+        const steps=v.steps.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).slice(0,50);
+        if(!steps.length)throw new Error("invalid");
+        const doneSteps=old&&Array.isArray(old.doneSteps)?old.doneSteps.filter(n=>n<steps.length):[];
+        const guide={id:old?old.id:uid("guide"),profileId:old?old.profileId:state.currentProfileId,name:v.name.trim(),description:v.description.trim(),steps:steps,images:imageData,image:imageData[0]||"",audio:audio,doneSteps:doneSteps,createdAt:old?old.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+        state.guides=state.guides.filter(g=>g.id!==guide.id);state.guides.push(guide);
+        recordAudit(old?"guide-updated":"guide-created",guide.name);editingGuideId="";draftGuideAudio="";
+        if(await saveState(false))renderApp();
       } catch(error) {setStatus(error.message==="photo-large"?t("photoTooLarge"):error.message==="file-large"?t("guideAudioTooLarge"):t("storageError"),true);}
     });
-    const reminderForm=$("#ls-reminder-form");
+        const reminderForm=$("#ls-reminder-form");
     if(reminderForm) reminderForm.addEventListener("submit",async event=>{
       event.preventDefault();const v=formData(reminderForm);const when=new Date(v.when);
       if(!v.title.trim()||!v.when||when.getTime()<=Date.now()){setStatus(t("futureOnly"),true);return;}
@@ -598,6 +607,7 @@
     if(!canvas)return;
     const ctx=canvas.getContext("2d");ctx.fillStyle="#ffffff";ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.lineWidth=5;ctx.lineCap="round";ctx.strokeStyle="#343451";
+    if(editingDrawingId){const saved=state.drawings.find(d=>d.id===editingDrawingId);if(saved&&saved.image){const img=new Image();img.onload=()=>ctx.drawImage(img,0,0,canvas.width,canvas.height);img.src=saved.image;}}
     let drawing=false,last=null;
     const point=event=>{const rect=canvas.getBoundingClientRect();return{x:(event.clientX-rect.left)*canvas.width/rect.width,y:(event.clientY-rect.top)*canvas.height/rect.height};};
     canvas.addEventListener("pointerdown",event=>{drawing=true;last=point(event);canvas.setPointerCapture(event.pointerId);});
