@@ -450,8 +450,7 @@
     if(!unlocked){
       ["agenda-form","mood-form","people-form"].forEach(formId=>{const form=$("#"+formId);if(form)form.reset();});
       ["agenda-status","mood-status","people-status"].forEach(statusId=>{const status=$("#"+statusId);if(status)status.textContent="";});
-      setNoteGateVisible(false);
-      $$(".drawing-gallery img").forEach(img=>{img.removeAttribute("src");});
+      $(".drawing-gallery img").forEach(img=>{img.removeAttribute("src");});
       $$(".feature-list,.drawing-gallery").forEach(list=>list.replaceChildren());
     }
     ["agenda-form","mood-form","people-form"].forEach(formId=>{
