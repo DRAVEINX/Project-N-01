@@ -156,6 +156,20 @@ test("privacy panel explains unencrypted local data and offers confirmed deletio
   assert.match(js, /localDataClearError/);
 });
 
+test("encrypted migration UI is explicit, bilingual and preserves legacy routines", () => {
+  assert.match(html, /id="migrate-routines-to-vault"/);
+  assert.match(html, /id="vault-migration-status"/);
+  assert.match(html, /data-i18n="vaultMigrationIntro"/);
+  assert.match(js, /import\("\.\/encrypted-vault\.js"\)/);
+  assert.match(js, /import\("\.\/routine-migration\.js"\)/);
+  assert.match(js, /readLegacyRoutines\(localStorage\)/);
+  assert.match(js, /vault\.exportEnvelope\(\)/);
+  assert.match(js, /vault\.lock\(\)/);
+  assert.match(js, /vaultMigrationSuccess:"De versleutelde kluis is gemaakt/);
+  assert.match(js, /vaultMigrationSuccess:"The encrypted vault was created/);
+  assert.match(js, /De oorspronkelijke routines blijven staan en zijn nog steeds onversleuteld/);
+});
+
 const secureStorage = await readFile(new URL("../src/secure-storage.js", import.meta.url), "utf8");
 test("experimental encryption module uses authenticated AES-GCM and a password KDF", () => {
   assert.match(secureStorage, /PBKDF2/);
