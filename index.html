@@ -119,6 +119,12 @@
               <label class="secondary-button file-pick-label" for="import-encrypted-routines" data-i18n="importEncryptedRoutines">Versleutelde back-up herstellen</label>
               <input class="sr-only" type="file" id="import-encrypted-routines" accept="application/json,.json">
             </div>
+            <div class="vault-migration-panel">
+              <h4 data-i18n="vaultMigrationTitle">Bestaande routines veilig kopiëren</h4>
+              <p class="privacy-hint" data-i18n="vaultMigrationIntro">Kopieer je bestaande routines naar een lokale versleutelde kluis en download een versleutelde kopie. De oorspronkelijke routines blijven staan en zijn nog steeds onversleuteld in deze prototype-app.</p>
+              <button type="button" class="secondary-button" id="migrate-routines-to-vault" data-i18n="vaultMigrationAction">Versleutelde kopie maken</button>
+              <p id="vault-migration-status" class="inline-status" role="status" aria-live="polite"></p>
+            </div>
           </section>
 
           <div class="routine-backup-tools">
