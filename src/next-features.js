@@ -6,7 +6,7 @@
       navAgenda:"Weekplanner", navMood:"Stemming", navPeople:"Vertrouwde mensen", introAgain:"Introductie opnieuw bekijken",
       agendaEyebrow:"OVERZICHT", agendaTitle:"Mijn weekplanner", agendaIntro:"Leg afspraken vast en bekijk wat er de komende dagen op de planning staat.",
       agendaTitleLabel:"Waar gaat de afspraak over?", agendaDate:"Datum", agendaTime:"Tijd", agendaDetails:"Extra informatie (optioneel)", agendaAdd:"Afspraak opslaan",
-      agendaEmpty:"Er staan nog geen afspraken in je planner.", agendaDone:"Afgerond", agendaUndo:"Opnieuw openzetten", agendaDelete:"Afspraak verwijderen",
+      agendaEmpty:"Er staan nog geen afspraken in je planner.", agendaDone:"Afgerond", agendaUndo:"Opnieuw openzetten", agendaDelete:"Afspraak verwijderen", agendaEdit:"Afspraak bewerken", agendaCancelEdit:"Bewerken annuleren", agendaUpdate:"Wijzigingen opslaan", agendaUpdated:"De afspraak is bijgewerkt.", agendaEditStarted:"Je kunt de afspraak nu aanpassen.",
       weekHeading:"De komende 7 dagen", agendaSaved:"De afspraak is veilig opgeslagen.", agendaError:"Opslaan lukte niet. Controleer of je kluis ontgrendeld is en voldoende ruimte heeft.",
       moodEyebrow:"EVEN INCHECKEN", moodTitle:"Hoe voel je je vandaag?", moodIntro:"Kies het gevoel dat het beste past. Je hoeft het niet uit te leggen.",
       moodLabel:"Mijn stemming", chooseMood:"Kies een stemming…", moodNote:"Wil je er iets bij vertellen? (optioneel)", moodSave:"Stemming opslaan",
@@ -29,7 +29,7 @@
       navAgenda:"Week planner", navMood:"Mood", navPeople:"Trusted people", introAgain:"View the introduction again",
       agendaEyebrow:"OVERVIEW", agendaTitle:"My week planner", agendaIntro:"Add appointments and see what is planned for the coming days.",
       agendaTitleLabel:"What is the appointment about?", agendaDate:"Date", agendaTime:"Time", agendaDetails:"Extra details (optional)", agendaAdd:"Save appointment",
-      agendaEmpty:"There are no appointments in your planner yet.", agendaDone:"Completed", agendaUndo:"Mark as open", agendaDelete:"Delete appointment",
+      agendaEmpty:"There are no appointments in your planner yet.", agendaDone:"Completed", agendaUndo:"Mark as open", agendaDelete:"Delete appointment", agendaEdit:"Edit appointment", agendaCancelEdit:"Cancel editing", agendaUpdate:"Save changes", agendaUpdated:"Appointment updated.", agendaEditStarted:"You can edit this appointment now.",
       weekHeading:"The next 7 days", agendaSaved:"Appointment saved securely.", agendaError:"Could not save. Check that your vault is unlocked and has enough free space.",
       moodEyebrow:"CHECKING IN", moodTitle:"How are you feeling today?", moodIntro:"Choose the feeling that fits best. You do not have to explain it.",
       moodLabel:"My mood", chooseMood:"Choose a mood…", moodNote:"Would you like to add a note? (optional)", moodSave:"Save mood",
@@ -53,6 +53,9 @@
   const $$ = (selector, root) => Array.from((root || document).querySelectorAll(selector));
   let language = "nl";
   let lastUnlocked = false;
+  let editingAppointmentId = null;
+  let editingPersonId = null;
+  let editingPersonPhoto = "";
   const app = () => window.ProjectNApp;
   const text = key => (copy[language] && copy[language][key]) || copy.nl[key] || key;
   const id = prefix => prefix + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
@@ -176,9 +179,14 @@
     row.append(dateBox, timeBox);
     const detailsLabel = make("label", "", text("agendaDetails")); detailsLabel.htmlFor="agenda-details"; detailsLabel.dataset.featureText="agendaDetails";
     const details = make("textarea"); details.id="agenda-details"; details.name="details"; details.rows=3; details.maxLength=600;
-    const submit = make("button", "primary-button", text("agendaAdd")); submit.type="submit"; submit.dataset.featureText="agendaAdd";
+    const submit = make("button", "primary-button", text("agendaAdd")); submit.type="submit"; submit.id="agenda-submit"; submit.dataset.featureText="agendaAdd";
+    const cancel = make("button", "secondary-button", text("agendaCancelEdit")); cancel.type="button"; cancel.id="agenda-cancel-edit"; cancel.hidden=true; cancel.dataset.featureText="agendaCancelEdit";
     const status = make("p", "inline-status"); status.id="agenda-status"; status.setAttribute("role","status"); status.setAttribute("aria-live","polite");
-    form.append(nameLabel, name, row, detailsLabel, details, submit, status);
+    form.append(nameLabel, name, row, detailsLabel, details, submit, cancel, status);
+    cancel.addEventListener("click", () => {
+      editingAppointmentId=null; form.reset(); date.min=localDate(); date.value=localDate();
+      submit.textContent=text("agendaAdd"); cancel.hidden=true; status.textContent="";
+    });
     const gate = secureGate(); gate.hidden=true; gate.dataset.secureGate="";
     const secureContents = make("div", "secure-feature-contents"); secureContents.dataset.secureContents="";
     const week = make("div", "week-strip"); week.id="agenda-week";
@@ -189,12 +197,24 @@
     form.addEventListener("submit", async event => {
       event.preventDefault();
       if (!app().isVaultUnlocked()) { status.textContent=text("secureGateTitle"); gate.hidden=false; return; }
-      const item={ id:id("appointment"), title:name.value.trim().slice(0,80), date:date.value, time:time.value, details:details.value.trim().slice(0,600), done:false, createdAt:new Date().toISOString() };
-      if (!item.title || !item.date) return;
+      const targetId=editingAppointmentId;
+      const values={title:name.value.trim().slice(0,80),date:date.value,time:time.value,details:details.value.trim().slice(0,600)};
+      if (!values.title || !values.date) return;
       try {
-        await updateSecure(data=>{ if(data.agendaItems.length>=100) data.agendaItems=data.agendaItems.slice(-99); data.agendaItems.push(item); return data; });
-        form.reset(); date.value=localDate(); date.min=localDate();
-        status.textContent=text("agendaSaved"); renderAgenda();
+        await updateSecure(data=>{
+          if(targetId){
+            const found=data.agendaItems.find(item=>item && item.id===targetId);
+            if(!found) throw new Error("appointment-not-found");
+            Object.assign(found, values, {updatedAt:new Date().toISOString()});
+          } else {
+            if(data.agendaItems.length>=100) data.agendaItems=data.agendaItems.slice(-99);
+            data.agendaItems.push({id:id("appointment"),...values,done:false,createdAt:new Date().toISOString()});
+          }
+          return data;
+        });
+        editingAppointmentId=null; form.reset(); date.value=localDate(); date.min=localDate();
+        submit.textContent=text("agendaAdd"); cancel.hidden=true;
+        status.textContent=text(targetId?"agendaUpdated":"agendaSaved"); renderAgenda();
       } catch { status.textContent=text("agendaError"); }
     });
     return fragment;
@@ -300,6 +320,20 @@
     if(actionNodes && actionNodes.length){const actions=make("div","feature-item-actions");actionNodes.forEach(node=>actions.append(node));card.append(actions);}
     return card;
   }
+  function beginAppointmentEdit(item){
+    editingAppointmentId=item.id;
+    $("#agenda-title").value=item.title||"";
+    $("#agenda-date").min="";
+    $("#agenda-date").value=item.date||localDate();
+    $("#agenda-time").value=item.time||"";
+    $("#agenda-details").value=item.details||"";
+    const submit=$("#agenda-submit"),cancel=$("#agenda-cancel-edit"),status=$("#agenda-status");
+    if(submit)submit.textContent=text("agendaUpdate");
+    if(cancel)cancel.hidden=false;
+    if(status)status.textContent=text("agendaEditStarted");
+    app().setView("agenda");
+    $("#agenda-title").focus();
+  }
   function renderAgenda(){
     const list=$("#agenda-list"),week=$("#agenda-week");
     if(!list||!week)return;
@@ -329,7 +363,7 @@
         try{await updateSecure(data=>{const found=data.agendaItems.find(v=>v.id===item.id);if(found)found.done=!found.done;return data;});renderAgenda();}
         catch{$("#agenda-status").textContent=text("agendaError");}
       });
-      actions.push(toggle,button(text("agendaDelete"),"secondary-button",async()=>{try{await deleteItem("agendaItems",item.id);renderAgenda();}catch{$("#agenda-status").textContent=text("agendaError");}}));
+      actions.push(toggle,button(text("agendaEdit"),"secondary-button",()=>beginAppointmentEdit(item)),button(text("agendaDelete"),"secondary-button",async()=>{try{await deleteItem("agendaItems",item.id);renderAgenda();}catch{$("#agenda-status").textContent=text("agendaError");}}));
       const card=createItemCard(item.title,meta,item.details,actions);
       if(item.done)card.classList.add("is-complete");
       list.append(card);
