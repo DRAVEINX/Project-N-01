@@ -438,19 +438,41 @@
   function overlap(a,b) {
     return a.date === b.date && minutes(a.start) < minutes(b.end) && minutes(b.start) < minutes(a.end);
   }
-  function appointmentConflict(candidate) {
-    return visibleItems("appointments","calendar").filter(a=>a.id!==candidate.id && a.date===candidate.date && a.start===candidate.start)[0] ||
-      visibleItems("appointments","calendar").filter(a=>a.id!==candidate.id && overlap(a,candidate))[0] || null;
+  function appointmentConflict(candidate, pool) {
+    const candidates = Array.isArray(pool) ? pool : visibleItems("appointments","calendar");
+    const candidateProfile = candidate.profileId || state.currentProfileId;
+    const conflicting = candidates.filter(a => {
+      if (a.id === candidate.id) return false;
+      if ((a.profileId || "self") !== (candidateProfile || "self")) return false;
+      const candidateSeries = candidate.seriesId || (candidate.repeat === "weekly" ? candidate.id : "");
+      const otherSeries = a.seriesId || (a.repeat === "weekly" ? a.id : "");
+      if (candidateSeries && otherSeries && candidateSeries === otherSeries) return false;
+      return a.date === candidate.date && (a.start === candidate.start || overlap(a,candidate));
+    });
+    return conflicting.find(a => a.start === candidate.start) || conflicting[0] || null;
   }
-  function formData(form) { return Object.fromEntries(new FormData(form).entries()); }
+    function formData(form) { return Object.fromEntries(new FormData(form).entries()); }
   function addAppointmentRepeat(appt) {
-    const result = [appt];
+    const seriesId = appt.repeat === "weekly" ? (appt.seriesId || appt.id) : (appt.seriesId || "");
+    const base = Object.assign({}, appt);
+    if (seriesId) base.seriesId = seriesId;
+    const result = [base];
     if (appt.repeat === "weekly") {
-      for (let i=1;i<8;i++) result.push(Object.assign({},appt,{id:uid("appointment"),date:shiftDate(appt.date,i*7),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}));
+      // Keep a bounded eight-occurrence preview series; copies do not themselves recur.
+      for (let i=1;i<8;i++) {
+        result.push(Object.assign({}, appt, {
+          id:uid("appointment"),
+          seriesId:seriesId,
+          repeat:"none",
+          date:shiftDate(appt.date,i*7),
+          createdAt:new Date().toISOString(),
+          updatedAt:new Date().toISOString()
+        }));
+      }
     }
     return result;
   }
-  function bindEvents() {
+    function bindEvents() {
     $$("[data-ls-tab]").forEach(el=>el.addEventListener("click",()=>{activeTab=el.dataset.lsTab;renderApp();}));
     const profileSelect = $('select[name="active-profile"]');
     if (profileSelect) profileSelect.addEventListener("change",async()=>{state.currentProfileId=profileSelect.value;recordAudit("profile-switched",state.currentProfileId);await saveState(false);renderApp();});
@@ -465,17 +487,38 @@
       const v = formData(appointmentFormEl);
       if (!v.title.trim() || !v.date || !v.start || !v.end || minutes(v.end)<=minutes(v.start)) {setStatus(t("invalid"),true);return;}
       const existing = v.id ? state.appointments.find(a=>a.id===v.id) : null;
-      const a = {id:v.id||uid("appointment"),profileId:state.currentProfileId,title:v.title.trim(),date:v.date,start:v.start,end:v.end,location:v.location.trim(),notes:v.notes.trim(),preparation:v.preparation.trim(),reminderMins:Number(v.reminderMins)||0,repeat:v.repeat||"none",createdAt:existing?existing.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-      const conflict = appointmentConflict(a);
-      if (conflict && conflict.start === a.start) { const s=$("#ls-appointment-status");if(s)s.textContent=t("exactDuplicate");return; }
-      if (conflict && !window.confirm(t("overlap") + " " + t("overlapInfo"))) return;
-      state.appointments=state.appointments.filter(x=>x.id!==a.id);
-      state.appointments.push.apply(state.appointments,addAppointmentRepeat(a));
+      const now = new Date().toISOString();
+      const oldSeries = existing ? (existing.seriesId || (existing.repeat==="weekly" ? existing.id : "")) : "";
+      const id = v.id || uid("appointment");
+      const repeat = v.repeat || "none";
+      const a = {id:id,profileId:state.currentProfileId,title:v.title.trim(),date:v.date,start:v.start,end:v.end,location:v.location.trim(),notes:v.notes.trim(),preparation:v.preparation.trim(),reminderMins:Number(v.reminderMins)||0,repeat:repeat,createdAt:existing?existing.createdAt:now,updatedAt:now};
+      if(repeat==="weekly") a.seriesId = oldSeries || id;
+      else if(oldSeries && existing && existing.repeat==="weekly") a.seriesId = oldSeries;
+      const removeIds = new Set();
+      if(existing) {
+        if(existing.repeat==="weekly" && (!existing.seriesId || existing.seriesId===existing.id)) {
+          state.appointments.filter(x=>x.id===existing.id || x.seriesId===existing.id).forEach(x=>removeIds.add(x.id));
+        } else {
+          removeIds.add(existing.id);
+        }
+      }
+      const pool = state.appointments.filter(x=>!removeIds.has(x.id));
+      const generated = addAppointmentRepeat(a);
+      for(const candidate of generated) {
+        const conflict=appointmentConflict(candidate,pool);
+        if(conflict && conflict.start===candidate.start) {
+          const status=$("#ls-appointment-status");if(status)status.textContent=t("exactDuplicate");
+          return;
+        }
+        if(conflict && !window.confirm(t("overlap")+" "+t("overlapInfo"))) return;
+        pool.push(candidate);
+      }
+      state.appointments = pool;
       editingAppointmentId = "";
       recordAudit(existing?"appointment-updated":"appointment-created",a.title);
-      const ok=await saveState(false);if(ok){selectedDate=a.date;renderApp();setStatus(t("saved"));} 
+      const ok=await saveState(false);if(ok){selectedDate=a.date;renderApp();setStatus(t("saved"));}
     });
-    const workerForm = $("#ls-worker-form");
+        const workerForm = $("#ls-worker-form");
     if (workerForm) workerForm.addEventListener("submit",async event=>{
       event.preventDefault();const v=formData(workerForm);if(!v.name.trim()){setStatus(t("invalid"),true);return;}
       try {
