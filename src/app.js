@@ -326,6 +326,7 @@ $("#import-encrypted-routines").addEventListener("change", async event => {
       const existing = await vault.unlock(passphrase);
       if (!existing || !Array.isArray(existing.routines)) throw new Error("invalid-vault-data");
       activeVault = vault;
+      unlockedForThisImport = true;
       customRoutines = normaliseImportedRoutines(existing.routines);
     }
     const merged = [...customRoutines, ...imported].slice(0,50);
@@ -351,6 +352,13 @@ $("#import-encrypted-routines").addEventListener("change", async event => {
     renderCustomRoutines();
     $("#custom-routine-status").textContent = t("encryptedBackupSuccess");
   } catch {
+    if (unlockedForThisImport && activeVault) {
+      activeVault.lock();
+      activeVault = null;
+      customRoutines = [];
+      updateVaultControls();
+      renderCustomRoutines();
+    }
     $("#custom-routine-status").textContent = t("encryptedBackupError");
   } finally {
     event.target.value = "";
