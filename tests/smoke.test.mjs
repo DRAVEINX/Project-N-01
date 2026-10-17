@@ -72,6 +72,14 @@ test("notes can be explicitly downloaded as text and have a live character count
   assert.match(js, /link\.download = language === "nl" \? "mijn-notitie\.txt" : "my-note\.txt"/);
 });
 
+test("notes can be copied to the clipboard with accessible success and failure messages", () => {
+  assert.match(html, /id="copy-text-note"/);
+  assert.match(js, /navigator\.clipboard\.writeText\(note\)/);
+  assert.match(js, /noteCopied/);
+  assert.match(js, /noteCopyUnavailable/);
+  assert.match(js, /if \(!note\.trim\(\)\)/);
+});
+
 test("notes explicitly warn that the prototype does not save them", () => {
   assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
 });
