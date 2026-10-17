@@ -35,5 +35,8 @@ jobs:
           test -f src/routine-migration.js
           test -f service-worker.js
           test -f manifest.webmanifest
+          test -f assets/app-icon.svg
+          test -f offline.html
+          test -f scripts/serve.mjs
           test -f tests/smoke.test.mjs
           test -f README.md
