@@ -318,6 +318,9 @@ test("privacy panel explains unencrypted local data and offers confirmed deletio
   assert.match(js, /clearLocalData:"Wis lokale appgegevens"/);
   assert.match(js, /clearLocalData:"Clear local app data"/);
   assert.match(js, /localDataClearError/);
+  assert.match(js, /for \(const key of \[customRoutineStorageKey, preferenceKey, encryptedVaultStorageKey\]\)/);
+  assert.match(js, /encryptedVaultExists = localStorage\.getItem\(encryptedVaultStorageKey\) !== null/);
+  assert.match(js, /t\(allRemoved \? "localDataCleared" : "localDataClearError"\)/);
 });
 
 test("new encrypted vault creation requires a matching confirmation passphrase", () => {
