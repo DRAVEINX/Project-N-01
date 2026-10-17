@@ -23,3 +23,7 @@
 .custom-routine-card ol{padding-left:0}
 .custom-routine-card li{list-style:none}
 .custom-routine-card .secondary-button{margin-top:.5rem}
+
+.routine-backup-tools{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1rem}
+.file-pick-label{display:inline-flex;align-items:center;justify-content:center}
+.routine-backup-tools .secondary-button{max-width:100%}
