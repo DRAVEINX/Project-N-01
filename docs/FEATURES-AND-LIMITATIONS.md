@@ -22,7 +22,7 @@ The suite's encryption does **not** cover existing routine progress or accessibi
 
 - **No authenticated remote accounts:** local profiles help organize data but are not separate security principals. All local suite records use the same vault passphrase.
 - **No real remote invitations yet:** generated invitation codes are local records only. Do not use them to grant real-world access; securely accepting an invitation on another device needs a server-side identity and authorization service.
-- **No cross-device sync yet:** encrypted export/import is a manual transfer workflow, not live synchronization. Merge uses the latest timestamp for duplicate item IDs and does not provide a complete visual conflict-resolution experience.
+- **No live cross-device sync yet:** encrypted export/import is a manual transfer workflow. Merge shows a content-free conflict report and automatically keeps the latest updated version for matching IDs; the user cannot yet choose the winning version item by item.
 - **Background notifications are not guaranteed:** reminders are evaluated while the page is visible and unlocked. Closing, locking or backgrounding the page stops reminder processing. Native Android scheduling and server/push support remain future platform work.
 - **Weekly appointment repeat is currently expanded to a finite set of future entries:** review generated entries and recurrence behavior before release.
 - **Phone/tablet/Windows/iOS are not yet verified release targets:** the Android workflow packages the responsive web assets, but real device tests and platform-specific release builds are separate tasks.
