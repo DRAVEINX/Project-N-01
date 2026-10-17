@@ -701,7 +701,7 @@ dictationStart.addEventListener("click", () => {
       if (phrases.length) {
         const addition = phrases.join(" ");
         noteTextField.value = noteTextField.value.trim()
-          ? noteTextField.value.replace(/\\s+$/, "") + " " + addition
+          ? noteTextField.value.replace(/\s+$/, "") + " " + addition
           : addition;
         noteTextField.dispatchEvent(new Event("input", {bubbles:true}));
         dictationHadResult = true;
