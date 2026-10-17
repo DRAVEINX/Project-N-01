@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101320">
+  <meta name="description" content="Een rustige, toegankelijke plek voor overzicht, routines en communicatie.">
+  <title>Project N-01 — jouw dag, op jouw manier</title>
+  <link rel="stylesheet" href="src/styles.css">
+  <script src="src/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skip">Ga naar de inhoud</a>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Hoofdnavigatie">
+      <a class="brand" href="#home" aria-label="Project N-01 startpagina">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span><strong>Project N-01</strong><small data-i18n="brandline">Ruimte voor jouw dag</small></span>
+      </a>
+      <nav class="nav-list">
+        <button class="nav-item active" data-view="home"><span aria-hidden="true">◈</span><span data-i18n="navToday">Mijn dag</span></button>
+        <button class="nav-item" data-view="routines"><span aria-hidden="true">◷</span><span data-i18n="navRoutines">Routines</span></button>
+        <button class="nav-item" data-view="calm"><span aria-hidden="true">✧</span><span data-i18n="navCalm">Rustmoment</span></button>
+        <button class="nav-item" data-view="communicate"><span aria-hidden="true">☏</span><span data-i18n="navCommunicate">Communicatie</span></button>
+        <button class="nav-item" data-view="notes"><span aria-hidden="true">▤</span><span data-i18n="navNotes">Mijn notities</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="privacy-note"><span class="privacy-dot"></span><span data-i18n="privateNote">Jouw ruimte. Privé by default.</span></div>
+        <button class="nav-item" data-view="settings"><span aria-hidden="true">⚙</span><span data-i18n="settings">Instellingen</span></button>
+      </div>
+    </aside>
+
+    <main id="main" class="main-content" tabindex="-1">
+      <header class="topbar">
+        <div class="mobile-brand"><span class="brand-mark small" aria-hidden="true"><span></span><span></span><span></span></span><strong>Project N-01</strong></div>
+        <div class="topbar-spacer"></div>
+        <label class="language-control"><span class="sr-only" data-i18n="language">Taal</span>
+          <select id="language" aria-label="Language">
+            <option value="nl">Nederlands</option><option value="en">English</option>
+          </select>
+        </label>
+        <button class="avatar-button" data-view="settings" aria-label="Open instellingen">JD</button>
+      </header>
+
+      <section class="welcome-panel" id="welcome">
+        <div class="welcome-copy">
+          <p class="eyebrow" data-i18n="eyebrow">EEN MOMENT VOOR JOU</p>
+          <h1 data-i18n="greeting">Je hoeft niet alles tegelijk te doen.</h1>
+          <p data-i18n="welcomeText">Kies één kleine stap. De rest mag even wachten.</p>
+          <button class="primary-button" data-view="routines"><span data-i18n="startRoutine">Bekijk mijn routine</span><span aria-hidden="true">↗</span></button>
+        </div>
+        <div class="orb-scene" aria-hidden="true"><div class="orb-halo"></div><div class="orb"></div><div class="orb-star star-one">✦</div><div class="orb-star star-two">·</div><div class="orb-ring"></div></div>
+      </section>
+
+      <section class="view active" id="view-home" aria-labelledby="home-title">
+        <div class="section-heading">
+          <div><p class="eyebrow" data-i18n="yourOverview">JOUW OVERZICHT</p><h2 id="home-title" data-i18n="todayTitle">Vandaag, stap voor stap</h2></div>
+          <span class="date-pill" id="today-date"></span>
+        </div>
+        <div class="stats-grid">
+          <article class="stat-card"><span class="stat-icon lilac">◷</span><div><span class="stat-label" data-i18n="tasksDone">Taken afgerond</span><strong id="task-count">0 / 3</strong></div><div class="progress-track"><span id="progress-fill"></span></div></article>
+          <article class="stat-card"><span class="stat-icon mint">✧</span><div><span class="stat-label" data-i18n="pace">Jouw tempo</span><strong data-i18n="noRush">Geen haast</strong></div><p class="stat-foot" data-i18n="paceFoot">Pauze nemen mag altijd.</p></article>
+        </div>
+        <div class="content-grid">
+          <section class="panel tasks-panel">
+            <div class="panel-heading"><div><h3 data-i18n="nextSteps">Kleine stappen</h3><p data-i18n="nextStepsText">Kies wat nu haalbaar voelt.</p></div><span class="panel-symbol">✦</span></div>
+            <div id="task-list" class="task-list">
+              <label class="task-row"><input type="checkbox" data-task="0"><span class="task-check" aria-hidden="true"></span><span class="task-copy"><strong data-i18n="task1">Iets drinken</strong><small data-i18n="task1sub">Een slok water is al goed</small></span><span class="task-emoji">💧</span></label>
+              <label class="task-row"><input type="checkbox" data-task="1"><span class="task-check" aria-hidden="true"></span><span class="task-copy"><strong data-i18n="task2">Mijn spullen klaarleggen</strong><small data-i18n="task2sub">Alleen wat ik nodig heb</small></span><span class="task-emoji">🎒</span></label>
+              <label class="task-row"><input type="checkbox" data-task="2"><span class="task-check" aria-hidden="true"></span><span class="task-copy"><strong data-i18n="task3">Even naar buiten</strong><small data-i18n="task3sub">Ook vijf minuten telt</small></span><span class="task-emoji">🌿</span></label>
+            </div>
+            <p class="inline-status" id="task-status" role="status" aria-live="polite"></p>
+          </section>
+          <section class="panel support-panel">
+            <div class="panel-heading"><div><h3 data-i18n="needBreak">Even pauze?</h3><p data-i18n="breakText">Je mag eerst opladen.</p></div><span class="panel-symbol">☁</span></div>
+            <div class="calm-illustration" aria-hidden="true"><div class="calm-moon"></div><span class="calm-dot d1"></span><span class="calm-dot d2"></span><span class="calm-dot d3"></span></div>
+            <button class="secondary-button full-button" data-view="calm"><span data-i18n="openCalm">Open rustmoment</span><span aria-hidden="true">→</span></button>
+          </section>
+        </div>
+        <section class="quote-panel"><span class="quote-mark" aria-hidden="true">“</span><p data-i18n="gentleReminder">Klein is ook vooruitgang. Je hoeft het niet perfect te doen.</p><span class="quote-spark" aria-hidden="true">✧</span></section>
+      </section>
+
+      <section class="view" id="view-routines" aria-labelledby="routines-title">
+        <div class="section-heading"><div><p class="eyebrow" data-i18n="buildRhythm">JOUW RITME</p><h2 id="routines-title" data-i18n="routinesTitle">Routines die bij jou passen</h2><p class="section-subtitle" data-i18n="routinesIntro">Een overzichtelijke start. Je kunt later aanpassen wat voor jou werkt.</p></div></div>
+        <div class="routine-grid">
+          <article class="routine-card"><span class="routine-icon morning">☀</span><p class="eyebrow" data-i18n="morning">OCHTEND</p><h3 data-i18n="morningTitle">Rustig opstarten</h3><ol><li data-i18n="morning1">Gordijnen openen</li><li data-i18n="morning2">Aankleden</li><li data-i18n="morning3">Ontbijt of iets drinken</li></ol><button class="secondary-button" data-complete-routine="morning" data-i18n="markDone">Markeer als klaar</button></article>
+          <article class="routine-card"><span class="routine-icon afternoon">☁</span><p class="eyebrow" data-i18n="afternoon">MIDDAG</p><h3 data-i18n="afternoonTitle">Even opnieuw kijken</h3><ol><li data-i18n="afternoon1">Check mijn planning</li><li data-i18n="afternoon2">Kies één volgende stap</li><li data-i18n="afternoon3">Plan een pauze</li></ol><button class="secondary-button" data-complete-routine="afternoon" data-i18n="markDone">Markeer als klaar</button></article>
+          <article class="routine-card"><span class="routine-icon evening">☾</span><p class="eyebrow" data-i18n="evening">AVOND</p><h3 data-i18n="eveningTitle">Zacht afronden</h3><ol><li data-i18n="evening1">Spullen klaarleggen</li><li data-i18n="evening2">Een fijn moment onthouden</li><li data-i18n="evening3">Scherm rustig afsluiten</li></ol><button class="secondary-button" data-complete-routine="evening" data-i18n="markDone">Markeer als klaar</button></article>
+        </div>
+        <p class="inline-status" id="routine-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="view" id="view-calm" aria-labelledby="calm-title">
+        <div class="section-heading"><div><p class="eyebrow" data-i18n="slowDown">VERTRAAG EVEN</p><h2 id="calm-title" data-i18n="calmTitle">Een rustmoment voor jou</h2><p class="section-subtitle" data-i18n="calmIntro">Je hoeft niets te presteren. Kies wat prettig voelt.</p></div></div>
+        <div class="calm-layout"><div class="breathing-panel"><div class="breathing-orb" id="breathing-orb"><span id="breath-word" data-i18n="ready">Klaar?</span></div><p id="breath-instruction" class="breath-instruction" data-i18n="breathIntro">Volg de cirkel als dat fijn voelt, of kijk er gewoon naar.</p><div class="breath-actions"><button class="primary-button" id="breath-start" data-i18n="startBreathing">Start rustige ademhaling</button><button class="secondary-button" id="breath-stop" data-i18n="stop">Stop</button></div></div><div class="panel reset-panel"><h3 data-i18n="otherOptions">Andere opties</h3><button class="option-row" data-calm-tip="senses"><span>🌱</span><span><strong data-i18n="grounding">Voel de grond onder je voeten</strong><small data-i18n="groundingSub">Breng je aandacht naar het hier en nu</small></span><span>→</span></button><button class="option-row" data-calm-tip="quiet"><span>🎧</span><span><strong data-i18n="quiet">Maak het wat stiller</strong><small data-i18n="quietSub">Kies één prikkel die je kunt verminderen</small></span><span>→</span></button><button class="option-row" data-calm-tip="water"><span>💧</span><span><strong data-i18n="water">Neem iets te drinken</strong><small data-i18n="waterSub">Een kleine, concrete stap</small></span><span>→</span></button><p id="calm-tip-text" class="tip-result" role="status" aria-live="polite"></p></div></div>
+      </section>
+
+      <section class="view" id="view-communicate" aria-labelledby="communicate-title">
+        <div class="section-heading"><div><p class="eyebrow" data-i18n="yourWords">JOUW WOORDEN</p><h2 id="communicate-title" data-i18n="communicateTitle">Je kunt het op jouw manier zeggen</h2><p class="section-subtitle" data-i18n="communicateIntro">Tik op een zin om die groot in beeld te zetten.</p></div></div>
+        <div class="phrase-grid">
+          <button class="phrase-card" data-phrase="break"><span>☁</span><strong data-i18n="phraseBreak">Ik heb even pauze nodig.</strong><small data-i18n="tapPhrase">Tik om te tonen</small></button>
+          <button class="phrase-card" data-phrase="help"><span>🤝</span><strong data-i18n="phraseHelp">Wil je me even helpen?</strong><small data-i18n="tapPhrase">Tik om te tonen</small></button>
+          <button class="phrase-card" data-phrase="slow"><span>🐢</span><strong data-i18n="phraseSlow">Kun je het rustig uitleggen?</strong><small data-i18n="tapPhrase">Tik om te tonen</small></button>
+          <button class="phrase-card" data-phrase="no"><span>🛡</span><strong data-i18n="phraseNo">Dit voelt nu niet prettig.</strong><small data-i18n="tapPhrase">Tik om te tonen</small></button>
+        </div>
+        <div class="phrase-output" id="phrase-output" hidden><button id="close-phrase" class="close-button" aria-label="Close">×</button><p class="eyebrow" data-i18n="youCanShow">JE KUNT DIT LATEN ZIEN</p><p id="phrase-output-text"></p><button id="speak-phrase" class="secondary-button"><span aria-hidden="true">◖</span> <span data-i18n="readAloud">Lees voor</span></button></div>
+      </section>
+
+      <section class="view" id="view-notes" aria-labelledby="notes-title">
+        <div class="section-heading"><div><p class="eyebrow" data-i18n="privateSpace">ALLEEN VOOR JOU</p><h2 id="notes-title" data-i18n="notesTitle">Mijn notities</h2><p class="section-subtitle" data-i18n="notesIntro">Een plek om iets van je af te schrijven. In deze prototypeversie wordt niets opgeslagen.</p></div></div>
+        <div class="panel notes-panel"><label for="note-text" data-i18n="notePrompt">Wat wil je onthouden of kwijt?</label><textarea id="note-text" rows="6" data-i18n-placeholder="notePlaceholder" placeholder="Je mag het kort houden. Een paar woorden zijn genoeg."></textarea><div class="notes-actions"><span class="privacy-note"><span class="privacy-dot"></span><span data-i18n="notSaved">Niet opgeslagen in deze demo</span></span><button class="primary-button" id="clear-note" data-i18n="clearNote">Leegmaken</button></div><p id="note-status" class="inline-status" role="status" aria-live="polite"></p></div>
+      </section>
+
+      <section class="view" id="view-settings" aria-labelledby="settings-title">
+        <div class="section-heading"><div><p class="eyebrow" data-i18n="makeItYours">PAS AAN WAT BIJ JOU PAST</p><h2 id="settings-title" data-i18n="settingsTitle">Instellingen</h2><p class="section-subtitle" data-i18n="settingsIntro">Iedereen is anders. Kies wat prettig werkt voor jou.</p></div></div>
+        <div class="settings-list panel">
+          <label class="setting-row"><span><strong data-i18n="largeText">Grotere tekst</strong><small data-i18n="largeTextSub">Maak tekst makkelijker leesbaar</small></span><input id="large-text" type="checkbox"></label>
+          <label class="setting-row"><span><strong data-i18n="lessMotion">Minder beweging</strong><small data-i18n="lessMotionSub">Beperk animaties en overgangen</small></span><input id="less-motion" type="checkbox"></label>
+          <label class="setting-row"><span><strong data-i18n="quietView">Rustige weergave</strong><small data-i18n="quietViewSub">Verberg decoratieve elementen</small></span><input id="quiet-view" type="checkbox"></label>
+          <div class="setting-row"><span><strong data-i18n="languageSetting">Taal</strong><small data-i18n="languageSub">Nederlands of Engels</small></span><select id="language-settings" aria-label="Language setting"><option value="nl">Nederlands</option><option value="en">English</option></select></div>
+        </div>
+        <p class="settings-footnote" data-i18n="settingsFootnote">Dit is een eerste prototype. Instellingen worden nog niet bewaard tussen sessies.</p>
+      </section>
+
+      <footer class="app-footer"><span>✦ Project N-01</span><span data-i18n="footerText">Een kleine stap is ook een stap.</span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
