@@ -173,15 +173,16 @@ function scheduleVaultAutoLock() {
   }, { passive: true });
 });
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState !== "hidden") return;
-  // Stop active exercises and microphone features when the app is backgrounded.
-  if (breathInterval !== null) stopBreathing(false);
-  if (voiceRecorder && voiceRecorder.state !== "inactive") voiceRecorder.stop();
-  else releaseVoiceStream();
-  if (dictationRecognition) {
-    try { dictationRecognition.stop(); } catch {}
+  if (document.visibilityState === "hidden") {
+    // Stop active exercises and microphone features when the app is backgrounded.
+    if (breathInterval !== null) stopBreathing(false);
+    if (voiceRecorder && voiceRecorder.state !== "inactive") voiceRecorder.stop();
+    else releaseVoiceStream();
+    if (dictationRecognition) {
+      try { dictationRecognition.stop(); } catch {}
+    }
+    if (activeVault && activeVault.isUnlocked) lockVaultSession(t("vaultAutoLock"));
   }
-  if (activeVault && activeVault.isUnlocked) lockVaultSession(t("vaultAutoLock"));
 });
 window.addEventListener("pagehide", () => {
   if (activeVault) lockVaultSession(t("vaultLockedStatus"));
