@@ -644,7 +644,8 @@ voiceNoteDownload.addEventListener("click", () => {
   }
   const link = document.createElement("a");
   link.href = voiceObjectUrl;
-  link.download = "spraaknotitie." + (voiceBlob.type.includes("mp4") ? "mp4" : "webm");
+  const audioExtension = voiceBlob.type.includes("mp4") ? "mp4" : voiceBlob.type.includes("ogg") ? "ogg" : voiceBlob.type.includes("wav") ? "wav" : "webm";
+  link.download = "spraaknotitie." + audioExtension;
   link.hidden = true;
   document.body.append(link);
   link.click();
