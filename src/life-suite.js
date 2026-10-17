@@ -142,8 +142,7 @@
     const profile = currentProfile();
     if (profile && profile.role !== "self" && scope) {
       const owners = state.consents.filter(c => c.viewerId === profile.id && Array.isArray(c.scopes) && c.scopes.indexOf(scope) >= 0 && c.revoked !== true).map(c => c.ownerId);
-      if (!owners.length) return [];
-      return items.filter(item => owners.indexOf(item.profileId || "self") >= 0);
+      return items.filter(item => (item.profileId || "self") === profile.id || owners.indexOf(item.profileId || "self") >= 0);
     }
     return items.filter(scopeMatches);
   }
@@ -374,7 +373,7 @@
     const profileForm = '<form id="ls-profile-form" class="ls-form ls-grid">' + field(t("profileName"),"name","text","","required maxlength='100'") + select(t("profileRole"),"role",options,"caregiver") + '<button class="primary-button" type="submit">' + esc(t("addProfile")) + '</button></form>';
     const profileRows = state.profiles.map(p=>'<article class="ls-item"><div class="ls-item-top"><div><strong>' + esc(p.name) + '</strong><small>' + esc(t(p.role)) + '</small></div>' + (p.id !== "self" ? button(t("delete"),"delete-profile","secondary-button danger-button",'data-id="' + esc(p.id) + '"') : badge(t("self"))) + '</div></article>').join("");
     const viewerOptions = state.profiles.filter(p=>p.id!==state.currentProfileId).map(p=>({value:p.id,label:p.name + " · " + t(p.role)}));
-    const ownerOptions = state.profiles.map(p=>({value:p.id,label:p.name}));
+    const ownerOptions = state.profiles.filter(p=>p.id===state.currentProfileId).map(p=>({value:p.id,label:p.name}));
     const existing = state.consents.filter(c=>c.revoked!==true);
     const categories = [["calendar",t("calendarAccess")],["roster",t("rosterAccess")],["mood",t("moodAccess")],["journal",t("journalAccess")],["guides",t("guidesAccess")],["help",t("helpAccess")]];
     const consentForm = '<form id="ls-consent-form" class="ls-form">' + select(t("profile"),"viewerId",viewerOptions,viewerOptions[0] && viewerOptions[0].value) + select(t("profile"),"ownerId",ownerOptions,state.currentProfileId) + '<p>' + esc(t("viewData")) + '</p><div class="ls-check-grid">' + categories.map(x=>'<label><input type="checkbox" name="scope" value="' + x[0] + '"> ' + esc(x[1]) + '</label>').join("") + '</div><p>' + esc(t("modifyData")) + '</p><div class="ls-check-grid">' + categories.map(x=>'<label><input type="checkbox" name="modifyScope" value="' + x[0] + '"> ' + esc(x[1]) + '</label>').join("") + '</div><button class="primary-button" type="submit">' + esc(t("saveConsent")) + '</button></form>';
@@ -617,7 +616,7 @@
     const consentForm=$("#ls-consent-form");
     if(consentForm) consentForm.addEventListener("submit",async event=>{
       event.preventDefault();const v=formData(consentForm);if(!v.viewerId||!v.ownerId){setStatus(t("invalid"),true);return;}
-      if(v.ownerId!==state.currentProfileId){setStatus(t("noPermission"),true);return;}
+      if(v.ownerId!==state.currentProfileId||currentProfile()?.role!=="self"){setStatus(t("noPermission"),true);return;}
       const scopes=Array.from(consentForm.querySelectorAll('input[name="scope"]:checked')).map(x=>x.value);
       const modifyScopes=Array.from(consentForm.querySelectorAll('input[name="modifyScope"]:checked')).map(x=>x.value);
       modifyScopes.forEach(scope=>{if(!scopes.includes(scope))scopes.push(scope);});
