@@ -528,6 +528,11 @@
       $$("[data-secure-gate]",editor).forEach(gate=>{gate.hidden=unlocked;});
     });
     if(!unlocked){
+      editingAppointmentId=null; editingPersonId=null; editingPersonPhoto="";
+      const agendaSubmit=$("#agenda-submit"),agendaCancel=$("#agenda-cancel-edit");
+      if(agendaSubmit)agendaSubmit.textContent=text("agendaAdd");if(agendaCancel)agendaCancel.hidden=true;
+      const peopleSubmit=$("#person-submit"),peopleCancel=$("#person-cancel-edit");
+      if(peopleSubmit)peopleSubmit.textContent=text("peopleAdd");if(peopleCancel)peopleCancel.hidden=true;
       ["agenda-form","mood-form","people-form"].forEach(formId=>{const form=$("#"+formId);if(form)form.reset();});
       ["agenda-status","mood-status","people-status"].forEach(statusId=>{const status=$("#"+statusId);if(status)status.textContent="";});
       $$(".drawing-gallery img").forEach(img=>{img.removeAttribute("src");});
@@ -549,8 +554,10 @@
   }
   function applyLanguage(next){
     language=next==="en"?"en":"nl";
-    $$("[data-feature-text]").forEach(el=>{const key=el.dataset.featureText;el.textContent=text(key);});
-    $$("[data-feature-placeholder]").forEach(el=>{const key=el.dataset.featurePlaceholder;if(copy[language][key])el.placeholder=copy[language][key];});
+    $("[data-feature-text]").forEach(el=>{const key=el.dataset.featureText;el.textContent=text(key);});
+    const agendaSubmit=$("#agenda-submit");if(agendaSubmit)agendaSubmit.textContent=text(editingAppointmentId?"agendaUpdate":"agendaAdd");
+    const peopleSubmit=$("#person-submit");if(peopleSubmit)peopleSubmit.textContent=text(editingPersonId?"peopleUpdate":"peopleAdd");
+    $("[data-feature-placeholder]").forEach(el=>{const key=el.dataset.featurePlaceholder;if(copy[language][key])el.placeholder=copy[language][key];});
     if(app()&&app().isVaultUnlocked())renderAll();
     updateGateViews();
   }
