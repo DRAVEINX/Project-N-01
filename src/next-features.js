@@ -7,14 +7,14 @@
       agendaEyebrow:"OVERZICHT", agendaTitle:"Mijn weekplanner", agendaIntro:"Leg afspraken vast en bekijk wat er de komende dagen op de planning staat.",
       agendaTitleLabel:"Waar gaat de afspraak over?", agendaDate:"Datum", agendaTime:"Tijd", agendaDetails:"Extra informatie (optioneel)", agendaAdd:"Afspraak opslaan",
       agendaEmpty:"Er staan nog geen afspraken in je planner.", agendaDone:"Afgerond", agendaUndo:"Opnieuw openzetten", agendaDelete:"Afspraak verwijderen",
-      weekHeading:"De komende 7 dagen", agendaSaved:"De afspraak is veilig opgeslagen.", agendaError:"Opslaan lukte niet. Controleer of je kluis ontgrendeld is en er genoeg ruimte is.",
+      weekHeading:"De komende 7 dagen", agendaSaved:"De afspraak is veilig opgeslagen.", agendaError:"Opslaan lukte niet. Controleer of je kluis ontgrendeld is en voldoende ruimte heeft.",
       moodEyebrow:"EVEN INCHECKEN", moodTitle:"Hoe voel je je vandaag?", moodIntro:"Kies het gevoel dat het beste past. Je hoeft het niet uit te leggen.",
       moodLabel:"Mijn stemming", chooseMood:"Kies een stemming…", moodNote:"Wil je er iets bij vertellen? (optioneel)", moodSave:"Stemming opslaan",
       mood1:"Heel moeilijk", mood2:"Moeilijk", mood3:"Gaat wel", mood4:"Goed", mood5:"Heel goed",
-      moodSaved:"Je stemming is veilig opgeslagen.", moodEmpty:"Er zijn nog geen stemmingen opgeslagen.", moodHistory:"Recente check-ins", moodError:"Opslaan lukte niet. Ontgrendel de kluis en probeer opnieuw.",
+      moodSaved:"Je stemming is veilig opgeslagen.", moodEmpty:"Er zijn nog geen stemmingen opgeslagen.", moodHistory:"Recente check-ins", moodError:"Opslaan lukte niet. Ontgrendel de kluis en controleer of er voldoende ruimte is.",
       peopleEyebrow:"MENSEN OM JE HEEN", peopleTitle:"Vertrouwde mensen", peopleIntro:"Bewaar contactgegevens van mensen bij wie je terechtkunt. Deze gegevens blijven in jouw versleutelde kluis.",
       peopleName:"Naam", peoplePhoto:"Foto (optioneel, maximaal 120 KB)", peoplePhotoTooLarge:"Kies een PNG-, JPG- of WebP-foto van maximaal 120 KB.", peopleRole:"Wie is deze persoon voor jou?", peopleContact:"Telefoon, e-mail of andere contactgegevens", peopleDetails:"Extra informatie (optioneel)", peopleAdd:"Contact opslaan",
-      peopleEmpty:"Je hebt nog geen vertrouwde mensen toegevoegd.", peopleDelete:"Contact verwijderen", peopleSaved:"Contact is veilig opgeslagen.", peopleError:"Opslaan lukte niet. Ontgrendel de kluis en probeer opnieuw.",
+      peopleEmpty:"Je hebt nog geen vertrouwde mensen toegevoegd.", peopleDelete:"Contact verwijderen", peopleSaved:"Contact is veilig opgeslagen.", peopleError:"Opslaan lukte niet. Ontgrendel de kluis en controleer of er voldoende ruimte is.",
       secureGateTitle:"Je persoonlijke gegevens zijn vergrendeld", secureGateText:"Dagboek, stemming, afspraken, contacten en tekeningen worden alleen opgeslagen in je versleutelde kluis op dit apparaat. Ontgrendel de kluis via Routines om verder te gaan.",
       openVault:"Naar de kluisinstellingen", privateLocalOnly:"Alleen op dit apparaat · versleutelde opslag · geen cloud-synchronisatie",
       journalSave:"Notitie veilig opslaan", journalSaveStatus:"Je notitie is veilig opgeslagen in de kluis.", journalEmpty:"Schrijf eerst iets voordat je het opslaat.",
@@ -30,14 +30,14 @@
       agendaEyebrow:"OVERVIEW", agendaTitle:"My week planner", agendaIntro:"Add appointments and see what is planned for the coming days.",
       agendaTitleLabel:"What is the appointment about?", agendaDate:"Date", agendaTime:"Time", agendaDetails:"Extra details (optional)", agendaAdd:"Save appointment",
       agendaEmpty:"There are no appointments in your planner yet.", agendaDone:"Completed", agendaUndo:"Mark as open", agendaDelete:"Delete appointment",
-      weekHeading:"The next 7 days", agendaSaved:"Appointment saved securely.", agendaError:"Could not save. Check that your vault is unlocked and has enough space.",
+      weekHeading:"The next 7 days", agendaSaved:"Appointment saved securely.", agendaError:"Could not save. Check that your vault is unlocked and has enough free space.",
       moodEyebrow:"CHECKING IN", moodTitle:"How are you feeling today?", moodIntro:"Choose the feeling that fits best. You do not have to explain it.",
       moodLabel:"My mood", chooseMood:"Choose a mood…", moodNote:"Would you like to add a note? (optional)", moodSave:"Save mood",
       mood1:"Very difficult", mood2:"Difficult", mood3:"Okay", mood4:"Good", mood5:"Very good",
-      moodSaved:"Your mood was saved securely.", moodEmpty:"No moods have been saved yet.", moodHistory:"Recent check-ins", moodError:"Could not save. Unlock the vault and try again.",
+      moodSaved:"Your mood was saved securely.", moodEmpty:"No moods have been saved yet.", moodHistory:"Recent check-ins", moodError:"Could not save. Unlock the vault and check that there is enough free space.",
       peopleEyebrow:"YOUR PEOPLE", peopleTitle:"Trusted people", peopleIntro:"Keep contact details for people you can turn to. These details stay in your encrypted vault.",
       peopleName:"Name", peoplePhoto:"Photo (optional, maximum 120 KB)", peoplePhotoTooLarge:"Choose a PNG, JPG or WebP photo of 120 KB or less.", peopleRole:"How do you know this person?", peopleContact:"Phone, email or other contact details", peopleDetails:"Extra details (optional)", peopleAdd:"Save contact",
-      peopleEmpty:"You have not added any trusted people yet.", peopleDelete:"Delete contact", peopleSaved:"Contact saved securely.", peopleError:"Could not save. Unlock the vault and try again.",
+      peopleEmpty:"You have not added any trusted people yet.", peopleDelete:"Delete contact", peopleSaved:"Contact saved securely.", peopleError:"Could not save. Unlock the vault and check that there is enough free space.",
       secureGateTitle:"Your personal information is locked", secureGateText:"Journal, mood, appointments, contacts and drawings are saved only in your encrypted vault on this device. Unlock the vault under Routines to continue.",
       openVault:"Open vault settings", privateLocalOnly:"This device only · encrypted storage · no cloud sync",
       journalSave:"Save note securely", journalSaveStatus:"Your note was saved securely in the vault.", journalEmpty:"Write something before saving it.",
@@ -98,7 +98,11 @@
       for (const key of ["routines","journalEntries","savedDrawings","agendaItems","moodEntries","trustedPeople"]) {
         if (!Array.isArray(data[key])) data[key] = [];
       }
-      return mutator(data) || data;
+      const nextData = mutator(data) || data;
+      // Stay below the encryption helper's 1 MB hard limit so a failed save never silently replaces valid vault data.
+      const encodedSize = new TextEncoder().encode(JSON.stringify(nextData)).byteLength;
+      if (encodedSize > 900_000) throw new Error("vault-data-too-large");
+      return nextData;
     });
   }
   function secureGate() {
