@@ -156,6 +156,15 @@ test("privacy panel explains unencrypted local data and offers confirmed deletio
   assert.match(js, /localDataClearError/);
 });
 
+test("new encrypted vault creation requires a matching confirmation passphrase", () => {
+  assert.match(html, /id="confirm-vault-passphrase"/);
+  assert.match(html, /for="confirm-vault-passphrase" data-i18n="confirmVaultPassphraseLabel"/);
+  assert.match(js, /const confirmPassphrase = \$\("#confirm-vault-passphrase"\)\.value/);
+  assert.match(js, /if \(passphrase !== confirmPassphrase\)/);
+  assert.match(js, /vaultPassphraseMismatch:"The passphrases do not match/);
+  assert.match(js, /\$\("#confirm-vault-passphrase"\)\.value = ""/);
+});
+
 test("encrypted vault auto-locks after inactivity and when the tab is hidden", () => {
   assert.match(html, /data-i18n="vaultAutoLock"/);
   assert.match(js, /const VAULT_AUTO_LOCK_MS = 5 \* 60 \* 1000/);
