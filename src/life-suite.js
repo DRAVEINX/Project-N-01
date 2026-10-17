@@ -31,6 +31,7 @@
   let reminderTimer = null;
   let toastTimer = null;
   let pendingInviteCode = "";
+  let filePickerPending = false;
 
   const WORDS = {
     nl: {
@@ -513,6 +514,8 @@
       state.reminders.push({id:uid("reminder"),profileId:state.currentProfileId,title:v.title.trim(),when:stamp,repeat:v.repeat||"none",notifiedAt:"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
       recordAudit("reminder-created",v.title);if(await saveState(false))renderApp();
     });
+    const preferencesForm=$("#ls-preferences-form");
+    if(preferencesForm) preferencesForm.addEventListener("change",async()=>{state.preferences.largeText=preferencesForm.elements.largeText.checked;state.preferences.highContrast=preferencesForm.elements.highContrast.checked;state.preferences.reducedMotion=preferencesForm.elements.reducedMotion.checked;applyPreferences();if(await saveState(false))setStatus(t("saved"));});
     const profileForm=$("#ls-profile-form");
     if(profileForm) profileForm.addEventListener("submit",async event=>{event.preventDefault();const v=formData(profileForm);if(!v.name.trim()){setStatus(t("invalid"),true);return;}state.profiles.push({id:uid("profile"),name:v.name.trim(),role:v.role||"caregiver",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});recordAudit("profile-created",v.name);if(await saveState(false))renderApp();});
     const consentForm=$("#ls-consent-form");
@@ -545,7 +548,6 @@
         if(await saveState(false)){importForm.reset();renderApp();setStatus(t("importDone"));}
       }catch{setStatus(t("badPass"),true);}
     });
-    root.addEventListener("input",()=>startAutoLock(),{once:true});
     updateDrawingCanvas();
   }
 
@@ -588,6 +590,7 @@
     if(action==="delete-worker"){if(!window.confirm(t("deleteItem")))return;state.workers=state.workers.filter(x=>x.id!==id);state.shifts=state.shifts.filter(x=>x.workerId!==id);recordAudit("worker-deleted",id);if(await saveState(false))renderApp();return;}
     if(action==="edit-shift"){const s=state.shifts.find(x=>x.id===id);if(!s)return;const f=$("#ls-shift-form");if(f){f.elements.workerId.value=s.workerId;f.elements.date.value=s.date;f.elements.start.value=s.start;f.elements.end.value=s.end;f.dataset.editId=s.id;f.querySelector("button[type=submit]").textContent=t("edit");f.scrollIntoView({behavior:"auto",block:"center"});}return;}
     if(action==="delete-shift"||action==="delete-reminder"||action==="delete-guide"||action==="delete-journal"||action==="delete-drawing"||action==="revoke-consent"||action==="delete-profile"){
+      if(action==="delete-profile"){const hasData=["appointments","workers","shifts","moods","journal","drawings","guides","contacts","reminders"].some(key=>(state[key]||[]).some(item=>item.profileId===id));if(hasData){setStatus(t("profileDataExists"),true);return;}}
       if(!window.confirm(t("deleteItem")))return;
       const map={"delete-shift":"shifts","delete-reminder":"reminders","delete-guide":"guides","delete-journal":"journal","delete-drawing":"drawings","revoke-consent":"consents","delete-profile":"profiles"};
       const key=map[action];state[key]=state[key].filter(x=>x.id!==id);
@@ -647,11 +650,15 @@
     if(state&&sessionKey)renderApp();
     else renderLocked(localStorage.getItem(STORAGE_KEY)===null,"");
   }
+  root.addEventListener("click",event=>{if(event.target && event.target.matches('input[type="file"]'))filePickerPending=true;});
   document.addEventListener("change",event=>{
+    if(event.target && event.target.matches && event.target.matches('input[type="file"]'))filePickerPending=false;
     if(event.target && (event.target.id==="language"||event.target.id==="language-settings"))applyExternalLanguage();
   });
+  ["pointerdown","keydown","touchstart","scroll"].forEach(eventName=>document.addEventListener(eventName,()=>{if(sessionKey)startAutoLock();},{passive:true}));
   document.addEventListener("visibilitychange",()=>{
-    if(document.visibilityState==="hidden"&&sessionKey)lockVault(true);
+    if(document.visibilityState==="hidden"&&sessionKey&&!filePickerPending)lockVault(true);
+    if(document.visibilityState==="visible")filePickerPending=false;
   });
   window.addEventListener("pagehide",()=>{stopAutoLock();if(reminderTimer)clearInterval(reminderTimer);if(mediaRecorder&&mediaRecorder.state!=="inactive")try{mediaRecorder.stop();}catch{};});
   window.addEventListener("online",()=>{const n=$("#ls-connectivity");if(n)n.textContent=t("online");});
