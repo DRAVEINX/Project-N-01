@@ -5,9 +5,14 @@
     nl: {
       navAgenda:"Agenda", navMood:"Stemming", navPeople:"Vertrouwde mensen", navWork:"Wie werkt er?", introAgain:"Introductie opnieuw bekijken",
       agendaEyebrow:"OVERZICHT", agendaTitle:"Mijn agenda", agendaIntro:"Beheer afspraken, voorkom dubbele boekingen en bekijk wat er de komende dagen op de planning staat.",
-      agendaTitleLabel:"Waar gaat de afspraak over?", agendaDate:"Datum", agendaTime:"Tijd", agendaDetails:"Extra informatie (optioneel)", agendaAdd:"Afspraak opslaan",
+      agendaTitleLabel:"Waar gaat de afspraak over?", agendaDate:"Datum", agendaTime:"Tijd", agendaDuration:"Duur", duration15:"15 minuten", duration30:"30 minuten", duration45:"45 minuten", duration60:"1 uur", duration90:"1,5 uur", duration120:"2 uur",
+      agendaRepeat:"Herhalen", repeat1:"Eenmalig", repeat2:"Elke week · 2 keer totaal", repeat4:"Elke week · 4 keer totaal", repeat8:"Elke week · 8 keer totaal",
+      agendaReminder:"Herinnering", reminderNone:"Geen herinnering", reminder5:"5 minuten vooraf", reminder15:"15 minuten vooraf", reminder30:"30 minuten vooraf",
+      agendaEnableReminders:"Meldingen inschakelen", reminderEnabledStatus:"Meldingen zijn ingeschakeld. Herinneringen werken zolang Mivoryntra open is en meldingen zijn toegestaan.", reminderUnsupported:"Deze browser ondersteunt geen meldingen.", reminderDenied:"Meldingen zijn niet toegestaan. Controleer de browserinstellingen.",
+      agendaRepeatHint:"Wekelijkse herhalingen worden als losse afspraken aangemaakt; wijzigingen gelden per afspraak.", agendaRecurringSaved:"{count} wekelijkse afspraken zijn opgeslagen.",
+      agendaAdd:"Afspraak opslaan",
       agendaEmpty:"Er staan nog geen afspraken in je planner.", agendaDone:"Afgerond", agendaUndo:"Opnieuw openzetten", agendaDelete:"Afspraak verwijderen", agendaEdit:"Afspraak bewerken", agendaCancelEdit:"Bewerken annuleren", agendaUpdate:"Wijzigingen opslaan", agendaUpdated:"De afspraak is bijgewerkt.", agendaEditStarted:"Je kunt de afspraak nu aanpassen.",
-      weekHeading:"De komende 7 dagen", agendaSaved:"De afspraak is veilig opgeslagen.", agendaDuplicate:"Mogelijke dubbele afspraak: op deze datum staat al een afspraak binnen 30 minuten. Kies een ander tijdstip of bewerk de bestaande afspraak.", agendaError:"Opslaan lukte niet. Controleer of je kluis ontgrendeld is en voldoende ruimte heeft.",
+      weekHeading:"De komende 7 dagen", agendaSaved:"De afspraak is veilig opgeslagen.", agendaDuplicate:"Deze afspraak botst mogelijk met een andere afspraak of laat minder dan 30 minuten wisseltijd over. Kies een ander tijdstip of bewerk de bestaande afspraak.", agendaError:"Opslaan lukte niet. Controleer of je kluis ontgrendeld is en voldoende ruimte heeft.",
       moodEyebrow:"EVEN INCHECKEN", moodTitle:"Hoe voel je je vandaag?", moodIntro:"Kies het gevoel dat het beste past. Je hoeft het niet uit te leggen.",
       moodLabel:"Mijn stemming", chooseMood:"Kies een stemming…", moodNote:"Wil je er iets bij vertellen? (optioneel)", moodSave:"Stemming opslaan",
       mood1:"Heel moeilijk", mood2:"Moeilijk", mood3:"Gaat wel", mood4:"Goed", mood5:"Heel goed",
@@ -17,7 +22,7 @@
       peopleEmpty:"Je hebt nog geen vertrouwde mensen toegevoegd.", peopleDelete:"Contact verwijderen", peopleEdit:"Contact bewerken", peopleCancelEdit:"Bewerken annuleren", peopleUpdate:"Wijzigingen opslaan", peopleUpdated:"Contact is bijgewerkt.", peopleEditStarted:"Je kunt het contact nu aanpassen.", peopleSaved:"Contact is veilig opgeslagen.", peopleError:"Opslaan lukte niet. Ontgrendel de kluis en controleer of er voldoende ruimte is.",
       workEyebrow:"DAG- EN WEEKPLANNING", workTitle:"Wie werkt er vandaag?", workIntro:"Bewaar per dag wie er werkt. Kies een datum, voeg een naam en foto toe en pas de planning op elk moment aan.",
       workDate:"Voor welke datum?", workName:"Naam medewerker of begeleider", workRole:"Functie of rol (optioneel)", workPhoto:"Foto (optioneel, maximaal 120 KB)", workPhotoAlt:"Foto van", workPhotoTooLarge:"Kies een PNG-, JPG- of WebP-foto van maximaal 120 KB.", workNotes:"Opmerking (optioneel)", workSave:"Dienst opslaan",
-      workWeekHeading:"Weekplanning", workPreviousWeek:"Vorige week", workNextWeek:"Volgende week", workEmpty:"Voor deze dag is nog niemand ingepland.", workWeekEmpty:"Er zijn deze week nog geen medewerkers ingepland.",
+      workWeekHeading:"Weekplanning", workPreviousWeek:"Vorige week", workNextWeek:"Volgende week", workCopyPrevious:"Kopieer vorige week", workCopySuccess:"{count} diensten uit de vorige week gekopieerd.", workCopyNone:"Er zijn geen nieuwe diensten gekopieerd; de week is leeg of medewerkers stonden al ingepland.", workCopyError:"De vorige week kon niet worden gekopieerd. Controleer of er ruimte is in de kluis.", workEmpty:"Voor deze dag is nog niemand ingepland.", workWeekEmpty:"Er zijn deze week nog geen medewerkers ingepland.",
       workEdit:"Planning bewerken", workDelete:"Planning verwijderen", workCancelEdit:"Bewerken annuleren", workUpdate:"Wijzigingen opslaan", workSaved:"De planning is opgeslagen.", workUpdated:"De planning is bijgewerkt.", workEditStarted:"Je kunt deze planning nu aanpassen.", workDuplicate:"Deze persoon staat op deze datum al ingepland. Bewerk de bestaande planning om dubbele vermeldingen te voorkomen.", workError:"Opslaan lukte niet. Controleer of de kluis ontgrendeld is en voldoende ruimte heeft.",
       secureGateTitle:"Je persoonlijke gegevens zijn vergrendeld", secureGateText:"Dagboek, stemming, afspraken, contacten en tekeningen worden alleen opgeslagen in je versleutelde kluis op dit apparaat. Ontgrendel de kluis via Routines om verder te gaan.",
       openVault:"Naar de kluisinstellingen", privateLocalOnly:"Alleen op dit apparaat · versleutelde opslag · geen cloud-synchronisatie",
@@ -32,9 +37,14 @@
     en: {
       navAgenda:"Agenda", navMood:"Mood", navPeople:"Trusted people", navWork:"Staff on duty", introAgain:"View the introduction again",
       agendaEyebrow:"OVERVIEW", agendaTitle:"My agenda", agendaIntro:"Manage appointments, prevent duplicates, and see what is planned for the coming days.",
-      agendaTitleLabel:"What is the appointment about?", agendaDate:"Date", agendaTime:"Time", agendaDetails:"Extra details (optional)", agendaAdd:"Save appointment",
+      agendaTitleLabel:"What is the appointment about?", agendaDate:"Date", agendaTime:"Time", agendaDuration:"Duration", duration15:"15 minutes", duration30:"30 minutes", duration45:"45 minutes", duration60:"1 hour", duration90:"1.5 hours", duration120:"2 hours",
+      agendaRepeat:"Repeat", repeat1:"One time", repeat2:"Weekly · 2 occurrences total", repeat4:"Weekly · 4 occurrences total", repeat8:"Weekly · 8 occurrences total",
+      agendaReminder:"Reminder", reminderNone:"No reminder", reminder5:"5 minutes before", reminder15:"15 minutes before", reminder30:"30 minutes before",
+      agendaEnableReminders:"Enable notifications", reminderEnabledStatus:"Notifications are enabled. Reminders work while Mivoryntra is open and notifications are allowed.", reminderUnsupported:"This browser does not support notifications.", reminderDenied:"Notifications are not allowed. Check your browser settings.",
+      agendaRepeatHint:"Weekly repetitions are created as separate appointments; edit each occurrence individually.", agendaRecurringSaved:"{count} weekly appointments were saved.",
+      agendaAdd:"Save appointment",
       agendaEmpty:"There are no appointments in your planner yet.", agendaDone:"Completed", agendaUndo:"Mark as open", agendaDelete:"Delete appointment", agendaEdit:"Edit appointment", agendaCancelEdit:"Cancel editing", agendaUpdate:"Save changes", agendaUpdated:"Appointment updated.", agendaEditStarted:"You can edit this appointment now.",
-      weekHeading:"The next 7 days", agendaSaved:"Appointment saved securely.", agendaDuplicate:"Possible duplicate: an appointment already exists on this date within 30 minutes. Choose another time or edit the existing appointment.", agendaError:"Could not save. Check that your vault is unlocked and has enough free space.",
+      weekHeading:"The next 7 days", agendaSaved:"Appointment saved securely.", agendaDuplicate:"This appointment overlaps another one or leaves less than 30 minutes between appointments. Choose another time or edit the existing appointment.", agendaError:"Could not save. Check that your vault is unlocked and has enough free space.",
       moodEyebrow:"CHECKING IN", moodTitle:"How are you feeling today?", moodIntro:"Choose the feeling that fits best. You do not have to explain it.",
       moodLabel:"My mood", chooseMood:"Choose a mood…", moodNote:"Would you like to add a note? (optional)", moodSave:"Save mood",
       mood1:"Very difficult", mood2:"Difficult", mood3:"Okay", mood4:"Good", mood5:"Very good",
@@ -44,7 +54,7 @@
       peopleEmpty:"You have not added any trusted people yet.", peopleDelete:"Delete contact", peopleEdit:"Edit contact", peopleCancelEdit:"Cancel editing", peopleUpdate:"Save changes", peopleUpdated:"Contact updated.", peopleEditStarted:"You can edit this contact now.", peopleSaved:"Contact saved securely.", peopleError:"Could not save. Unlock the vault and check that there is enough free space.",
       workEyebrow:"DAY AND WEEK PLANNING", workTitle:"Who is working today?", workIntro:"Keep a schedule of who is working each day. Choose a date, add a name and photo, and update the plan at any time.",
       workDate:"Date", workName:"Staff member or support worker name", workRole:"Role (optional)", workPhoto:"Photo (optional, maximum 120 KB)", workPhotoAlt:"Photo of", workPhotoTooLarge:"Choose a PNG, JPG or WebP photo of 120 KB or less.", workNotes:"Notes (optional)", workSave:"Save shift",
-      workWeekHeading:"Weekly roster", workPreviousWeek:"Previous week", workNextWeek:"Next week", workEmpty:"No one is scheduled for this day yet.", workWeekEmpty:"No staff are scheduled for this week yet.",
+      workWeekHeading:"Weekly roster", workPreviousWeek:"Previous week", workNextWeek:"Next week", workCopyPrevious:"Copy previous week", workCopySuccess:"Copied {count} shifts from the previous week.", workCopyNone:"No new shifts were copied; the week is empty or staff were already scheduled.", workCopyError:"Could not copy last week's roster. Check that the vault has enough space.", workEmpty:"No one is scheduled for this day yet.", workWeekEmpty:"No staff are scheduled for this week yet.",
       workEdit:"Edit shift", workDelete:"Delete shift", workCancelEdit:"Cancel editing", workUpdate:"Save changes", workSaved:"The schedule was saved.", workUpdated:"The schedule was updated.", workEditStarted:"You can edit this schedule now.", workDuplicate:"This person is already scheduled for this date. Edit the existing entry to avoid a duplicate.", workError:"Could not save. Check that the vault is unlocked and has enough free space.",
       secureGateTitle:"Your personal information is locked", secureGateText:"Journal, mood, appointments, contacts and drawings are saved only in your encrypted vault on this device. Unlock the vault under Routines to continue.",
       openVault:"Open vault settings", privateLocalOnly:"This device only · encrypted storage · no cloud sync",
@@ -197,47 +207,99 @@
     const time = make("input"); time.type="time"; time.id="agenda-time"; time.name="time";
     timeBox.append(timeLabelEl, time);
     row.append(dateBox, timeBox);
+    const optionsRow=make("div","feature-form-grid agenda-options-grid");
+    const durationBox=make("div");
+    const durationLabel=make("label","",text("agendaDuration"));durationLabel.htmlFor="agenda-duration";durationLabel.dataset.featureText="agendaDuration";
+    const duration=make("select");duration.id="agenda-duration";duration.name="durationMinutes";
+    for(const [value,key] of [["15","duration15"],["30","duration30"],["45","duration45"],["60","duration60"],["90","duration90"],["120","duration120"]]){
+      const option=make("option","",text(key));option.value=value;option.dataset.featureText=key;duration.append(option);
+    }
+    duration.value="30";durationBox.append(durationLabel,duration);
+    const repeatBox=make("div");
+    const repeatLabel=make("label","",text("agendaRepeat"));repeatLabel.htmlFor="agenda-repeat";repeatLabel.dataset.featureText="agendaRepeat";
+    const repeat=make("select");repeat.id="agenda-repeat";repeat.name="repeat";
+    for(const [value,key] of [["1","repeat1"],["2","repeat2"],["4","repeat4"],["8","repeat8"]]){
+      const option=make("option","",text(key));option.value=value;option.dataset.featureText=key;repeat.append(option);
+    }
+    repeat.value="1";repeatBox.append(repeatLabel,repeat);
+    const reminderBox=make("div");
+    const reminderLabel=make("label","",text("agendaReminder"));reminderLabel.htmlFor="agenda-reminder";reminderLabel.dataset.featureText="agendaReminder";
+    const reminder=make("select");reminder.id="agenda-reminder";reminder.name="reminderMinutes";
+    for(const [value,key] of [["0","reminderNone"],["5","reminder5"],["15","reminder15"],["30","reminder30"]]){
+      const option=make("option","",text(key));option.value=value;option.dataset.featureText=key;reminder.append(option);
+    }
+    reminder.value="0";reminderBox.append(reminderLabel,reminder);
+    optionsRow.append(durationBox,repeatBox,reminderBox);
+    const repeatHint=make("p","privacy-hint",text("agendaRepeatHint"));repeatHint.dataset.featureText="agendaRepeatHint";
     const detailsLabel = make("label", "", text("agendaDetails")); detailsLabel.htmlFor="agenda-details"; detailsLabel.dataset.featureText="agendaDetails";
     const details = make("textarea"); details.id="agenda-details"; details.name="details"; details.rows=3; details.maxLength=600;
     const submit = make("button", "primary-button", text("agendaAdd")); submit.type="submit"; submit.id="agenda-submit"; submit.dataset.featureText="agendaAdd";
     const cancel = make("button", "secondary-button", text("agendaCancelEdit")); cancel.type="button"; cancel.id="agenda-cancel-edit"; cancel.hidden=true; cancel.dataset.featureText="agendaCancelEdit";
     const status = make("p", "inline-status"); status.id="agenda-status"; status.setAttribute("role","status"); status.setAttribute("aria-live","polite");
-    form.append(nameLabel, name, row, detailsLabel, details, submit, cancel, status);
+    form.append(nameLabel, name, row, optionsRow, repeatHint, detailsLabel, details, submit, cancel, status);
     cancel.addEventListener("click", () => {
-      editingAppointmentId=null; form.reset(); date.min=localDate(); date.value=localDate();
+      editingAppointmentId=null; form.reset(); date.min=localDate(); date.value=localDate();duration.value="30";repeat.value="1";reminder.value="0";
       submit.textContent=text("agendaAdd"); cancel.hidden=true; status.textContent="";
     });
     const gate = secureGate(); gate.hidden=true; gate.dataset.secureGate="";
     const secureContents = make("div", "secure-feature-contents"); secureContents.dataset.secureContents="";
+    const reminderTools=make("div","agenda-reminder-tools");
+    const enableReminders=button(text("agendaEnableReminders"),"secondary-button",async()=>{
+      const reminderStatus=$("#agenda-reminder-status");
+      if(!("Notification" in window)){reminderStatus.textContent=text("reminderUnsupported");return;}
+      try{
+        const permission=Notification.permission==="granted"?"granted":await Notification.requestPermission();
+        reminderStatus.textContent=permission==="granted"?text("reminderEnabledStatus"):text("reminderDenied");
+        if(permission==="granted")void checkAppointmentReminders();
+      }catch{reminderStatus.textContent=text("reminderDenied");}
+    });
+    enableReminders.id="agenda-enable-reminders";enableReminders.dataset.featureText="agendaEnableReminders";
+    const reminderStatus=make("p","inline-status");reminderStatus.id="agenda-reminder-status";reminderStatus.setAttribute("role","status");reminderStatus.setAttribute("aria-live","polite");
+    reminderTools.append(enableReminders,reminderStatus);
     const week = make("div", "week-strip"); week.id="agenda-week";
     const listHeading=make("h3", "feature-subheading", text("weekHeading")); listHeading.dataset.featureText="weekHeading";
     const list=make("div","feature-list"); list.id="agenda-list";
-    secureContents.append(week,listHeading,list);
+    secureContents.append(reminderTools,week,listHeading,list);
     fragment.append(form,gate,secureContents);
     form.addEventListener("submit", async event => {
       event.preventDefault();
       if (!app().isVaultUnlocked()) { status.textContent=text("secureGateTitle"); gate.hidden=false; return; }
       const targetId=editingAppointmentId;
-      const values={title:name.value.trim().slice(0,80),date:date.value,time:time.value,details:details.value.trim().slice(0,600)};
+      const values={title:name.value.trim().slice(0,80),date:date.value,time:time.value,durationMinutes:Number(duration.value),reminderMinutes:Number(reminder.value),details:details.value.trim().slice(0,600)};
+      const occurrenceCount=targetId?1:Math.max(1,Math.min(8,Number(repeat.value)||1));
       if (!values.title || !values.date) return;
+      let savedCount=0;
       try {
-        const { findDuplicateAppointment } = await import("./appointment-rules.js");
+        const { findDuplicateAppointment, findAppointmentConflict, generateWeeklyOccurrences } = await import("./appointment-rules.js");
         await updateSecure(data=>{
-          const conflict=findDuplicateAppointment(values,data.agendaItems,targetId,30);
-          if(conflict) throw new Error("duplicate-appointment");
           if(targetId){
+            const conflict=findDuplicateAppointment(values,data.agendaItems,targetId,30)||findAppointmentConflict(values,data.agendaItems,targetId,30);
+            if(conflict) throw new Error("duplicate-appointment");
             const found=data.agendaItems.find(item=>item && item.id===targetId);
             if(!found) throw new Error("appointment-not-found");
             Object.assign(found, values, {updatedAt:new Date().toISOString()});
-          } else {
-            if(data.agendaItems.length>=100) data.agendaItems=data.agendaItems.slice(-99);
-            data.agendaItems.push({id:id("appointment"),...values,done:false,createdAt:new Date().toISOString()});
+            delete found.reminderSentAt;
+            savedCount=1;
+          }else{
+            const dates=generateWeeklyOccurrences(values.date,occurrenceCount);
+            if(!dates.length)throw new Error("invalid-appointment-date");
+            if(data.agendaItems.length+dates.length>100)throw new Error("appointment-limit");
+            const pending=[];
+            const seriesId=dates.length>1?id("series"):undefined;
+            for(let index=0;index<dates.length;index++){
+              const occurrence={...values,date:dates[index]};
+              const existing=[...data.agendaItems,...pending];
+              if(findDuplicateAppointment(occurrence,existing,null,30)||findAppointmentConflict(occurrence,existing,null,30))throw new Error("duplicate-appointment");
+              pending.push({id:id("appointment"),...occurrence,done:false,createdAt:new Date().toISOString(),...(seriesId?{seriesId,seriesIndex:index+1,seriesCount:dates.length}:{})});
+            }
+            data.agendaItems.push(...pending);
+            savedCount=pending.length;
           }
           return data;
         });
-        editingAppointmentId=null; form.reset(); date.value=localDate(); date.min=localDate();
+        editingAppointmentId=null; form.reset(); date.value=localDate(); date.min=localDate();duration.value="30";repeat.value="1";reminder.value="0";
         submit.textContent=text("agendaAdd"); cancel.hidden=true;
-        status.textContent=text(targetId?"agendaUpdated":"agendaSaved"); renderAgenda();
+        status.textContent=targetId?text("agendaUpdated"):(savedCount>1?text("agendaRecurringSaved").replace("{count}",String(savedCount)):text("agendaSaved")); renderAgenda();
       } catch (error) {
         status.textContent=error && error.message==="duplicate-appointment" ? text("agendaDuplicate") : text("agendaError");
       }
@@ -390,8 +452,35 @@
     });
     next.id="work-next-week";next.dataset.featureText="workNextWeek";
     toolbar.append(prev,range,next);
+    const copyWeek=button(text("workCopyPrevious"),"secondary-button",async()=>{
+      const status=$("#work-status");
+      if(!app()||!app().isVaultUnlocked()){status.textContent=text("secureGateTitle");gate.hidden=false;return;}
+      try{
+        const {getWorkWeekCopies}=await import("./appointment-rules.js");
+        const targetMonday=localDate(workWeekStart||mondayOf(new Date()));
+        let count=0;
+        await updateSecure(data=>{
+          const copies=getWorkWeekCopies(data.workSchedules,targetMonday);
+          const available=Math.max(0,500-data.workSchedules.length);
+          const picked=copies.slice(0,available);
+          const now=new Date().toISOString();
+          for(const copy of picked){
+            const item={...copy,id:id("work"),createdAt:now};
+            delete item.updatedAt;
+            data.workSchedules.push(item);
+            count++;
+          }
+          const referencedStaff=new Set(data.workSchedules.map(item=>item&&item.staffId).filter(Boolean));
+          data.workStaff=data.workStaff.filter(person=>person&&referencedStaff.has(person.id));
+          return data;
+        });
+        status.textContent=count?text("workCopySuccess").replace("{count}",String(count)):text("workCopyNone");
+        renderWorkSchedule();
+      }catch{status.textContent=text("workCopyError");}
+    });
+    copyWeek.id="work-copy-previous-week";copyWeek.dataset.featureText="workCopyPrevious";
     const week=make("div","work-week-grid");week.id="work-week-grid";
-    contents.append(weekHeading,toolbar,week);
+    contents.append(weekHeading,toolbar,copyWeek,week);
     fragment.append(form,gate,contents);
 
     form.addEventListener("submit",async event=>{
@@ -480,6 +569,9 @@
     $("#agenda-date").value=item.date||localDate();
     $("#agenda-time").value=item.time||"";
     $("#agenda-details").value=item.details||"";
+    $("#agenda-duration").value=String([15,30,45,60,90,120].includes(item.durationMinutes)?item.durationMinutes:30);
+    $("#agenda-repeat").value="1";
+    $("#agenda-reminder").value=String([0,5,15,30].includes(item.reminderMinutes)?item.reminderMinutes:0);
     const submit=$("#agenda-submit"),cancel=$("#agenda-cancel-edit"),status=$("#agenda-status");
     if(submit)submit.textContent=text("agendaUpdate");
     if(cancel)cancel.hidden=false;
@@ -510,7 +602,9 @@
     if(!items.length){list.append(make("p","privacy-hint",text("agendaEmpty")));return;}
     for(const item of items){
       if(!item||typeof item.title!=="string"||typeof item.date!=="string")continue;
-      const meta=[dateLabel(item.date),item.time||""].filter(Boolean).join(" · ");
+      const durationText=item.durationMinutes?String(item.durationMinutes)+" min":"";
+      const reminderText=Number(item.reminderMinutes)>0?(language==="nl"?"herinnering ":"reminder ")+String(item.reminderMinutes)+" min":"";
+      const meta=[dateLabel(item.date),item.time||"",durationText,reminderText].filter(Boolean).join(" · ");
       const actions=[];
       const toggle=button(item.done?text("agendaUndo"):text("agendaDone"),"secondary-button",async()=>{
         try{await updateSecure(data=>{const found=data.agendaItems.find(v=>v.id===item.id);if(found)found.done=!found.done;return data;});renderAgenda();}
@@ -522,6 +616,40 @@
       list.append(card);
     }
   }
+  async function checkAppointmentReminders(){
+    if(!app()||!app().isVaultUnlocked()||!("Notification" in window)||Notification.permission!=="granted")return;
+    const now=new Date();
+    let due=[];
+    try{
+      const {timeToMinutes}=await import("./appointment-rules.js");
+      const items=secureData().agendaItems;
+      due=items.filter(item=>{
+        if(!item||item.done||item.reminderSentAt||!(Number(item.reminderMinutes)>0)||typeof item.date!=="string")return false;
+        if(timeToMinutes(item.time)===null)return false;
+        const appointmentAt=new Date(item.date+"T"+String(item.time)+":00");
+        if(Number.isNaN(appointmentAt.getTime())||appointmentAt<=now)return false;
+        const notifyAt=new Date(appointmentAt.getTime()-Number(item.reminderMinutes)*60000);
+        return now>=notifyAt&&now<appointmentAt;
+      });
+    }catch{return;}
+    if(!due.length)return;
+    const dueIds=new Set(due.map(item=>item.id));
+    try{
+      await updateSecure(data=>{
+        for(const item of data.agendaItems){
+          if(dueIds.has(item&&item.id)&&!item.reminderSentAt)item.reminderSentAt=now.toISOString();
+        }
+        return data;
+      });
+    }catch{return;}
+    for(const item of due){
+      try{
+        const notification=new Notification("Mivoryntra",{body:(language==="nl"?"Afspraak: ":"Appointment: ")+item.title+" · "+item.time,tag:"mivoryntra-"+item.id});
+        notification.onclick=()=>{window.focus();app().setView("agenda");notification.close();};
+      }catch{}
+    }
+  }
+
   function renderMoods(){
     const list=$("#mood-list");if(!list)return;list.replaceChildren();
     if(!app().isVaultUnlocked())return;
@@ -789,12 +917,14 @@
     const today=localDate();
     workWeekStart=mondayOf(new Date());
     const agendaDate=$("#agenda-date");if(agendaDate){agendaDate.value=today;agendaDate.min=today;}
-    window.addEventListener("project-vault-state",()=>updateGateViews());
+    window.addEventListener("project-vault-state",()=>{updateGateViews();void checkAppointmentReminders();});
     applyLanguage(app()?app().getLanguage():"nl");
     updateGateViews();
     if(app()&&app().isVaultUnlocked())renderAll();
+    void checkAppointmentReminders();
+    window.setInterval(()=>void checkAppointmentReminders(),30000);
   }
-  window.ProjectNFeatures={applyLanguage,renderAll,updateGateViews};
+  window.ProjectNFeatures={applyLanguage,renderAll,updateGateViews,checkAppointmentReminders};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});
   else boot();
 })();
