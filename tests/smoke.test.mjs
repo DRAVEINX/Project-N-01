@@ -205,6 +205,10 @@ test("encrypted routine storage has an explicit unlock/lock UI and keeps keys in
   assert.match(js, /activeVault\.lock\(\)/);
   assert.match(secureStorage, /openEncryptedJsonSession/);
   assert.match(secureStorage, /fresh random IV for every save/);
+  assert.match(js, /const VAULT_AUTO_LOCK_MS = 5 \* 60 \* 1000/);
+  assert.match(js, /document\.visibilityState === "hidden"/);
+  assert.match(js, /window\.addEventListener\("pagehide"/);
+  assert.match(js, /window\.addEventListener\("pageshow"/);
 });
 
 import { webcrypto } from "node:crypto";
