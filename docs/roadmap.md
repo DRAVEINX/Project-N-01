@@ -31,14 +31,17 @@
 - [x] Add a separate full-vault restore action, with confirmation, 2 MiB file limit, schema/collection validation before overwrite, and localized status messages.
 - [x] Add regression tests for valid full-vault data and rejection of invalid mood values, dates, photo formats, collection limits and oversized payloads.
 - [x] Add date/time duplicate prevention to the week planner: same-date appointments within 30 minutes are rejected, and identical titles are checked when an appointment has no time; editing excludes the appointment itself.
+- [x] Add appointment durations, time-overlap and transition-buffer checks, and bounded weekly recurrence (up to eight separate appointments).
+- [x] Add opt-in browser notifications for appointment reminders while the app is open; closed-app delivery is not guaranteed.
+- [x] Add a copy-previous-week action for staff rosters, skipping duplicate same-name/day assignments and reusing encrypted staff profiles.
 - [x] Add an editable “Who is working today?” roster with previous/next week navigation, date-specific assignments, name, role, notes and photo.
 - [x] Store each staff photo once in the encrypted staff directory and reference the profile from daily assignments; edits and deletion update the current assignment and remove unused profiles.
 - [x] Prevent the same normalized staff name from being scheduled twice on the same date; permit the same staff member on different dates.
 - [x] Add phone/tablet responsive styling, lock-time roster DOM cleanup, full-vault validation and regression tests for the agenda and staff roster.
 - [x] Add edit/cancel flows for appointments and trusted contacts; preserve appointment identity and keep a contact photo unless the user chooses a replacement.
 - [x] Add regression tests that check editing updates the existing encrypted record rather than creating duplicates.
-- [ ] Confirm the latest GitHub Actions CI run for the newest source commit.
-- [ ] Manually exercise add/edit/cancel/delete/lock/unlock and full-vault backup/restore on Android phone/tablet, including screen readers, reduced motion and offline start.
+- [ ] Confirm the latest GitHub Actions CI run for the newest source commit after the agenda/roster additions.
+- [ ] Manually exercise add/edit/cancel/delete/lock/unlock, recurring appointments, notification permission/reminders, roster week-copy and full-vault backup/restore on Android phone/tablet, including screen readers, reduced motion and offline start.
 - [ ] Complete official trademark, app-store and domain checks before making the name public.
 
 ## Phase 2 — Make the prototype more robust
