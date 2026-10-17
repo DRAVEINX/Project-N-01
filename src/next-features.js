@@ -10,6 +10,8 @@
       agendaReminder:"Herinnering", reminderNone:"Geen herinnering", reminder5:"5 minuten vooraf", reminder15:"15 minuten vooraf", reminder30:"30 minuten vooraf",
       agendaEnableReminders:"Meldingen inschakelen", reminderEnabledStatus:"Meldingen zijn ingeschakeld. Herinneringen werken zolang Mivoryntra open is en meldingen zijn toegestaan.", reminderUnsupported:"Deze browser ondersteunt geen meldingen.", reminderDenied:"Meldingen zijn niet toegestaan. Controleer de browserinstellingen.",
       agendaRepeatHint:"Wekelijkse herhalingen worden als losse afspraken aangemaakt; wijzigingen gelden per afspraak.", agendaRecurringSaved:"{count} wekelijkse afspraken zijn opgeslagen.",
+      agendaSearch:"Zoek in afspraken", agendaFilter:"Weergave", filterAll:"Alle afspraken", filterUpcoming:"Komende afspraken", filterCompleted:"Afgeronde afspraken", agendaNoMatch:"Geen afspraken die aan je zoekopdracht voldoen.", agendaCount:"{count} afspraken zichtbaar.",
+      moodDelete:"Check-in verwijderen",
       agendaAdd:"Afspraak opslaan",
       agendaEmpty:"Er staan nog geen afspraken in je planner.", agendaDone:"Afgerond", agendaUndo:"Opnieuw openzetten", agendaDelete:"Afspraak verwijderen", agendaEdit:"Afspraak bewerken", agendaCancelEdit:"Bewerken annuleren", agendaUpdate:"Wijzigingen opslaan", agendaUpdated:"De afspraak is bijgewerkt.", agendaEditStarted:"Je kunt de afspraak nu aanpassen.",
       weekHeading:"De komende 7 dagen", agendaSaved:"De afspraak is veilig opgeslagen.", agendaDuplicate:"Deze afspraak botst mogelijk met een andere afspraak of laat minder dan 30 minuten wisseltijd over. Kies een ander tijdstip of bewerk de bestaande afspraak.", agendaError:"Opslaan lukte niet. Controleer of je kluis ontgrendeld is en voldoende ruimte heeft.",
@@ -42,6 +44,8 @@
       agendaReminder:"Reminder", reminderNone:"No reminder", reminder5:"5 minutes before", reminder15:"15 minutes before", reminder30:"30 minutes before",
       agendaEnableReminders:"Enable notifications", reminderEnabledStatus:"Notifications are enabled. Reminders work while Mivoryntra is open and notifications are allowed.", reminderUnsupported:"This browser does not support notifications.", reminderDenied:"Notifications are not allowed. Check your browser settings.",
       agendaRepeatHint:"Weekly repetitions are created as separate appointments; edit each occurrence individually.", agendaRecurringSaved:"{count} weekly appointments were saved.",
+      agendaSearch:"Search appointments", agendaFilter:"View", filterAll:"All appointments", filterUpcoming:"Upcoming appointments", filterCompleted:"Completed appointments", agendaNoMatch:"No appointments match your search.", agendaCount:"{count} appointments shown.",
+      moodDelete:"Delete check-in",
       agendaAdd:"Save appointment",
       agendaEmpty:"There are no appointments in your planner yet.", agendaDone:"Completed", agendaUndo:"Mark as open", agendaDelete:"Delete appointment", agendaEdit:"Edit appointment", agendaCancelEdit:"Cancel editing", agendaUpdate:"Save changes", agendaUpdated:"Appointment updated.", agendaEditStarted:"You can edit this appointment now.",
       weekHeading:"The next 7 days", agendaSaved:"Appointment saved securely.", agendaDuplicate:"This appointment overlaps another one or leaves less than 30 minutes between appointments. Choose another time or edit the existing appointment.", agendaError:"Could not save. Check that your vault is unlocked and has enough free space.",
@@ -258,8 +262,19 @@
     reminderTools.append(enableReminders,reminderStatus);
     const week = make("div", "week-strip"); week.id="agenda-week";
     const listHeading=make("h3", "feature-subheading", text("weekHeading")); listHeading.dataset.featureText="weekHeading";
+    const filterBar=make("div","agenda-filter-toolbar");
+    const searchBox=make("div");const searchLabel=make("label","",text("agendaSearch"));searchLabel.htmlFor="agenda-search";searchLabel.dataset.featureText="agendaSearch";
+    const search=make("input");search.id="agenda-search";search.type="search";search.name="agenda-search";search.maxLength=100;search.autocomplete="off";search.placeholder=text("agendaSearch");search.dataset.featurePlaceholder="agendaSearch";
+    searchBox.append(searchLabel,search);
+    const filterBox=make("div");const filterLabel=make("label","",text("agendaFilter"));filterLabel.htmlFor="agenda-filter";filterLabel.dataset.featureText="agendaFilter";
+    const filter=make("select");filter.id="agenda-filter";
+    for(const [value,key] of [["all","filterAll"],["upcoming","filterUpcoming"],["completed","filterCompleted"]]){const option=make("option","",text(key));option.value=value;option.dataset.featureText=key;filter.append(option);}
+    filterBox.append(filterLabel,filter);
+    filterBar.append(searchBox,filterBox);
+    const resultCount=make("p","privacy-hint");resultCount.id="agenda-results";resultCount.setAttribute("aria-live","polite");
     const list=make("div","feature-list"); list.id="agenda-list";
-    secureContents.append(reminderTools,week,listHeading,list);
+    secureContents.append(reminderTools,week,listHeading,filterBar,resultCount,list);
+    search.addEventListener("input",renderAgenda);filter.addEventListener("change",renderAgenda);
     fragment.append(form,gate,secureContents);
     form.addEventListener("submit", async event => {
       event.preventDefault();
@@ -586,7 +601,17 @@
     if(!app().isVaultUnlocked()){return;}
     let items=[];
     try{items=secureData().agendaItems;}catch{return;}
+    const availableItems=items.length;
     const today=localDate();
+    const query=($("#agenda-search")?.value||"").trim().toLocaleLowerCase(language==="nl"?"nl-NL":"en-GB");
+    const filter=$("#agenda-filter")?.value||"all";
+    items=items.filter(item=>{
+      if(!item||typeof item.title!=="string"||typeof item.date!=="string")return false;
+      if(filter==="upcoming"&&(item.done||item.date<today))return false;
+      if(filter==="completed"&&!item.done)return false;
+      if(query&&!((item.title+" "+(item.details||"")).toLocaleLowerCase(language==="nl"?"nl-NL":"en-GB").includes(query)))return false;
+      return true;
+    });
     for(let offset=0;offset<7;offset++){
       const date=new Date();date.setHours(12,0,0,0);date.setDate(date.getDate()+offset);
       const key=localDate(date);
@@ -599,7 +624,8 @@
       week.append(day);
     }
     items.sort((a,b)=>(String(a.date)+" "+String(a.time||"")).localeCompare(String(b.date)+" "+String(b.time||"")));
-    if(!items.length){list.append(make("p","privacy-hint",text("agendaEmpty")));return;}
+    const results=$("#agenda-results");if(results)results.textContent=text("agendaCount").replace("{count}",String(items.length));
+    if(!items.length){list.append(make("p","privacy-hint",text(availableItems?"agendaNoMatch":"agendaEmpty")));return;}
     for(const item of items){
       if(!item||typeof item.title!=="string"||typeof item.date!=="string")continue;
       const durationText=item.durationMinutes?String(item.durationMinutes)+" min":"";
@@ -657,7 +683,11 @@
     if(!entries.length){list.append(make("p","privacy-hint",text("moodEmpty")));return;}
     entries.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,14).forEach(entry=>{
       const moodLabel=text("mood"+entry.mood);
-      const card=createItemCard("● "+moodLabel,dateLabel(entry.date),entry.note||"");
+      const remove=button(text("moodDelete"),"secondary-button",async()=>{
+        try{await deleteItem("moodEntries",entry.id);renderMoods();}
+        catch{$("#mood-status").textContent=text("moodError");}
+      });
+      const card=createItemCard("● "+moodLabel,dateLabel(entry.date),entry.note||"",[remove]);
       list.append(card);
     });
   }
