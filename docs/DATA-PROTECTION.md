@@ -6,7 +6,7 @@
 - Routine JSON exports are plaintext and must be treated as readable by anyone who obtains the file.
 - Notes and drawings are currently temporary and are not persisted.
 - The experimental `src/secure-storage.js` module provides Web Crypto AES-256-GCM encryption with a random 128-bit salt, random 96-bit IV, PBKDF2-SHA-256 key derivation, and a 128-bit authentication tag.
-- The optional encrypted vault is connected to custom routine-template persistence. The user must unlock it with a passphrase on each page load; a derived `CryptoKey` is retained only in an in-memory closure while unlocked and is discarded on lock. This prototype has no inactivity auto-lock, key recovery or independent security review, so it is not yet a release-ready security guarantee.
+- The optional encrypted vault is connected to custom routine-template persistence. The user must unlock it with a passphrase on each page load; a derived `CryptoKey` is retained only in an in-memory closure while unlocked and is discarded on lock. The prototype auto-locks after five minutes without activity and when the page is hidden or navigated away from; key recovery and independent security review are still missing, so this is not yet a release-ready security guarantee.
 - Browser encryption does not protect data from a compromised device, malicious browser extension, injected script, or someone with access to an unlocked app session.
 
 ## Proposed data categories
@@ -55,7 +55,7 @@ The experimental Web Crypto helper now rejects values that cannot be serialized 
 
 `src/encrypted-vault.js` adds a standalone storage adapter that stores one AES-GCM envelope under a dedicated storage key, requires an explicit unlock, clears its in-memory plaintext on lock, and verifies the supplied passphrase against the existing envelope before replacing data. Restore authenticates the incoming envelope before writing it. Automated tests cover persistence shape, wrong passphrases, save and restore behavior.
 
-The adapter is connected to the custom-routine editor after an explicit opt-in action. The user must enter the passphrase after each page load; while unlocked, creating, editing, deleting, and importing routine templates writes to the encrypted vault. The initial migration downloads an encrypted envelope and leaves the legacy plaintext copy in place until the user explicitly deletes it. Accessibility preferences still use ordinary unencrypted `localStorage`. The UI updates its privacy notice for unlocked/locked vault states. There is no inactivity auto-lock or recovery flow, and this has not received an independent security review. Do not store sensitive journal, mood, voice, or caregiver data in the prototype.
+The adapter is connected to the custom-routine editor after an explicit opt-in action. The user must enter the passphrase after each page load; while unlocked, creating, editing, deleting, and importing routine templates writes to the encrypted vault. The initial migration downloads an encrypted envelope and leaves the legacy plaintext copy in place until the user explicitly deletes it. Accessibility preferences still use ordinary unencrypted `localStorage`. The UI updates its privacy notice for unlocked/locked vault states. The UI locks after five minutes without activity and when the page is hidden or navigated away from. Recovery and independent security review are still missing. Do not store sensitive journal, mood, voice, or caregiver data in the prototype.
 
 
 ## Non-destructive routine migration helper
