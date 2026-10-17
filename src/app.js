@@ -99,10 +99,18 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 window.addEventListener("pagehide", () => {
-  if (activeVault) activeVault.lock();
-  activeVault = null;
-  if (vaultAutoLockTimer !== null) window.clearTimeout(vaultAutoLockTimer);
-  vaultAutoLockTimer = null;
+  if (activeVault) lockVaultSession(t("vaultLockedStatus"));
+  else {
+    if (vaultAutoLockTimer !== null) window.clearTimeout(vaultAutoLockTimer);
+    vaultAutoLockTimer = null;
+  }
+});
+window.addEventListener("pageshow", () => {
+  if (encryptedVaultExists && (!activeVault || !activeVault.isUnlocked)) {
+    customRoutines = [];
+    updateVaultControls();
+    renderCustomRoutines();
+  }
 });
 
 function readCustomRoutines() {
