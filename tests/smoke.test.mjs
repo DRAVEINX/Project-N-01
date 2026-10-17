@@ -99,6 +99,17 @@ test("service worker cache version is bumped when shipping updated app assets", 
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v5/);
 });
 
+test("encrypted import tracks temporary vault unlock in local scope", () => {
+  const handlerStart = js.indexOf('$("#import-encrypted-routines").addEventListener("change", async event => {');
+  const handlerEnd = js.indexOf("\n});", handlerStart);
+  assert.notEqual(handlerStart, -1);
+  assert.notEqual(handlerEnd, -1);
+  const handler = js.slice(handlerStart, handlerEnd);
+  assert.match(handler, /let unlockedForThisImport = false;/);
+  assert.match(handler, /unlockedForThisImport = true;/);
+  assert.match(handler, /if \\(unlockedForThisImport && activeVault\\)/);
+});
+
 test("vault startup tolerates unavailable browser storage", () => {
   assert.match(js, /function safeLocalStorageGetItem\(key\)\s*\{\s*try\s*\{\s*return localStorage\.getItem\(key\);\s*\}\s*catch\s*\{\s*return null;\s*\}\s*\}/);
   assert.match(js, /encryptedVaultExists = safeLocalStorageGetItem\(encryptedVaultStorageKey\) !== null/);
