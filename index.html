@@ -127,10 +127,16 @@
               <h4 data-i18n="vaultMigrationTitle">Bestaande routines veilig kopiëren</h4>
               <p class="privacy-hint" data-i18n="vaultMigrationIntro">Kopieer je bestaande routines naar een lokale versleutelde kluis en download een versleutelde kopie. De oorspronkelijke routines blijven staan en zijn nog steeds onversleuteld in deze prototype-app.</p>
               <div class="routine-backup-tools">
-                <button type="button" class="secondary-button" id="migrate-routines-to-vault" data-i18n="vaultMigrationAction">Versleutelde opslag activeren / ontgrendelen</button>
+                <button type="button" class="secondary-button" id="migrate-routines-to-vault" data-i18n="vaultMigrationAction">Kluis activeren / ontgrendelen en back-up downloaden</button>
                 <button type="button" class="secondary-button" id="lock-encrypted-vault" data-i18n="vaultLockAction">Kluis vergrendelen</button>
                 <button type="button" class="secondary-button" id="delete-plaintext-routines" data-i18n="vaultDeletePlaintextAction">Onversleutelde routinekopie verwijderen</button>
               </div>
+              <div class="routine-backup-tools full-vault-restore-tools">
+                <label class="secondary-button file-pick-label" for="restore-full-vault-file" data-i18n="restoreFullVaultLabel">Volledige versleutelde kluis herstellen</label>
+                <input class="sr-only" type="file" id="restore-full-vault-file" accept="application/json,.json">
+              </div>
+              <p class="privacy-hint" data-i18n="restoreFullVaultWarning">Dit vervangt alle gegevens in de huidige versleutelde kluis. Download eerst een back-up die je wilt bewaren en kies daarna het bijbehorende bestand met de juiste wachtzin.</p>
+              <p id="restore-full-vault-status" class="inline-status" role="status" aria-live="polite"></p>
               <p class="privacy-hint" data-i18n="vaultAutoLock">De kluis wordt automatisch vergrendeld na 5 minuten inactiviteit of wanneer je dit tabblad verlaat.</p>
               <p id="vault-migration-status" class="inline-status" role="status" aria-live="polite"></p>
             </div>
