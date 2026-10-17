@@ -837,3 +837,14 @@ test("starting a new voice note clears the previous temporary recording first", 
   assert.match(handler, /voiceChunks = \[\];\s*voiceBlob = null;\s*clearVoiceObjectUrl\(\);\s*voiceNotePlayback\.pause\(\);\s*voiceNotePlayback\.removeAttribute\("src"\);\s*voiceNotePlayback\.hidden = true;\s*voiceNoteDownload\.disabled = true;/);
   assert.match(app, /function clearVoiceObjectUrl\(\) \{\s*if \(voiceObjectUrl\) URL\.revokeObjectURL\(voiceObjectUrl\);\s*voiceObjectUrl = null;/);
 });
+
+test("leaving the app aborts speech recognition and releases its reference", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const start = app.indexOf('window.addEventListener("pagehide", () => {', app.indexOf("// Optional browser speech recognition"));
+  const end = app.indexOf('\n});', start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const handler = app.slice(start, end);
+  assert.match(handler, /if \(dictationRecognition\) \{\s*try \{ dictationRecognition\.abort\(\); \} catch \{\}\s*dictationRecognition = null;/);
+  assert.match(handler, /\{once:true\}/);
+});
