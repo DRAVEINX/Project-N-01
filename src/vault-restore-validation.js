@@ -67,7 +67,12 @@ export function validateFullVaultData(value) {
     !item || typeof item !== "object" || !text(item.id, 120, true) ||
     !text(item.name, 80, true) || !date(item.date) ||
     !text(item.staffId, 120, true) || !staffIds.has(item.staffId) ||
-    !optionalText(item.role, 80) || !optionalText(item.notes, 400)
+    !optionalText(item.role, 80) || !optionalText(item.notes, 400) ||
+    !optionalText(item.startTime, 5) || !optionalText(item.endTime, 5) ||
+    (item.startTime !== undefined && item.startTime !== "" && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.startTime)) ||
+    (item.endTime !== undefined && item.endTime !== "" && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.endTime)) ||
+    (Boolean(item.startTime) !== Boolean(item.endTime)) ||
+    (item.startTime && item.endTime && item.endTime <= item.startTime)
   )) return false;
   return true;
 }
