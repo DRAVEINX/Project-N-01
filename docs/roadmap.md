@@ -37,6 +37,7 @@
 - [x] Encryption helper rejects non-JSON values and oversized payloads with regression tests
 - [ ] Security expert review and threat-model sign-off
 - [x] Add standalone experimental encrypted vault adapter with passphrase verification and restore tests; not connected to app data
+- [x] Add non-destructive legacy routine preview/copy helper with validation and tests; original plaintext remains untouched
 - [ ] Integrate encrypted storage, unlock/lock and recovery without losing existing data
 
 ## Phase 4 — Android phone and tablet
