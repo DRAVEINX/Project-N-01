@@ -826,3 +826,14 @@ test("speech recognition errors show feedback and restore dictation controls whe
   assert.match(handler, /dictationRecognition\.addEventListener\("end", \(\) => \{\s*setDictationButtons\(false\)/);
   assert.match(app, /function setDictationButtons\(listening\) \{\s*dictationStart\.disabled = listening \|\| !SpeechRecognitionAPI;\s*dictationStop\.disabled = !listening;/);
 });
+
+test("starting a new voice note clears the previous temporary recording first", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const start = app.indexOf('voiceNoteStart.addEventListener("click", async () => {');
+  const end = app.indexOf('\n});', start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const handler = app.slice(start, end);
+  assert.match(handler, /voiceChunks = \[\];\s*voiceBlob = null;\s*clearVoiceObjectUrl\(\);\s*voiceNotePlayback\.pause\(\);\s*voiceNotePlayback\.removeAttribute\("src"\);\s*voiceNotePlayback\.hidden = true;\s*voiceNoteDownload\.disabled = true;/);
+  assert.match(app, /function clearVoiceObjectUrl\(\) \{\s*if \(voiceObjectUrl\) URL\.revokeObjectURL\(voiceObjectUrl\);\s*voiceObjectUrl = null;/);
+});
