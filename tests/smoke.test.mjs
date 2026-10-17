@@ -131,5 +131,6 @@ test("custom routine export and import controls validate files and disclose priv
   assert.match(js, /file\.size > 1024 \* 1024/);
   assert.match(js, /URL\.createObjectURL\(blob\)/);
   assert.match(js, /JSON\.parse\(await file\.text\(\)\)/);
-  assert.match(js, /\.slice\(0, 50\)/);
+  assert.match(js, /\.slice\(0,\s*50\)/);
+  assert.match(js, /routineBackupPrivacy:"Export files are not encrypted/);
 });
