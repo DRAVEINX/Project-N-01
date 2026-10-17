@@ -1,4 +1,4 @@
-const CACHE_NAME = "project-n-01-prototype-v12";
+const CACHE_NAME = "project-n-01-prototype-v13";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -8,6 +8,7 @@ const APP_SHELL = [
   "/src/next-features.js",
   "/src/secure-storage.js",
   "/src/encrypted-vault.js",
+  "/src/vault-restore-validation.js",
   "/src/routine-migration.js",
   "/manifest.webmanifest",
   "/assets/app-icon.svg",
