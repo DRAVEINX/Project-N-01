@@ -554,10 +554,10 @@
   }
   function applyLanguage(next){
     language=next==="en"?"en":"nl";
-    $("[data-feature-text]").forEach(el=>{const key=el.dataset.featureText;el.textContent=text(key);});
+    $$("[data-feature-text]").forEach(el=>{const key=el.dataset.featureText;el.textContent=text(key);});
     const agendaSubmit=$("#agenda-submit");if(agendaSubmit)agendaSubmit.textContent=text(editingAppointmentId?"agendaUpdate":"agendaAdd");
     const peopleSubmit=$("#person-submit");if(peopleSubmit)peopleSubmit.textContent=text(editingPersonId?"peopleUpdate":"peopleAdd");
-    $("[data-feature-placeholder]").forEach(el=>{const key=el.dataset.featurePlaceholder;if(copy[language][key])el.placeholder=copy[language][key];});
+    $$("[data-feature-placeholder]").forEach(el=>{const key=el.dataset.featurePlaceholder;if(copy[language][key])el.placeholder=copy[language][key];});
     if(app()&&app().isVaultUnlocked())renderAll();
     updateGateViews();
   }
