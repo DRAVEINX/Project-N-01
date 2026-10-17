@@ -721,6 +721,22 @@ test("new personal modules use the unlocked encrypted vault and do not write pri
   assert.match(serviceWorker, /"\/src\/next-features.js"/);
 });
 
+test("trusted people can store a bounded optional photo only through encrypted feature data", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(features, /peoplePhotoTooLarge/);
+  assert.match(features, /photoFile\.size>120\*1024/);
+  assert.match(features, /data\.trustedPeople\.push\(person\)/);
+  assert.match(features, /data:image\\\/(png\|jpeg\|webp\);base64,/);
+  assert.match(css, /\.trusted-photo/);
+  assert.doesNotMatch(features, /localStorage\.setItem/);
+});
+
+test("mood selection requires an intentional choice instead of preselecting a mood", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(features, /chooseMood:"Choose a mood…"/);
+  assert.match(features, /placeholder\.disabled=true; placeholder\.selected=true/);
+});
+
 test("secure feature module iterates querySelectorAll collections safely", async () => {
   const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
   assert.doesNotMatch(features, /(?<!\\$)\\$\\([^;\\n]*\\)\\.forEach/);
