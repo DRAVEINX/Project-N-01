@@ -3,11 +3,11 @@
   "use strict";
   const copy = {
     nl: {
-      navAgenda:"Weekplanner", navMood:"Stemming", navPeople:"Vertrouwde mensen", introAgain:"Introductie opnieuw bekijken",
+      navAgenda:"Weekplanner", navMood:"Stemming", navPeople:"Vertrouwde mensen", navWork:"Wie werkt er?", introAgain:"Introductie opnieuw bekijken",
       agendaEyebrow:"OVERZICHT", agendaTitle:"Mijn weekplanner", agendaIntro:"Leg afspraken vast en bekijk wat er de komende dagen op de planning staat.",
       agendaTitleLabel:"Waar gaat de afspraak over?", agendaDate:"Datum", agendaTime:"Tijd", agendaDetails:"Extra informatie (optioneel)", agendaAdd:"Afspraak opslaan",
       agendaEmpty:"Er staan nog geen afspraken in je planner.", agendaDone:"Afgerond", agendaUndo:"Opnieuw openzetten", agendaDelete:"Afspraak verwijderen", agendaEdit:"Afspraak bewerken", agendaCancelEdit:"Bewerken annuleren", agendaUpdate:"Wijzigingen opslaan", agendaUpdated:"De afspraak is bijgewerkt.", agendaEditStarted:"Je kunt de afspraak nu aanpassen.",
-      weekHeading:"De komende 7 dagen", agendaSaved:"De afspraak is veilig opgeslagen.", agendaError:"Opslaan lukte niet. Controleer of je kluis ontgrendeld is en voldoende ruimte heeft.",
+      weekHeading:"De komende 7 dagen", agendaSaved:"De afspraak is veilig opgeslagen.", agendaDuplicate:"Mogelijke dubbele afspraak: op deze datum staat al een afspraak binnen 30 minuten. Kies een ander tijdstip of bewerk de bestaande afspraak.", agendaError:"Opslaan lukte niet. Controleer of je kluis ontgrendeld is en voldoende ruimte heeft.",
       moodEyebrow:"EVEN INCHECKEN", moodTitle:"Hoe voel je je vandaag?", moodIntro:"Kies het gevoel dat het beste past. Je hoeft het niet uit te leggen.",
       moodLabel:"Mijn stemming", chooseMood:"Kies een stemming…", moodNote:"Wil je er iets bij vertellen? (optioneel)", moodSave:"Stemming opslaan",
       mood1:"Heel moeilijk", mood2:"Moeilijk", mood3:"Gaat wel", mood4:"Goed", mood5:"Heel goed",
@@ -26,11 +26,11 @@
       secureDeleteConfirm:"Wil je dit item definitief verwijderen?", deleting:"Verwijderen…", today:"Vandaag", done:"Klaar", cancel:"Annuleren"
     },
     en: {
-      navAgenda:"Week planner", navMood:"Mood", navPeople:"Trusted people", introAgain:"View the introduction again",
+      navAgenda:"Week planner", navMood:"Mood", navPeople:"Trusted people", navWork:"Staff on duty", introAgain:"View the introduction again",
       agendaEyebrow:"OVERVIEW", agendaTitle:"My week planner", agendaIntro:"Add appointments and see what is planned for the coming days.",
       agendaTitleLabel:"What is the appointment about?", agendaDate:"Date", agendaTime:"Time", agendaDetails:"Extra details (optional)", agendaAdd:"Save appointment",
       agendaEmpty:"There are no appointments in your planner yet.", agendaDone:"Completed", agendaUndo:"Mark as open", agendaDelete:"Delete appointment", agendaEdit:"Edit appointment", agendaCancelEdit:"Cancel editing", agendaUpdate:"Save changes", agendaUpdated:"Appointment updated.", agendaEditStarted:"You can edit this appointment now.",
-      weekHeading:"The next 7 days", agendaSaved:"Appointment saved securely.", agendaError:"Could not save. Check that your vault is unlocked and has enough free space.",
+      weekHeading:"The next 7 days", agendaSaved:"Appointment saved securely.", agendaDuplicate:"Possible duplicate: an appointment already exists on this date within 30 minutes. Choose another time or edit the existing appointment.", agendaError:"Could not save. Check that your vault is unlocked and has enough free space.",
       moodEyebrow:"CHECKING IN", moodTitle:"How are you feeling today?", moodIntro:"Choose the feeling that fits best. You do not have to explain it.",
       moodLabel:"My mood", chooseMood:"Choose a mood…", moodNote:"Would you like to add a note? (optional)", moodSave:"Save mood",
       mood1:"Very difficult", mood2:"Difficult", mood3:"Okay", mood4:"Good", mood5:"Very good",
@@ -56,6 +56,9 @@
   let editingAppointmentId = null;
   let editingPersonId = null;
   let editingPersonPhoto = "";
+  let editingWorkScheduleId = null;
+  let editingWorkSchedulePhoto = "";
+  let workWeekStart = null;
   const app = () => window.ProjectNApp;
   const text = key => (copy[language] && copy[language][key]) || copy.nl[key] || key;
   const id = prefix => prefix + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
@@ -63,6 +66,13 @@
     const date = d || new Date();
     return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
   };
+  const mondayOf = value => {
+    const date = new Date(value);
+    date.setHours(12,0,0,0);
+    date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+    return date;
+  };
+  const addDays = (value, count) => { const date = new Date(value); date.setDate(date.getDate()+count); return date; };
   const dateLabel = value => {
     if (!value) return "";
     const date = new Date(value.length === 10 ? value + "T12:00:00" : value);
@@ -91,14 +101,15 @@
       savedDrawings: Array.isArray(data.savedDrawings) ? data.savedDrawings : [],
       agendaItems: Array.isArray(data.agendaItems) ? data.agendaItems : [],
       moodEntries: Array.isArray(data.moodEntries) ? data.moodEntries : [],
-      trustedPeople: Array.isArray(data.trustedPeople) ? data.trustedPeople : []
+      trustedPeople: Array.isArray(data.trustedPeople) ? data.trustedPeople : [],
+      workSchedules: Array.isArray(data.workSchedules) ? data.workSchedules : []
     };
   }
   async function updateSecure(mutator) {
     if (!app() || !app().isVaultUnlocked()) throw new Error("vault-locked");
     return app().updateVaultData(current => {
       const data = current && typeof current === "object" ? current : {};
-      for (const key of ["routines","journalEntries","savedDrawings","agendaItems","moodEntries","trustedPeople"]) {
+      for (const key of ["routines","journalEntries","savedDrawings","agendaItems","moodEntries","trustedPeople","workSchedules"]) {
         if (!Array.isArray(data[key])) data[key] = [];
       }
       const nextData = mutator(data) || data;
