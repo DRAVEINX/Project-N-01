@@ -35,3 +35,8 @@
 .privacy-panel{margin-top:1rem;display:grid;gap:.8rem}
 .privacy-panel h3,.privacy-panel p{margin:0}
 .danger-button{border-color:rgba(255,120,140,.55)}
+
+.encrypted-backup-panel{display:grid;gap:.7rem;margin-top:1rem;padding:1rem;border:1px solid var(--border-color,rgba(160,170,190,.25));border-radius:1rem}
+.encrypted-backup-panel h3,.encrypted-backup-panel p{margin:0}
+.encrypted-backup-panel input[type="password"]{width:100%;min-height:2.8rem;padding:.7rem;border-radius:.65rem;border:1px solid var(--border-color,rgba(160,170,190,.35));background:var(--surface,transparent);color:inherit;font:inherit}
+.encrypted-backup-panel input:focus-visible{outline:3px solid var(--focus-color,#8bb8ff);outline-offset:2px}
