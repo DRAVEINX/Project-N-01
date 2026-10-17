@@ -39,8 +39,22 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses and install required packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [ -z "$sdk_root" ]; then
+            echo "ANDROID_HOME or ANDROID_SDK_ROOT is not set on this runner."
+            exit 1
+          fi
+          sdkmanager_path="$(find "$sdk_root/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          if [ -z "$sdkmanager_path" ]; then
+            echo "Android sdkmanager was not found under $sdk_root/cmdline-tools."
+            exit 1
+          fi
+          yes | "$sdkmanager_path" --licenses >/dev/null
+          "$sdkmanager_path" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Install JavaScript dependencies
         run: npm install --no-audit --no-fund
