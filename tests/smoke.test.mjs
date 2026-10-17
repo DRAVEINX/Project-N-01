@@ -37,6 +37,19 @@ test("accessibility controls and reduced motion support exist", () => {
   assert.match(css, /prefers-reduced-motion:reduce/);
   assert.match(css, /:focus-visible/);
 });
+test("voice notes can be recorded, played and explicitly downloaded without app persistence", () => {
+  assert.match(html, /id="start-voice-note"/);
+  assert.match(html, /id="stop-voice-note"/);
+  assert.match(html, /id="download-voice-note"/);
+  assert.match(html, /id="voice-note-playback"/);
+  assert.match(js, /navigator\.mediaDevices\?\.getUserMedia/);
+  assert.match(js, /new MediaRecorder\(voiceStream\)/);
+  assert.match(js, /voiceNotePlayback\.src = voiceObjectUrl/);
+  assert.match(js, /link\.download = "spraaknotitie\."/);
+  assert.match(js, /voiceNoteIntro:"[^"]*not automatically saved or uploaded/);
+  assert.match(js, /voiceNoteIntro:"[^"]*niet automatisch opgeslagen of geüpload/);
+});
+
 test("notes explicitly warn that the prototype does not save them", () => {
   assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
 });
