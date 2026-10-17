@@ -2,10 +2,28 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { validateFullVaultData } from "../src/vault-restore-validation.js";
+import { findDuplicateAppointment, findDuplicateWorkAssignment } from "../src/appointment-rules.js";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
+
+test("appointment collision rules block same-day appointments within 30 minutes", () => {
+  const existing = [{ id: "a1", title: "Meeting", date: "2026-10-22", time: "10:00" }];
+  assert.equal(findDuplicateAppointment({ title: "Another appointment", date: "2026-10-22", time: "10:30" }, existing)?.id, "a1");
+  assert.equal(findDuplicateAppointment({ title: "Another appointment", date: "2026-10-22", time: "09:30" }, existing)?.id, "a1");
+  assert.equal(findDuplicateAppointment({ title: "Another appointment", date: "2026-10-22", time: "10:31" }, existing), null);
+  assert.equal(findDuplicateAppointment({ title: "Another appointment", date: "2026-10-23", time: "10:00" }, existing), null);
+  assert.equal(findDuplicateAppointment({ title: "  MEETING  ", date: "2026-10-22", time: "" }, existing)?.id, "a1");
+  assert.equal(findDuplicateAppointment({ title: "Meeting", date: "2026-10-22", time: "10:00" }, existing, "a1") , null);
+});
+
+test("work-roster rules prevent the same person being listed twice on one date", () => {
+  const existing = [{ id: "w1", name: "Sam de Vries", date: "2026-10-22" }];
+  assert.equal(findDuplicateWorkAssignment({ name: "  SAM DE VRIES ", date: "2026-10-22" }, existing)?.id, "w1");
+  assert.equal(findDuplicateWorkAssignment({ name: "Sam de Vries", date: "2026-10-23" }, existing), null);
+  assert.equal(findDuplicateWorkAssignment({ name: "Sam de Vries", date: "2026-10-22" }, existing, "w1"), null);
+});
 
 test("daily task and built-in routine progress persists locally for the current day", () => {
   assert.match(js, /const dailyProgressKey = "project-n-01-daily-progress-v1"/);
@@ -127,8 +145,9 @@ test("notes are only persisted after an explicit encrypted save action", async (
 const manifest = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 test("service worker cache version is bumped when shipping updated app assets", () => {
-  assert.match(serviceWorker, /project-n-01-prototype-v14/);
-  assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v9/);
+  assert.match(serviceWorker, /project-n-01-prototype-v15/);
+  assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v14/);
+  assert.match(serviceWorker, /"\\/src\\/appointment-rules.js"/);
 });
 
 test("encrypted import tracks temporary vault unlock in local scope", () => {
@@ -729,7 +748,7 @@ test("new personal modules use the unlocked encrypted vault and do not write pri
   assert.match(js, /window.ProjectNApp =/);
   assert.match(js, /async updateVaultData\(mutator\)/);
   assert.match(js, /\.\.\.activeVault\.read\(\), routines: customRoutines/);
-  for (const key of ["journalEntries", "savedDrawings", "agendaItems", "moodEntries", "trustedPeople"]) {
+  for (const key of ["journalEntries", "savedDrawings", "agendaItems", "moodEntries", "trustedPeople", "workSchedules"]) {
     assert.ok(features.includes(key), `missing secure data collection ${key}`);
   }
   assert.match(features, /isVaultUnlocked\(\)/);
@@ -988,7 +1007,8 @@ test("full vault restore validation accepts supported private data and rejects i
     savedDrawings: [{ id: "d1", dataUrl: "data:image/png;base64,AA==", createdAt: "2026-10-17T09:00:00.000Z" }],
     agendaItems: [{ id: "a1", title: "Afspraak", date: "2026-10-18", time: "09:30", details: "", done: false }],
     moodEntries: [{ id: "m1", date: "2026-10-17", mood: 4, note: "" }],
-    trustedPeople: [{ id: "p1", name: "Vertrouwd persoon", role: "Begeleider", contact: "", details: "", photo: "" }]
+    trustedPeople: [{ id: "p1", name: "Vertrouwd persoon", role: "Begeleider", contact: "", details: "", photo: "" }],
+    workSchedules: [{ id: "w1", name: "Sam de Vries", date: "2026-10-18", role: "Begeleider", notes: "", photo: "data:image/png;base64,AA==" }]
   };
   assert.equal(validateFullVaultData(valid), true);
   assert.equal(validateFullVaultData(null), false);
@@ -999,7 +1019,37 @@ test("full vault restore validation accepts supported private data and rejects i
   assert.equal(validateFullVaultData({ ...valid, agendaItems: [{ ...valid.agendaItems[0], date: "2026-02-30" }] }), false);
   assert.equal(validateFullVaultData({ ...valid, trustedPeople: [{ ...valid.trustedPeople[0], photo: "data:image/svg+xml;base64,PHN2Zz4=" }] }), false);
   assert.equal(validateFullVaultData({ ...valid, agendaItems: Array.from({ length: 101 }, (_, i) => ({ ...valid.agendaItems[0], id: "a" + i })) }), false);
+  assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], date: "2026-02-30" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], photo: "data:image/svg+xml;base64,PHN2Zz4=" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, workSchedules: Array.from({ length: 501 }, (_, i) => ({ ...valid.workSchedules[0], id: "w" + i })) }), false);
   assert.equal(validateFullVaultData({ ...valid, extra: "x".repeat(1_000_001) }), false);
+});
+
+test("agenda blocks possible duplicates and shows a bilingual warning", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(features, /findDuplicateAppointment\(values,data\.agendaItems,targetId,30\)/);
+  assert.match(features, /agendaDuplicate:"Mogelijke dubbele afspraak/);
+  assert.match(features, /agendaDuplicate:"Possible duplicate/);
+  assert.match(features, /duplicate-appointment/);
+});
+
+test("daily and weekly staff roster supports photos, editing and deleting through encrypted storage", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(features, /const workRoster = addView\("work",/);
+  assert.match(features, /workSchedules/);
+  assert.match(features, /id="work-previous-week"/);
+  assert.match(features, /id="work-next-week"/);
+  assert.match(features, /id="work-schedule-form"/);
+  assert.match(features, /findDuplicateWorkAssignment\(values,data\.workSchedules,targetId\)/);
+  assert.match(features, /function beginWorkScheduleEdit\(item\)/);
+  assert.match(features, /renderWorkSchedule\(\)/);
+  assert.match(features, /workPhotoTooLarge/);
+  assert.match(features, /selectedFile\.size>120\*1024/);
+  assert.match(features, /deleteItem\("workSchedules",item\.id\)/);
+  assert.match(features, /renderAgenda\(\);renderMoods\(\);renderPeople\(\);renderWorkSchedule\(\)/);
+  assert.match(css, /\.work-week-grid/);
+  assert.match(css, /\.work-assignment-photo/);
+  assert.doesNotMatch(features, /localStorage\.setItem/);
 });
 
 test("full vault restore has its own confirmation and validates before replacing stored data", async () => {
