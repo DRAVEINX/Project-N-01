@@ -360,8 +360,7 @@ $("#import-encrypted-routines").addEventListener("change", async event => {
       customRoutines = normaliseImportedRoutines(existing.routines);
     }
     if (customRoutines.length + imported.length > 50) {
-      $("#custom-routine-status").textContent = t("routineImportLimit");
-      return;
+      throw new Error("routine-limit");
     }
     const merged = [...customRoutines, ...imported];
     if (encryptedVaultExists) {
@@ -385,7 +384,7 @@ $("#import-encrypted-routines").addEventListener("change", async event => {
     scheduleVaultAutoLock();
     renderCustomRoutines();
     $("#custom-routine-status").textContent = t("encryptedBackupSuccess");
-  } catch {
+  } catch (error) {
     if (unlockedForThisImport && activeVault) {
       activeVault.lock();
       activeVault = null;
@@ -393,7 +392,8 @@ $("#import-encrypted-routines").addEventListener("change", async event => {
       updateVaultControls();
       renderCustomRoutines();
     }
-    $("#custom-routine-status").textContent = t("encryptedBackupError");
+    $("#custom-routine-status").textContent = error?.message === "routine-limit"
+      ? t("routineImportLimit") : t("encryptedBackupError");
   } finally {
     event.target.value = "";
   }
