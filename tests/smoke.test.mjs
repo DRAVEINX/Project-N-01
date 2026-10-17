@@ -290,14 +290,6 @@ test("vault restore authenticates before replacing stored data", async () => {
   assert.deepEqual(await second.restoreEnvelope("een-veilige-testzin-123", exported), { profile: "A" });
 });
 
-function createMemoryStorage() {
-  const values = new Map();
-  return {
-    getItem(key) { return values.has(key) ? values.get(key) : null; },
-    setItem(key, value) { values.set(key, String(value)); },
-    removeItem(key) { values.delete(key); }
-  };
-}
 test("legacy routine preview validates and normalizes data without changing the source", () => {
   const storage = createMemoryStorage();
   const original = JSON.stringify([
