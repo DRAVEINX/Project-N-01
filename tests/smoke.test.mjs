@@ -748,7 +748,7 @@ test("new personal modules use the unlocked encrypted vault and do not write pri
   assert.match(js, /window.ProjectNApp =/);
   assert.match(js, /async updateVaultData\(mutator\)/);
   assert.match(js, /\.\.\.activeVault\.read\(\), routines: customRoutines/);
-  for (const key of ["journalEntries", "savedDrawings", "agendaItems", "moodEntries", "trustedPeople", "workSchedules"]) {
+  for (const key of ["journalEntries", "savedDrawings", "agendaItems", "moodEntries", "trustedPeople", "workStaff", "workSchedules"]) {
     assert.ok(features.includes(key), `missing secure data collection ${key}`);
   }
   assert.match(features, /isVaultUnlocked\(\)/);
@@ -1008,7 +1008,8 @@ test("full vault restore validation accepts supported private data and rejects i
     agendaItems: [{ id: "a1", title: "Afspraak", date: "2026-10-18", time: "09:30", details: "", done: false }],
     moodEntries: [{ id: "m1", date: "2026-10-17", mood: 4, note: "" }],
     trustedPeople: [{ id: "p1", name: "Vertrouwd persoon", role: "Begeleider", contact: "", details: "", photo: "" }],
-    workSchedules: [{ id: "w1", name: "Sam de Vries", date: "2026-10-18", role: "Begeleider", notes: "", photo: "data:image/png;base64,AA==" }]
+    workStaff: [{ id: "s1", name: "Sam de Vries", role: "Begeleider", photo: "data:image/png;base64,AA==" }],
+    workSchedules: [{ id: "w1", staffId: "s1", name: "Sam de Vries", date: "2026-10-18", role: "Begeleider", notes: "" }]
   };
   assert.equal(validateFullVaultData(valid), true);
   assert.equal(validateFullVaultData(null), false);
@@ -1020,7 +1021,8 @@ test("full vault restore validation accepts supported private data and rejects i
   assert.equal(validateFullVaultData({ ...valid, trustedPeople: [{ ...valid.trustedPeople[0], photo: "data:image/svg+xml;base64,PHN2Zz4=" }] }), false);
   assert.equal(validateFullVaultData({ ...valid, agendaItems: Array.from({ length: 101 }, (_, i) => ({ ...valid.agendaItems[0], id: "a" + i })) }), false);
   assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], date: "2026-02-30" }] }), false);
-  assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], photo: "data:image/svg+xml;base64,PHN2Zz4=" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, workStaff: [{ ...valid.workStaff[0], photo: "data:image/svg+xml;base64,PHN2Zz4=" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], staffId: "missing-profile" }] }), false);
   assert.equal(validateFullVaultData({ ...valid, workSchedules: Array.from({ length: 501 }, (_, i) => ({ ...valid.workSchedules[0], id: "w" + i })) }), false);
   assert.equal(validateFullVaultData({ ...valid, extra: "x".repeat(1_000_001) }), false);
 });
@@ -1037,6 +1039,9 @@ test("daily and weekly staff roster supports photos, editing and deleting throug
   const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
   assert.match(features, /const workRoster = addView\("work",/);
   assert.match(features, /workSchedules/);
+  assert.match(features, /workStaff/);
+  assert.match(features, /data\.workStaff\.find\(person=>person&&normaliseAppointmentTitle\(person\.name\)===normaliseAppointmentTitle\(values\.name\)\)/);
+  assert.match(features, /const profile=profiles\.find\(person=>person&&person\.id===item\.staffId\)/);
   assert.match(features, /id="work-previous-week"/);
   assert.match(features, /id="work-next-week"/);
   assert.match(features, /id="work-schedule-form"/);
