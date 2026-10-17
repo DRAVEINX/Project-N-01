@@ -79,7 +79,7 @@ let customRoutines = encryptedVaultExists ? [] : readCustomRoutines();
 
 function updateVaultControls() {
   const locked = encryptedVaultExists && !(activeVault && activeVault.isUnlocked);
-  $("#custom-routine-form").querySelectorAll("input, textarea, button").forEach(control => { control.disabled = locked; });
+  $("input, textarea, button", $("#custom-routine-form")).forEach(control => { control.disabled = locked; });
   ["#clear-custom-routines", "#export-custom-routines", "#import-custom-routines", "#export-encrypted-routines", "#import-encrypted-routines"]
     .forEach(selector => { const control = $(selector); if (control) control.disabled = locked; });
   $("#lock-encrypted-vault").disabled = !activeVault || !activeVault.isUnlocked;
