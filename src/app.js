@@ -20,6 +20,12 @@ function showToast(message) {
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => toast.classList.remove("show"), 2800);
 }
+function updateDocumentTitle() {
+  const activeView = $(".view.active");
+  const heading = activeView?.querySelector("h2");
+  const pageName = heading?.textContent?.trim();
+  document.title = pageName ? `${pageName} · Project N-01` : "Project N-01";
+}
 function setView(view) {
   $(".view").forEach(section => section.classList.toggle("active", section.id === `view-${view}`));
   $(".nav-item[data-view]").forEach(button => {
@@ -32,6 +38,7 @@ function setView(view) {
   const heading = $(`#view-${view} h2`);
   if (heading) heading.setAttribute("tabindex", "-1");
   if (heading) heading.focus({preventScroll:true});
+  updateDocumentTitle();
   window.scrollTo({top:0,behavior:document.body.classList.contains("reduced-motion") ? "auto" : "smooth"});
 }
 function updateTaskCount() {
@@ -52,6 +59,7 @@ function applyLanguage(next) {
   updateVaultControls();
   $("[data-complete-routine]").forEach(button => { const done = button.dataset.done === "true"; button.textContent = done ? t("routineMarkedDone") : t("routineMarkDone"); });
   $("#today-date").textContent = new Intl.DateTimeFormat(language === "nl" ? "nl-NL" : "en-GB", {weekday:"short",day:"numeric",month:"short"}).format(new Date());
+  updateDocumentTitle();
   $("#task-status").textContent = "";
   $("#routine-status").textContent = "";
   $$("[data-routine-step]").forEach(input => updateRoutineProgress(input.dataset.routineStep));
