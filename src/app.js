@@ -63,7 +63,7 @@ function readDailyProgress() {
 function saveDailyProgress() {
   const progress = {
     date: localDateKey(),
-    tasks: $("[data-task]").map(input => input.checked),
+    tasks: $$("[data-task]").map(input => input.checked),
     routines: Object.fromEntries(builtInRoutineIds.map(id => [
       id,
       $("[data-routine-step]").filter(input => input.dataset.routineStep === id).map(input => input.checked)
@@ -80,7 +80,7 @@ function restoreDailyProgress() {
   const progress = readDailyProgress();
   if (!progress) return;
   if (Array.isArray(progress.tasks)) {
-    $("[data-task]").forEach((input, index) => { input.checked = progress.tasks[index] === true; });
+    $$("[data-task]").forEach((input, index) => { input.checked = progress.tasks[index] === true; });
   }
   if (progress.routines && typeof progress.routines === "object") {
     for (const id of builtInRoutineIds) {
