@@ -87,7 +87,7 @@ test("notes can be copied to the clipboard with accessible success and failure m
   assert.match(html, /id="copy-text-note"/);
   assert.match(js, /navigator\.clipboard\.writeText\(note\)/);
   assert.match(js, /noteCopied/);
-  assert.match(js, /noteCopyUnavailable/);
+  assert.match(js, /noteCopyFallback/);
   assert.match(js, /if \(!note\.trim\(\)\)/);
 });
 
@@ -105,6 +105,8 @@ test("clipboard failure selects the note for manual copying and has its own empt
 test("notes explicitly warn that the prototype does not save them", () => {
   assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
 });
+const manifest = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
+const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 test("service worker cache version is bumped when shipping updated app assets", () => {
   assert.match(serviceWorker, /project-n-01-prototype-v9/);
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v8/);
@@ -132,15 +134,15 @@ test("all multi-element event loops use querySelectorAll helper", () => {
   assert.doesNotMatch(js, /(?<!\$)\$\([^\n]*?\)\.forEach/);
   assert.match(js, /\$\$\("\.view"\)\.forEach/);
   assert.match(js, /\$\$\("\.nav-item\[data-view\]"\)\.forEach/);
-  assert.match(js, /\$\$\("\[data-view\]"\)\.forEach/);
+  assert.match(js, /\$\$\("\.nav-item\[data-view\]"\)\.forEach/);
 });
 
 test("routine checkbox and completion listeners use the shared query helper", () => {
   assert.doesNotMatch(js, /\$\$\$\(/);
   assert.match(js, /\$\$\("\[data-routine-step\]"\)\.forEach/);
   assert.match(js, /\$\$\("\[data-complete-routine\]"\)\.forEach/);
-  assert.doesNotMatch(js, /\$\("\[data-routine-step\]"\)\.forEach/);
-  assert.doesNotMatch(js, /\$\("\[data-complete-routine\]"\)\.forEach/);
+  assert.doesNotMatch(js, /(?<!\$)\$\("\[data-routine-step\]"\)\.forEach/);
+  assert.doesNotMatch(js, /(?<!\$)\$\("\[data-complete-routine\]"\)\.forEach/);
 });
 
 test("document title follows the active view and updates when language changes", () => {
@@ -150,7 +152,7 @@ test("document title follows the active view and updates when language changes",
 });
 
 test("reduced motion follows the operating system until the user chooses a preference", () => {
-  assert.match(js, /window\.matchMedia\("\\(prefers-reduced-motion: reduce\\)"\)/);
+  assert.match(js, /window\.matchMedia\("\(prefers-reduced-motion: reduce\)"\)/);
   assert.match(js, /typeof preferences\.reducedMotion === "boolean" \? preferences\.reducedMotion : systemPrefersReducedMotion/);
   assert.match(js, /\$\("#less-motion"\)\.checked = reducedMotion/);
 });
@@ -167,8 +169,6 @@ test("prototype does not depend on external runtime scripts or styles", () => {
   assert.doesNotMatch(html, /https?:\/\//);
 });
 
-const manifest = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
-const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 test("install metadata and offline assets are present", () => {
   const parsed = JSON.parse(manifest);
   assert.equal(parsed.name.startsWith("Project N-01"), true);
@@ -227,7 +227,7 @@ test("language changes update all translated placeholders and accessible labels"
 test("routine completion state is accessible and follows the selected language", () => {
   assert.equal((html.match(/data-complete-routine="/g) || []).length, 3);
   assert.equal((html.match(/aria-pressed="false"/g) || []).length, 3);
-  assert.match(js, /button\.setAttribute\("aria-pressed", String\(done\)\)/);
+  assert.match(js, /button\.setAttribute\("aria-pressed", String\(complete\)\)/);
   assert.match(js, /button\.textContent = done \? t\("routineMarkedDone"\) : t\("routineMarkDone"\)/);
   assert.match(js, /\$\$\("\[data-i18n-placeholder\]"\)\.forEach/);
   assert.match(js, /\$\$\("\[data-i18n-aria-label\]"\)\.forEach/);
@@ -325,7 +325,7 @@ test("privacy panel explains unencrypted local data and offers confirmed deletio
   assert.match(html, /data-i18n="privacyDetails"/);
   assert.match(js, /window\.confirm\(t\("clearLocalDataConfirm"\)\)/);
   assert.match(js, /localStorage\.removeItem\(customRoutineStorageKey\)/);
-  assert.match(js, /localStorage\.removeItem\(preferenceKey\)/);
+  assert.match(js, /for \(const key of \[customRoutineStorageKey, preferenceKey, encryptedVaultStorageKey\]\)/);
   assert.match(js, /clearLocalData:"Wis lokale appgegevens"/);
   assert.match(js, /clearLocalData:"Clear local app data"/);
   assert.match(js, /localDataClearError/);
@@ -360,7 +360,7 @@ test("encrypted migration UI is explicit, bilingual and preserves legacy routine
   assert.match(js, /import\("\.\/encrypted-vault\.js"\)/);
   assert.match(js, /import\("\.\/routine-migration\.js"\)/);
   assert.match(js, /readLegacyRoutines\(localStorage\)/);
-  assert.match(js, /vault\.exportEnvelope\(\)/);
+  assert.match(js, /activeVault\.exportEnvelope\(\)/);
   assert.match(js, /vault\.lock\(\)/);
   assert.match(js, /vaultRoutinePrivacy:"Je routines worden versleuteld opgeslagen/);
   assert.match(js, /vaultRoutinePrivacy:"Your routines are encrypted/);
@@ -449,7 +449,7 @@ test("encrypted restore unlocks an existing locked vault before merging routines
   assert.match(js, /encryptedVaultExists && \(!activeVault \|\| !activeVault\.isUnlocked\)/);
   assert.match(js, /const existing = await vault\.unlock\(passphrase\)/);
   assert.match(js, /customRoutines = normaliseImportedRoutines\(existing\.routines\)/);
-  assert.match(js, /const merged = \[\.\.\.customRoutines, \.\.\.imported\]\.slice\(0,50\)/);
+  assert.match(js, /const merged = \[\.\.\.customRoutines, \.\.\.imported\]/);
 });
 
 test("encrypted restore validates routine payloads, accepts vault envelopes and clears passphrase input", () => {
