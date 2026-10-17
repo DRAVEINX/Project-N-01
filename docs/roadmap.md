@@ -28,6 +28,7 @@
 ## Phase 3 — Product foundation
 - [ ] Final brand/name research across app stores, BOIP/EUIPO/TMview and domain availability
 - [ ] Architecture decision for native Android and Windows implementations
+- [x] Prototype privacy panel explains unencrypted browser storage and offers confirmed deletion of routines/preferences
 - [ ] Data model and local-first storage strategy
 - [ ] Backup/export and deletion design
 - [ ] Threat model and privacy review
