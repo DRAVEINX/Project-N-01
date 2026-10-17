@@ -89,6 +89,21 @@
           <article class="routine-card"><span class="routine-icon afternoon">☁</span><p class="eyebrow" data-i18n="afternoon">MIDDAG</p><h3 data-i18n="afternoonTitle">Even opnieuw kijken</h3><ol><li><label class="routine-step"><input type="checkbox" data-routine-step="afternoon"><span data-i18n="afternoon1">Check mijn planning</span></label></li><li><label class="routine-step"><input type="checkbox" data-routine-step="afternoon"><span data-i18n="afternoon2">Kies één volgende stap</span></label></li><li><label class="routine-step"><input type="checkbox" data-routine-step="afternoon"><span data-i18n="afternoon3">Plan een pauze</span></label></li></ol><p class="routine-progress" data-routine-progress="afternoon" role="status" aria-live="polite"></p><button class="secondary-button" data-complete-routine="afternoon" data-i18n="markDone" aria-pressed="false">Markeer als klaar</button></article>
           <article class="routine-card"><span class="routine-icon evening">☾</span><p class="eyebrow" data-i18n="evening">AVOND</p><h3 data-i18n="eveningTitle">Zacht afronden</h3><ol><li><label class="routine-step"><input type="checkbox" data-routine-step="evening"><span data-i18n="evening1">Spullen klaarleggen</span></label></li><li><label class="routine-step"><input type="checkbox" data-routine-step="evening"><span data-i18n="evening2">Een fijn moment onthouden</span></label></li><li><label class="routine-step"><input type="checkbox" data-routine-step="evening"><span data-i18n="evening3">Scherm rustig afsluiten</span></label></li></ol><p class="routine-progress" data-routine-progress="evening" role="status" aria-live="polite"></p><button class="secondary-button" data-complete-routine="evening" data-i18n="markDone" aria-pressed="false">Markeer als klaar</button></article>
         </div>
+
+        <section class="custom-routine-panel" aria-labelledby="custom-routine-title">
+          <h3 id="custom-routine-title" data-i18n="customRoutineTitle">Maak je eigen routine</h3>
+          <p class="section-subtitle" data-i18n="customRoutineIntro">Kies een naam en zet elke stap op een aparte regel.</p>
+          <form id="custom-routine-form" class="custom-routine-form">
+            <label for="custom-routine-name" data-i18n="customRoutineName">Naam van de routine</label>
+            <input id="custom-routine-name" name="routineName" maxlength="60" required data-i18n-placeholder="customRoutineNamePlaceholder" placeholder="Bijvoorbeeld: Klaarmaken om weg te gaan">
+            <label for="custom-routine-steps" data-i18n="customRoutineSteps">Stappen (één per regel, maximaal 10)</label>
+            <textarea id="custom-routine-steps" name="routineSteps" rows="4" maxlength="800" required data-i18n-placeholder="customRoutineStepsPlaceholder" placeholder="Tas pakken&#10;Sleutels controleren&#10;Jas aantrekken"></textarea>
+            <p class="privacy-hint" data-i18n="customRoutinePrivacy">Eigen routines worden alleen in deze browser bewaard. Deze prototype-opslag is niet versleuteld; zet hier geen gevoelige informatie in.</p>
+            <button class="primary-button" type="submit" data-i18n="customRoutineAdd">Routine toevoegen</button>
+          </form>
+          <div id="custom-routine-list" class="custom-routine-list" aria-live="polite"></div>
+          <p id="custom-routine-status" class="inline-status" role="status" aria-live="polite"></p>
+        </section>
         <p class="inline-status" id="routine-status" role="status" aria-live="polite"></p>
       </section>
 
