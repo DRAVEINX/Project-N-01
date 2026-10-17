@@ -1,7 +1,7 @@
 const path = require("node:path");
 const { relative, resolve, isAbsolute } = require("node:path");
 const { pathToFileURL } = require("node:url");
-const { app, BrowserWindow, net, protocol, shell } = require("electron");
+const { app, BrowserWindow, dialog, net, protocol, session, shell } = require("electron");
 
 protocol.registerSchemesAsPrivileged([{
   scheme: "mivoryntra",
@@ -55,6 +55,27 @@ async function createMainWindow() {
 }
 
 app.whenReady().then(async () => {
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    const trustedApp = webContents.getURL().startsWith("mivoryntra://app/");
+    if (!trustedApp) return callback(false);
+    if (permission === "notifications") return callback(true);
+    if (permission !== "media") return callback(false);
+
+    const options = {
+      type: "question",
+      title: "Mivoryntra",
+      message: "Mivoryntra is requesting microphone access.",
+      detail: "Allow this only when you start a voice recording. / Sta dit alleen toe wanneer je een spraakopname start.",
+      buttons: ["Allow / Toestaan", "Deny / Weigeren"],
+      defaultId: 1,
+      cancelId: 1,
+      noLink: true
+    };
+    const owner = BrowserWindow.fromWebContents(webContents);
+    const request = owner ? dialog.showMessageBox(owner, options) : dialog.showMessageBox(options);
+    void request.then(({ response }) => callback(response === 0)).catch(() => callback(false));
+  });
+
   const root = resolve(desktopAssetRoot());
   protocol.handle("mivoryntra", async request => {
     try {
