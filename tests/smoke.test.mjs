@@ -233,6 +233,15 @@ test("routines can be completed one step at a time", () => {
   assert.match(js, /\$\$\("\[data-complete-routine\]"\)\.forEach/);
 });
 
+test("routine imports reject over-limit backups without silently truncating existing routines", () => {
+  assert.match(js, /if \(validCandidateCount > 50\)/);
+  assert.match(js, /if \(customRoutines\.length \+ imported\.length > 50\)/);
+  assert.match(js, /error\?\.message === "routine-limit"/);
+  assert.match(js, /routineImportLimit:"Deze back-up past niet: maximaal 50 routines zijn toegestaan\. Er is niets gewijzigd\."/);
+  assert.match(js, /routineImportLimit:"This backup would exceed the 50-routine limit\. Nothing was changed\."/);
+  assert.doesNotMatch(js, /const merged = \[\.\.\.customRoutines, \.\.\.imported\]\.slice\(0,50\)/);
+});
+
 test("language controls and phrase close button have translated accessible labels", () => {
   assert.match(html, /id="language"[^>]*data-i18n-aria-label="languageSelectLabel"/);
   assert.match(html, /id="language-settings"[^>]*data-i18n-aria-label="languageSettingsLabel"/);
