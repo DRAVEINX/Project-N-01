@@ -10,6 +10,8 @@ const VERSION = 1;
 const ITERATIONS = 310_000;
 const SALT_BYTES = 16;
 const IV_BYTES = 12;
+const MAX_PLAINTEXT_BYTES = 1_000_000;
+const MAX_CIPHERTEXT_BYTES = MAX_PLAINTEXT_BYTES + 16;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
@@ -68,7 +70,10 @@ export async function encryptJson(value, passphrase) {
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
   const key = await deriveKey(passphrase, salt);
-  const plaintext = encoder.encode(JSON.stringify(value));
+  const serialized = JSON.stringify(value);
+  if (typeof serialized !== "string") throw new Error("Only JSON-serializable values can be encrypted.");
+  const plaintext = encoder.encode(serialized);
+  if (plaintext.length > MAX_PLAINTEXT_BYTES) throw new Error("Encrypted data exceeds the 1 MB limit.");
   const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv, tagLength: 128 }, key, plaintext);
   return {
     format: FORMAT,
@@ -94,9 +99,11 @@ export async function decryptJson(envelope, passphrase) {
   const salt = fromBase64(envelope.salt, SALT_BYTES);
   const iv = fromBase64(envelope.iv, IV_BYTES);
   const ciphertext = fromBase64(envelope.ciphertext);
+  if (ciphertext.length > MAX_CIPHERTEXT_BYTES) throw new Error("Encrypted data exceeds the 1 MB limit.");
   if (ciphertext.length < 16) throw new Error("Invalid encrypted data format.");
   const key = await deriveKey(passphrase, salt);
   const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv, tagLength: 128 }, key, ciphertext);
+  if (plaintext.byteLength > MAX_PLAINTEXT_BYTES) throw new Error("Decrypted data exceeds the 1 MB limit.");
   return JSON.parse(decoder.decode(plaintext));
 }
 
