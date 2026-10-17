@@ -194,3 +194,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
  .launch-card{animation:none!important}
  .launch-orbit,.launch-glow{display:none}
 }
+
+.trusted-photo{display:block;width:76px;height:76px;object-fit:cover;border-radius:20px;border:1px solid var(--line);margin-bottom:12px;background:#101421}
+#person-photo{padding:9px}
+@media(max-width:760px){.trusted-photo{width:68px;height:68px;border-radius:17px}}
