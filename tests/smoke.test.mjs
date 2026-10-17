@@ -216,3 +216,13 @@ test("encrypted restore validates format before adding routines and clears passp
   assert.match(js, /customRoutines = previous/);
   assert.match(js, /\$\("#backup-passphrase"\)\.value = ""/);
 });
+
+test("encryption rejects non-JSON values and oversized payloads", async () => {
+  await assert.rejects(() => encryptJson(undefined, "een-veilige-testzin-123"), /JSON-serializable/);
+  await assert.rejects(() => encryptJson({ text: "x".repeat(1_000_001) }, "een-veilige-testzin-123"), /1 MB limit/);
+});
+test("encrypted envelopes enforce ciphertext size limits before decrypting", async () => {
+  const envelope = await encryptJson({ ok: true }, "een-veilige-testzin-123");
+  envelope.ciphertext = "A".repeat(1_400_000);
+  await assert.rejects(() => decryptJson(envelope, "een-veilige-testzin-123"), /1 MB limit/);
+});
