@@ -44,3 +44,8 @@ This is an engineering plan, not a certification, legal assessment, or claim tha
 The routine screen now offers a separate encrypted JSON backup and restore flow. The user supplies a passphrase (minimum 12 characters); the passphrase field is cleared after the operation and is not written to the backup. The encrypted file is limited to 1 MiB on import and decrypted content is schema-checked before routines are added. Import merges routines and keeps the existing maximum of 50 templates.
 
 **Important limitation:** the encrypted backup file is encrypted, but when restored, routines are still saved in the prototype's ordinary unencrypted browser `localStorage`. This is not end-to-end encrypted app storage. The existing plaintext export remains available and is still explicitly labelled as unencrypted. Do not store sensitive information in this prototype.
+
+
+## Payload-size guard
+
+The experimental Web Crypto helper now rejects values that cannot be serialized as JSON and caps plaintext and decrypted data at 1,000,000 bytes. Encrypted input is rejected if its decoded ciphertext exceeds the corresponding limit plus the 16-byte AES-GCM authentication tag. This defensive resource limit is not a substitute for a security review.
