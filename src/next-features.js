@@ -11,6 +11,7 @@
       agendaEnableReminders:"Meldingen inschakelen", reminderEnabledStatus:"Meldingen zijn ingeschakeld. Herinneringen werken zolang Mivoryntra open is en meldingen zijn toegestaan.", reminderUnsupported:"Deze browser ondersteunt geen meldingen.", reminderDenied:"Meldingen zijn niet toegestaan. Controleer de browserinstellingen.",
       agendaRepeatHint:"Wekelijkse herhalingen worden als losse afspraken aangemaakt; wijzigingen gelden per afspraak.", agendaRecurringSaved:"{count} wekelijkse afspraken zijn opgeslagen.",
       agendaSearch:"Zoek in afspraken", agendaFilter:"Weergave", filterAll:"Alle afspraken", filterUpcoming:"Komende afspraken", filterCompleted:"Afgeronde afspraken", agendaNoMatch:"Geen afspraken die aan je zoekopdracht voldoen.", agendaCount:"{count} afspraken zichtbaar.",
+      agendaMonthTitle:"Maandoverzicht", agendaMonthPrevious:"Vorige maand", agendaMonthNext:"Volgende maand", agendaMonthToday:"Vandaag", agendaMonthClear:"Toon alle datums", agendaSelectedDate:"Geselecteerde datum: {date}", monthMon:"Ma", monthTue:"Di", monthWed:"Wo", monthThu:"Do", monthFri:"Vr", monthSat:"Za", monthSun:"Zo",
       moodDelete:"Check-in verwijderen",
       agendaAdd:"Afspraak opslaan",
       agendaEmpty:"Er staan nog geen afspraken in je planner.", agendaDone:"Afgerond", agendaUndo:"Opnieuw openzetten", agendaDelete:"Afspraak verwijderen", agendaEdit:"Afspraak bewerken", agendaCancelEdit:"Bewerken annuleren", agendaUpdate:"Wijzigingen opslaan", agendaUpdated:"De afspraak is bijgewerkt.", agendaEditStarted:"Je kunt de afspraak nu aanpassen.",
@@ -45,6 +46,7 @@
       agendaEnableReminders:"Enable notifications", reminderEnabledStatus:"Notifications are enabled. Reminders work while Mivoryntra is open and notifications are allowed.", reminderUnsupported:"This browser does not support notifications.", reminderDenied:"Notifications are not allowed. Check your browser settings.",
       agendaRepeatHint:"Weekly repetitions are created as separate appointments; edit each occurrence individually.", agendaRecurringSaved:"{count} weekly appointments were saved.",
       agendaSearch:"Search appointments", agendaFilter:"View", filterAll:"All appointments", filterUpcoming:"Upcoming appointments", filterCompleted:"Completed appointments", agendaNoMatch:"No appointments match your search.", agendaCount:"{count} appointments shown.",
+      agendaMonthTitle:"Month view", agendaMonthPrevious:"Previous month", agendaMonthNext:"Next month", agendaMonthToday:"Today", agendaMonthClear:"Show all dates", agendaSelectedDate:"Selected date: {date}", monthMon:"Mon", monthTue:"Tue", monthWed:"Wed", monthThu:"Thu", monthFri:"Fri", monthSat:"Sat", monthSun:"Sun",
       moodDelete:"Delete check-in",
       agendaAdd:"Save appointment",
       agendaEmpty:"There are no appointments in your planner yet.", agendaDone:"Completed", agendaUndo:"Mark as open", agendaDelete:"Delete appointment", agendaEdit:"Edit appointment", agendaCancelEdit:"Cancel editing", agendaUpdate:"Save changes", agendaUpdated:"Appointment updated.", agendaEditStarted:"You can edit this appointment now.",
@@ -76,6 +78,9 @@
   let language = "nl";
   let lastUnlocked = false;
   let editingAppointmentId = null;
+  let agendaMonthCursor = new Date();
+  agendaMonthCursor.setDate(1);agendaMonthCursor.setHours(12,0,0,0);
+  let selectedAgendaDate = "";
   let editingPersonId = null;
   let editingPersonPhoto = "";
   let editingWorkScheduleId = null;
@@ -261,6 +266,24 @@
     const reminderStatus=make("p","inline-status");reminderStatus.id="agenda-reminder-status";reminderStatus.setAttribute("role","status");reminderStatus.setAttribute("aria-live","polite");
     reminderTools.append(enableReminders,reminderStatus);
     const week = make("div", "week-strip"); week.id="agenda-week";
+    const monthPanel=make("section","agenda-month-panel");monthPanel.setAttribute("aria-labelledby","agenda-month-title");
+    const monthToolbar=make("div","agenda-month-toolbar");
+    const monthTitle=make("h3","feature-subheading",text("agendaMonthTitle"));monthTitle.id="agenda-month-title";monthTitle.dataset.featureText="agendaMonthTitle";
+    const previousMonth=button(text("agendaMonthPrevious"),"secondary-button",()=>{agendaMonthCursor=new Date(agendaMonthCursor.getFullYear(),agendaMonthCursor.getMonth()-1,1,12);selectedAgendaDate="";renderAgenda();});
+    previousMonth.id="agenda-month-previous";previousMonth.dataset.featureText="agendaMonthPrevious";
+    const nextMonth=button(text("agendaMonthNext"),"secondary-button",()=>{agendaMonthCursor=new Date(agendaMonthCursor.getFullYear(),agendaMonthCursor.getMonth()+1,1,12);selectedAgendaDate="";renderAgenda();});
+    nextMonth.id="agenda-month-next";nextMonth.dataset.featureText="agendaMonthNext";
+    const todayMonth=button(text("agendaMonthToday"),"secondary-button",()=>{const now=new Date();agendaMonthCursor=new Date(now.getFullYear(),now.getMonth(),1,12);selectedAgendaDate=localDate(now);renderAgenda();});
+    todayMonth.id="agenda-month-today";todayMonth.dataset.featureText="agendaMonthToday";
+    const clearMonth=button(text("agendaMonthClear"),"secondary-button",()=>{selectedAgendaDate="";renderAgenda();});
+    clearMonth.id="agenda-month-clear";clearMonth.dataset.featureText="agendaMonthClear";
+    const monthLabel=make("p","agenda-month-label","");monthLabel.id="agenda-month-label";monthLabel.setAttribute("aria-live","polite");
+    monthToolbar.append(monthTitle,previousMonth,monthLabel,nextMonth,todayMonth,clearMonth);
+    const weekdayRow=make("div","agenda-month-weekdays");
+    for(const key of ["monthMon","monthTue","monthWed","monthThu","monthFri","monthSat","monthSun"]){const day=make("span","agenda-month-weekday",text(key));day.dataset.featureText=key;weekdayRow.append(day);}
+    const monthGrid=make("div","agenda-month-grid");monthGrid.id="agenda-month-grid";monthGrid.setAttribute("role","group");
+    const monthStatus=make("p","privacy-hint");monthStatus.id="agenda-month-status";monthStatus.setAttribute("aria-live","polite");
+    monthPanel.append(monthToolbar,weekdayRow,monthGrid,monthStatus);
     const listHeading=make("h3", "feature-subheading", text("weekHeading")); listHeading.dataset.featureText="weekHeading";
     const filterBar=make("div","agenda-filter-toolbar");
     const searchBox=make("div");const searchLabel=make("label","",text("agendaSearch"));searchLabel.htmlFor="agenda-search";searchLabel.dataset.featureText="agendaSearch";
@@ -273,7 +296,7 @@
     filterBar.append(searchBox,filterBox);
     const resultCount=make("p","privacy-hint");resultCount.id="agenda-results";resultCount.setAttribute("aria-live","polite");
     const list=make("div","feature-list"); list.id="agenda-list";
-    secureContents.append(reminderTools,week,listHeading,filterBar,resultCount,list);
+    secureContents.append(reminderTools,week,monthPanel,listHeading,filterBar,resultCount,list);
     search.addEventListener("input",renderAgenda);filter.addEventListener("change",renderAgenda);
     fragment.append(form,gate,secureContents);
     form.addEventListener("submit", async event => {
@@ -612,11 +635,13 @@
     let items=[];
     try{items=secureData().agendaItems;}catch{return;}
     const availableItems=items.length;
+    const allItems=items.slice();
     const today=localDate();
     const query=($("#agenda-search")?.value||"").trim().toLocaleLowerCase(language==="nl"?"nl-NL":"en-GB");
     const filter=$("#agenda-filter")?.value||"all";
     items=items.filter(item=>{
       if(!item||typeof item.title!=="string"||typeof item.date!=="string")return false;
+      if(selectedAgendaDate&&item.date!==selectedAgendaDate)return false;
       if(filter==="upcoming"&&(item.done||item.date<today))return false;
       if(filter==="completed"&&!item.done)return false;
       if(query&&!((item.title+" "+(item.details||"")).toLocaleLowerCase(language==="nl"?"nl-NL":"en-GB").includes(query)))return false;
@@ -626,13 +651,14 @@
       const date=new Date();date.setHours(12,0,0,0);date.setDate(date.getDate()+offset);
       const key=localDate(date);
       const day=make("div","week-day");
-      const count=items.filter(item=>item.date===key&&!item.done).length;
+      const count=allItems.filter(item=>item.date===key&&!item.done).length;
       day.append(make("span","week-day-name",new Intl.DateTimeFormat(language==="nl"?"nl-NL":"en-GB",{weekday:"short"}).format(date)));
       day.append(make("strong","week-day-date",String(date.getDate())));
       day.append(make("small","week-day-count",String(count)));
       if(key===today)day.classList.add("is-today");
       week.append(day);
     }
+    renderAgendaMonth(allItems);
     items.sort((a,b)=>(String(a.date)+" "+String(a.time||"")).localeCompare(String(b.date)+" "+String(b.time||"")));
     const results=$("#agenda-results");if(results)results.textContent=text("agendaCount").replace("{count}",String(items.length));
     if(!items.length){list.append(make("p","privacy-hint",text(availableItems?"agendaNoMatch":"agendaEmpty")));return;}
@@ -652,6 +678,32 @@
       list.append(card);
     }
   }
+  function renderAgendaMonth(items){
+    const grid=$("#agenda-month-grid"),label=$("#agenda-month-label"),status=$("#agenda-month-status");
+    if(!grid||!label||!status)return;
+    grid.replaceChildren();
+    const year=agendaMonthCursor.getFullYear(),month=agendaMonthCursor.getMonth();
+    const first=new Date(year,month,1,12),dayOffset=(first.getDay()+6)%7,dayCount=new Date(year,month+1,0,12).getDate();
+    label.textContent=new Intl.DateTimeFormat(language==="nl"?"nl-NL":"en-GB",{month:"long",year:"numeric"}).format(first);
+    const counts=new Map();
+    for(const item of items){if(item&&typeof item.date==="string")counts.set(item.date,(counts.get(item.date)||0)+1);}
+    const totalCells=Math.ceil((dayOffset+dayCount)/7)*7;
+    for(let cell=0;cell<totalCells;cell++){
+      const date=new Date(year,month,cell-dayOffset+1,12);
+      const key=localDate(date),inMonth=date.getMonth()===month,count=counts.get(key)||0;
+      const day=button(String(date.getDate()),"agenda-month-day",()=>{selectedAgendaDate=key;renderAgenda();});
+      day.disabled=!inMonth;
+      day.classList.toggle("is-selected",selectedAgendaDate===key);
+      day.classList.toggle("has-appointments",count>0);
+      day.setAttribute("aria-pressed",String(selectedAgendaDate===key));
+      day.setAttribute("aria-label",dateLabel(key)+(count?(", "+count+" "+(language==="nl"?"afspraken":"appointments")):""));
+      day.dataset.agendaDate=key;
+      if(count){const badge=make("small","agenda-month-count",String(count));badge.setAttribute("aria-hidden","true");day.append(badge);}
+      grid.append(day);
+    }
+    status.textContent=selectedAgendaDate?text("agendaSelectedDate").replace("{date}",dateLabel(selectedAgendaDate)):"";
+  }
+
   async function checkAppointmentReminders(){
     if(!app()||!app().isVaultUnlocked()||!("Notification" in window)||Notification.permission!=="granted")return;
     const now=new Date();
