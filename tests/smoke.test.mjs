@@ -783,3 +783,14 @@ test("reduced-motion preference respects the system default unless the user save
   assert.match(js, /reducedMotion: \$\("#less-motion"\)\.checked/);
   assert.match(js, /\$\("#less-motion"\)\.addEventListener\("change", event => \{[\s\S]*?savePreferences\(\)/);
 });
+
+test("voice recording permission failures release the microphone and restore controls", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const start = app.indexOf('voiceNoteStart.addEventListener("click", async () => {');
+  const end = app.indexOf('\n});', start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const handler = app.slice(start, end);
+  assert.match(handler, /catch \{[\s\S]*?releaseVoiceStream\(\);[\s\S]*?voiceNoteStart\.disabled = false;[\s\S]*?voiceNoteStop\.disabled = true;[\s\S]*?recordingPermissionError/);
+  assert.match(app, /function releaseVoiceStream\(\) \{\s*if \(voiceStream\) voiceStream\.getTracks\(\)\.forEach\(track => track\.stop\(\)\);\s*voiceStream = null;/);
+});
