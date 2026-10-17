@@ -20,7 +20,7 @@ export function findDuplicateAppointment(candidate, appointments, excludeId = nu
   for (const existing of appointments) {
     if (!existing || typeof existing !== "object") continue;
     if (excludeId && existing.id === excludeId) continue;
-    if (existing.date !== candidate.date) continue;
+    if (existing.done || existing.date !== candidate.date) continue;
 
     const existingTime = timeToMinutes(existing.time);
     if (candidateTime !== null && existingTime !== null) {
@@ -112,10 +112,6 @@ export function getWorkWeekCopies(assignments, targetWeekStart) {
   });
   const existingKeys = new Set(assignments.filter(item => item && typeof item === "object").map(item => item.date + "|" + normaliseAppointmentTitle(item.name)));
   const results = [];
-  for (const item of assignments) {
-    if (!item || typeof item !== "object" || typeof item.date !== "string" || !targetDates.includes(item.date)) continue;
-    // Items in targetDates are not the previous week; select source-week below.
-  }
   const previousDates = Array.from({ length: 7 }, (_, offset) => {
     const date = new Date(previous);
     date.setDate(date.getDate() + offset);
