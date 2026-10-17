@@ -3,7 +3,7 @@
  * This runs on decrypted data before the vault adapter writes the new envelope.
  */
 export function validateFullVaultData(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  if (!value || typeof value !== "object" || Array.isArray(value) || !Array.isArray(value.routines) || value.routines.length > 50) return false;
   let serialized;
   try { serialized = JSON.stringify(value); } catch { return false; }
   if (typeof serialized !== "string" || new TextEncoder().encode(serialized).byteLength > 1_000_000) return false;
@@ -21,8 +21,9 @@ export function validateFullVaultData(value) {
     return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
   };
   if ((value.routines || []).some(item =>
-    !item || typeof item !== "object" || !text(item.name, 60, true) ||
-    !Array.isArray(item.steps) || item.steps.length > 10 || item.steps.some(step => !text(step, 120, true))
+    !item || typeof item !== "object" || !text(item.id, 120, true) || !text(item.name, 60, true) ||
+    !Array.isArray(item.steps) || item.steps.length < 1 || item.steps.length > 10 ||
+    item.steps.some(step => !text(step, 120, true))
   )) return false;
   if ((value.journalEntries || []).some(item =>
     !item || typeof item !== "object" || !text(item.text, 5000, true) || !text(item.id, 120, true)
