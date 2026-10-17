@@ -134,3 +134,13 @@ test("custom routine export and import controls validate files and disclose priv
   assert.match(js, /\.slice\(0,\s*50\)/);
   assert.match(js, /routineBackupPrivacy:"Export files are not encrypted/);
 });
+
+test("custom routines can be cleared with a confirmation and bilingual accessible controls", () => {
+  assert.match(html, /id="clear-custom-routines"/);
+  assert.match(js, /window\.confirm\(t\("clearRoutinesConfirm"\)\)/);
+  assert.match(js, /clearRoutines:"Alle eigen routines wissen"/);
+  assert.match(js, /clearRoutines:"Clear all custom routines"/);
+  assert.match(js, /customRoutines = \[\]/);
+  assert.equal((html.match(/id="export-custom-routines"/g) || []).length, 1);
+  assert.equal((html.match(/id="import-custom-routines"/g) || []).length, 1);
+});
