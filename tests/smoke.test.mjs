@@ -165,6 +165,11 @@ test("encrypted migration UI is explicit, bilingual and preserves legacy routine
   assert.match(js, /readLegacyRoutines\(localStorage\)/);
   assert.match(js, /vault\.exportEnvelope\(\)/);
   assert.match(js, /vault\.lock\(\)/);
+  assert.match(js, /vaultRoutinePrivacy:"Je routines worden versleuteld opgeslagen/);
+  assert.match(js, /vaultRoutinePrivacy:"Your routines are encrypted/);
+  assert.match(js, /routinePrivacy.textContent = encryptedVaultExists && !locked/);
+  assert.match(js, /updateVaultControls\(\);/);
+  assert.match(js, /if \(!\(await saveCustomRoutines\(\)\)\)/);
   assert.match(js, /vaultMigrationSuccess:"De versleutelde kluis is gemaakt/);
   assert.match(js, /vaultMigrationSuccess:"The encrypted vault was created/);
   assert.match(js, /De oorspronkelijke routines blijven staan en zijn nog steeds onversleuteld/);
