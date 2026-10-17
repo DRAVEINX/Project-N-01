@@ -2,7 +2,7 @@ name: Project N-01 Android build
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/brand-splash-next-features]
     paths:
       - "index.html"
       - "offline.html"
