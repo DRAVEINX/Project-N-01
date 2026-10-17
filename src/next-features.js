@@ -14,7 +14,7 @@
       moodSaved:"Je stemming is veilig opgeslagen.", moodEmpty:"Er zijn nog geen stemmingen opgeslagen.", moodHistory:"Recente check-ins", moodError:"Opslaan lukte niet. Ontgrendel de kluis en controleer of er voldoende ruimte is.",
       peopleEyebrow:"MENSEN OM JE HEEN", peopleTitle:"Vertrouwde mensen", peopleIntro:"Bewaar contactgegevens van mensen bij wie je terechtkunt. Deze gegevens blijven in jouw versleutelde kluis.",
       peopleName:"Naam", peoplePhoto:"Foto (optioneel, maximaal 120 KB)", peoplePhotoTooLarge:"Kies een PNG-, JPG- of WebP-foto van maximaal 120 KB.", peopleRole:"Wie is deze persoon voor jou?", peopleContact:"Telefoon, e-mail of andere contactgegevens", peopleDetails:"Extra informatie (optioneel)", peopleAdd:"Contact opslaan",
-      peopleEmpty:"Je hebt nog geen vertrouwde mensen toegevoegd.", peopleDelete:"Contact verwijderen", peopleSaved:"Contact is veilig opgeslagen.", peopleError:"Opslaan lukte niet. Ontgrendel de kluis en controleer of er voldoende ruimte is.",
+      peopleEmpty:"Je hebt nog geen vertrouwde mensen toegevoegd.", peopleDelete:"Contact verwijderen", peopleEdit:"Contact bewerken", peopleCancelEdit:"Bewerken annuleren", peopleUpdate:"Wijzigingen opslaan", peopleUpdated:"Contact is bijgewerkt.", peopleEditStarted:"Je kunt het contact nu aanpassen.", peopleSaved:"Contact is veilig opgeslagen.", peopleError:"Opslaan lukte niet. Ontgrendel de kluis en controleer of er voldoende ruimte is.",
       secureGateTitle:"Je persoonlijke gegevens zijn vergrendeld", secureGateText:"Dagboek, stemming, afspraken, contacten en tekeningen worden alleen opgeslagen in je versleutelde kluis op dit apparaat. Ontgrendel de kluis via Routines om verder te gaan.",
       openVault:"Naar de kluisinstellingen", privateLocalOnly:"Alleen op dit apparaat · versleutelde opslag · geen cloud-synchronisatie",
       journalSave:"Notitie veilig opslaan", journalSaveStatus:"Je notitie is veilig opgeslagen in de kluis.", journalEmpty:"Schrijf eerst iets voordat je het opslaat.",
@@ -37,7 +37,7 @@
       moodSaved:"Your mood was saved securely.", moodEmpty:"No moods have been saved yet.", moodHistory:"Recent check-ins", moodError:"Could not save. Unlock the vault and check that there is enough free space.",
       peopleEyebrow:"YOUR PEOPLE", peopleTitle:"Trusted people", peopleIntro:"Keep contact details for people you can turn to. These details stay in your encrypted vault.",
       peopleName:"Name", peoplePhoto:"Photo (optional, maximum 120 KB)", peoplePhotoTooLarge:"Choose a PNG, JPG or WebP photo of 120 KB or less.", peopleRole:"How do you know this person?", peopleContact:"Phone, email or other contact details", peopleDetails:"Extra details (optional)", peopleAdd:"Save contact",
-      peopleEmpty:"You have not added any trusted people yet.", peopleDelete:"Delete contact", peopleSaved:"Contact saved securely.", peopleError:"Could not save. Unlock the vault and check that there is enough free space.",
+      peopleEmpty:"You have not added any trusted people yet.", peopleDelete:"Delete contact", peopleEdit:"Edit contact", peopleCancelEdit:"Cancel editing", peopleUpdate:"Save changes", peopleUpdated:"Contact updated.", peopleEditStarted:"You can edit this contact now.", peopleSaved:"Contact saved securely.", peopleError:"Could not save. Unlock the vault and check that there is enough free space.",
       secureGateTitle:"Your personal information is locked", secureGateText:"Journal, mood, appointments, contacts and drawings are saved only in your encrypted vault on this device. Unlock the vault under Routines to continue.",
       openVault:"Open vault settings", privateLocalOnly:"This device only · encrypted storage · no cloud sync",
       journalSave:"Save note securely", journalSaveStatus:"Your note was saved securely in the vault.", journalEmpty:"Write something before saving it.",
@@ -278,9 +278,13 @@
       if(field.type==="file")input.accept="image/png,image/jpeg,image/webp";
       form.append(label,input);
     }
-    const submit=make("button","primary-button",text("peopleAdd")); submit.type="submit"; submit.dataset.featureText="peopleAdd";
+    const submit=make("button","primary-button",text("peopleAdd")); submit.type="submit"; submit.id="person-submit"; submit.dataset.featureText="peopleAdd";
+    const cancel=make("button","secondary-button",text("peopleCancelEdit")); cancel.type="button"; cancel.id="person-cancel-edit"; cancel.hidden=true; cancel.dataset.featureText="peopleCancelEdit";
     const status=make("p","inline-status"); status.id="people-status"; status.setAttribute("role","status"); status.setAttribute("aria-live","polite");
-    form.append(submit,status);
+    form.append(submit,cancel,status);
+    cancel.addEventListener("click",()=>{
+      editingPersonId=null; editingPersonPhoto=""; form.reset(); submit.textContent=text("peopleAdd"); cancel.hidden=true; status.textContent="";
+    });
     const gate=secureGate();gate.hidden=true;gate.dataset.secureGate="";
     const contents=make("div","secure-feature-contents");contents.dataset.secureContents="";
     const list=make("div","feature-list");list.id="people-list";
@@ -288,18 +292,30 @@
     form.addEventListener("submit",async event=>{
       event.preventDefault();
       if(!app().isVaultUnlocked()){status.textContent=text("secureGateTitle");gate.hidden=false;return;}
+      const targetId=editingPersonId;
       const photoFile=$("#person-photo").files && $("#person-photo").files[0];
-      let photo="";
+      let photo=targetId?editingPersonPhoto:"";
       if(photoFile){
         if(!["image/png","image/jpeg","image/webp"].includes(photoFile.type)||photoFile.size>120*1024){status.textContent=text("peoplePhotoTooLarge");return;}
         photo=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.addEventListener("load",()=>resolve(typeof reader.result==="string"?reader.result:""));reader.addEventListener("error",reject);reader.readAsDataURL(photoFile);});
-        if(!photo.startsWith("data:image/")||photo.length>180000){status.textContent=text("peoplePhotoTooLarge");return;}
+        if(!/^data:image\/(png|jpeg|webp);base64,/.test(photo)||photo.length>180000){status.textContent=text("peoplePhotoTooLarge");return;}
       }
-      const person={id:id("person"),name:$("#person-name").value.trim().slice(0,80),role:$("#person-role").value.trim().slice(0,80),contact:$("#person-contact").value.trim().slice(0,120),details:$("#person-details").value.trim().slice(0,500),photo,createdAt:new Date().toISOString()};
-      if(!person.name || !person.role)return;
+      const values={name:$("#person-name").value.trim().slice(0,80),role:$("#person-role").value.trim().slice(0,80),contact:$("#person-contact").value.trim().slice(0,120),details:$("#person-details").value.trim().slice(0,500),photo};
+      if(!values.name || !values.role)return;
       try{
-        await updateSecure(data=>{if(data.trustedPeople.length>=50)throw new Error("limit");data.trustedPeople.push(person);return data;});
-        form.reset();status.textContent=text("peopleSaved");renderPeople();
+        await updateSecure(data=>{
+          if(targetId){
+            const index=data.trustedPeople.findIndex(person=>person && person.id===targetId);
+            if(index<0)throw new Error("person-not-found");
+            data.trustedPeople[index]={...data.trustedPeople[index],...values,updatedAt:new Date().toISOString()};
+          }else{
+            if(data.trustedPeople.length>=50)throw new Error("limit");
+            data.trustedPeople.push({id:id("person"),...values,createdAt:new Date().toISOString()});
+          }
+          return data;
+        });
+        editingPersonId=null; editingPersonPhoto=""; form.reset(); submit.textContent=text("peopleAdd"); cancel.hidden=true;
+        status.textContent=text(targetId?"peopleUpdated":"peopleSaved");renderPeople();
       }catch{status.textContent=text("peopleError");}
     });
     return fragment;
@@ -380,6 +396,21 @@
       list.append(card);
     });
   }
+  function beginPersonEdit(person){
+    editingPersonId=person.id;
+    editingPersonPhoto=typeof person.photo==="string"?person.photo:"";
+    const form=$("#people-form");if(form)form.reset();
+    $("#person-name").value=person.name||"";
+    $("#person-role").value=person.role||"";
+    $("#person-contact").value=person.contact||"";
+    $("#person-details").value=person.details||"";
+    const submit=$("#person-submit"),cancel=$("#person-cancel-edit"),status=$("#people-status");
+    if(submit)submit.textContent=text("peopleUpdate");
+    if(cancel)cancel.hidden=false;
+    if(status)status.textContent=text("peopleEditStarted");
+    app().setView("people");
+    $("#person-name").focus();
+  }
   function renderPeople(){
     const list=$("#people-list");if(!list)return;list.replaceChildren();
     if(!app().isVaultUnlocked())return;
@@ -387,7 +418,7 @@
     if(!entries.length){list.append(make("p","privacy-hint",text("peopleEmpty")));return;}
     entries.forEach(person=>{
       const body=[person.contact,person.details].filter(Boolean).join("\n");
-      const card=createItemCard(person.name,person.role,body,[button(text("peopleDelete"),"secondary-button",async()=>{
+      const card=createItemCard(person.name,person.role,body,[button(text("peopleEdit"),"secondary-button",()=>beginPersonEdit(person)),button(text("peopleDelete"),"secondary-button",async()=>{
         try{await deleteItem("trustedPeople",person.id);renderPeople();}
         catch{$("#people-status").textContent=text("peopleError");}
       })]);
