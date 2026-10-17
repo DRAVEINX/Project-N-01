@@ -27,3 +27,7 @@
 .routine-backup-tools{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1rem}
 .file-pick-label{display:inline-flex;align-items:center;justify-content:center}
 .routine-backup-tools .secondary-button{max-width:100%}
+
+.routine-backup-tools{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1rem}
+.file-pick-label{display:inline-flex;align-items:center;justify-content:center}
+.routine-backup-tools .secondary-button{max-width:100%}
