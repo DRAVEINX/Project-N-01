@@ -13,6 +13,7 @@ export function validateFullVaultData(value) {
     if (value[key] !== undefined && (!Array.isArray(value[key]) || value[key].length > limit)) return false;
   }
   const text = (item, max, required = false) => typeof item === "string" && item.length <= max && (!required || Boolean(item.trim()));
+  const optionalText = (item, max) => item === undefined || (typeof item === "string" && item.length <= max);
   const date = item => {
     if (typeof item !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(item)) return false;
     const [year, month, day] = item.split("-").map(Number);
@@ -35,18 +36,18 @@ export function validateFullVaultData(value) {
     !item || typeof item !== "object" || !text(item.id, 120, true) ||
     !text(item.title, 80, true) || !date(item.date) ||
     (item.time !== "" && item.time !== undefined && (typeof item.time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.time))) ||
-    !text(item.details || "", 600)
+    !optionalText(item.details, 600)
   )) return false;
   if ((value.moodEntries || []).some(item =>
     !item || typeof item !== "object" || !text(item.id, 120, true) ||
     !date(item.date) || !Number.isInteger(item.mood) || item.mood < 1 || item.mood > 5 ||
-    !text(item.note || "", 300)
+    !optionalText(item.note, 300)
   )) return false;
   if ((value.trustedPeople || []).some(item =>
     !item || typeof item !== "object" || !text(item.id, 120, true) ||
     !text(item.name, 80, true) || !text(item.role, 80, true) ||
-    !text(item.contact || "", 120) || !text(item.details || "", 500) ||
-    !text(item.photo || "", 180000) ||
+    !optionalText(item.contact, 120) || !optionalText(item.details, 500) ||
+    !optionalText(item.photo, 180000) ||
     (item.photo && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(item.photo))
   )) return false;
   return true;
