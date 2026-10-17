@@ -3,7 +3,7 @@
   "use strict";
   const copy = {
     nl: {
-      navAgenda:"Weekplanner", navMood:"Stemming", navPeople:"Vertrouwde mensen",
+      navAgenda:"Weekplanner", navMood:"Stemming", navPeople:"Vertrouwde mensen", introAgain:"Introductie opnieuw bekijken",
       agendaEyebrow:"OVERZICHT", agendaTitle:"Mijn weekplanner", agendaIntro:"Leg afspraken vast en bekijk wat er de komende dagen op de planning staat.",
       agendaTitleLabel:"Waar gaat de afspraak over?", agendaDate:"Datum", agendaTime:"Tijd", agendaDetails:"Extra informatie (optioneel)", agendaAdd:"Afspraak opslaan",
       agendaEmpty:"Er staan nog geen afspraken in je planner.", agendaDone:"Afgerond", agendaUndo:"Opnieuw openzetten", agendaDelete:"Afspraak verwijderen",
@@ -26,7 +26,7 @@
       secureDeleteConfirm:"Wil je dit item definitief verwijderen?", deleting:"Verwijderen…", today:"Vandaag", done:"Klaar", cancel:"Annuleren"
     },
     en: {
-      navAgenda:"Week planner", navMood:"Mood", navPeople:"Trusted people",
+      navAgenda:"Week planner", navMood:"Mood", navPeople:"Trusted people", introAgain:"View the introduction again",
       agendaEyebrow:"OVERVIEW", agendaTitle:"My week planner", agendaIntro:"Add appointments and see what is planned for the coming days.",
       agendaTitleLabel:"What is the appointment about?", agendaDate:"Date", agendaTime:"Time", agendaDetails:"Extra details (optional)", agendaAdd:"Save appointment",
       agendaEmpty:"There are no appointments in your planner yet.", agendaDone:"Completed", agendaUndo:"Mark as open", agendaDelete:"Delete appointment",
@@ -105,9 +105,13 @@
     const gate = make("div", "private-gate");
     const lockMark = make("div", "private-gate-mark", "✦");
     lockMark.setAttribute("aria-hidden", "true");
-    gate.append(lockMark, make("h3", "", text("secureGateTitle")), make("p", "", text("secureGateText")));
+    const heading = make("h3", "", text("secureGateTitle")); heading.dataset.featureText = "secureGateTitle";
+    const explain = make("p", "", text("secureGateText")); explain.dataset.featureText = "secureGateText";
+    gate.append(lockMark, heading, explain);
     const action = button(text("openVault"), "primary-button", () => app().focusVaultSetup());
-    gate.append(action, make("p", "privacy-hint", text("privateLocalOnly")));
+    action.dataset.featureText = "openVault";
+    const hint = make("p", "privacy-hint", text("privateLocalOnly")); hint.dataset.featureText = "privateLocalOnly";
+    gate.append(action, hint);
     return gate;
   }
   function addView(viewId, icon, navKey, viewTitleKey, eyebrowKey, introKey, contentBuilder) {
@@ -121,8 +125,7 @@
     const caption = make("span", "", text(navKey));
     caption.dataset.featureText = navKey;
     navButton.append(glyph, caption);
-    if (anchor && anchor.nextSibling) nav.insertBefore(navButton, anchor.nextSibling);
-    else nav.append(navButton);
+    nav.append(navButton);
     navButton.addEventListener("click", () => app().setView(viewId));
 
     const view = make("section", "view");
@@ -141,8 +144,8 @@
     heading.append(headingInner);
     view.append(heading);
     const area = make("div", "feature-area");
-    const editor = contentBuilder();
-    editor.classList.add("feature-editor");
+    const editor = make("div", "feature-editor");
+    editor.append(contentBuilder());
     area.append(editor);
     view.append(area);
     const footer = $(".app-footer");
@@ -451,6 +454,11 @@
       $$(".drawing-gallery img").forEach(img=>{img.removeAttribute("src");});
       $$(".feature-list,.drawing-gallery").forEach(list=>list.replaceChildren());
     }
+    ["agenda-form","mood-form","people-form"].forEach(formId=>{
+      const form=$("#"+formId);
+      if(form) $("input,select,textarea,button",form).forEach(control=>{control.disabled=!unlocked;});
+    });
+    setNoteGateVisible(!unlocked);
     if(unlocked && !lastUnlocked){
       renderAll();
     }
@@ -462,7 +470,7 @@
   }
   function applyLanguage(next){
     language=next==="en"?"en":"nl";
-    $$("[data-feature-text]").forEach(el=>{const key=el.dataset.featureText;if(text(key))el.textContent=text(key);});
+    $("[data-feature-text]").forEach(el=>{const key=el.dataset.featureText;el.textContent=text(key);});
     $$("[data-feature-placeholder]").forEach(el=>{const key=el.dataset.featurePlaceholder;if(copy[language][key])el.placeholder=copy[language][key];});
     if(app()&&app().isVaultUnlocked())renderAll();
     updateGateViews();
@@ -471,7 +479,7 @@
     const panel=$(".privacy-panel");
     if(!panel||$("#intro-show-again"))return;
     const b=button(language==="nl"?"Introductie opnieuw bekijken":"View the introduction again","secondary-button",()=>window.MivoryntraIntro?.showIntro());
-    b.id="intro-show-again";
+    b.id="intro-show-again"; b.dataset.featureText="introAgain";
     panel.append(b);
   }
   function boot(){
