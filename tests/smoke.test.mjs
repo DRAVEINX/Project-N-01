@@ -975,6 +975,9 @@ test("full vault restore validation accepts supported private data and rejects i
   };
   assert.equal(validateFullVaultData(valid), true);
   assert.equal(validateFullVaultData(null), false);
+  assert.equal(validateFullVaultData({ profile: "not-a-vault" }), false);
+  assert.equal(validateFullVaultData({ ...valid, routines: [{ id: "", name: "Ochtend", steps: ["Water drinken"] }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, routines: [{ id: "r1", name: "Ochtend", steps: [] }] }), false);
   assert.equal(validateFullVaultData({ ...valid, moodEntries: [{ ...valid.moodEntries[0], mood: 6 }] }), false);
   assert.equal(validateFullVaultData({ ...valid, agendaItems: [{ ...valid.agendaItems[0], date: "2026-02-30" }] }), false);
   assert.equal(validateFullVaultData({ ...valid, trustedPeople: [{ ...valid.trustedPeople[0], photo: "data:image/svg+xml;base64,PHN2Zz4=" }] }), false);
@@ -991,6 +994,9 @@ test("full vault restore has its own confirmation and validates before replacing
   assert.match(app, /window\.confirm\(t\("restoreFullVaultConfirm"\)\)/);
   assert.match(app, /file\.size > 2 \* 1024 \* 1024/);
   assert.match(app, /restoreEnvelope\(passphrase, envelope, validateFullVaultData\)/);
+  assert.match(app, /customRoutines = restoredData\.routines;/);
+  assert.match(app, /throw new Error\("full-vault-backup"\)/);
+  assert.match(app, /t\("fullVaultUseRestore"\)/);
   assert.match(adapter, /validateRestoredData\(restored\) !== true/);
   assert.match(adapter, /Validate decrypted data before touching the current stored vault/);
 });
