@@ -156,6 +156,16 @@ test("privacy panel explains unencrypted local data and offers confirmed deletio
   assert.match(js, /localDataClearError/);
 });
 
+test("encrypted vault auto-locks after inactivity and when the tab is hidden", () => {
+  assert.match(html, /data-i18n="vaultAutoLock"/);
+  assert.match(js, /const VAULT_AUTO_LOCK_MS = 5 \* 60 \* 1000/);
+  assert.match(js, /setTimeout\(\(\) => lockVaultSession\(t\("vaultAutoLock"\)\), VAULT_AUTO_LOCK_MS\)/);
+  assert.match(js, /document\.addEventListener\("visibilitychange"/);
+  assert.match(js, /window\.addEventListener\("pagehide"/);
+  assert.match(js, /lockVaultSession\(t\("vaultLockedStatus"\)\)/);
+  assert.match(js, /vaultAutoLock:"The vault automatically locks after 5 minutes/);
+});
+
 test("encrypted migration UI is explicit, bilingual and preserves legacy routines", () => {
   assert.match(html, /id="migrate-routines-to-vault"/);
   assert.match(html, /id="vault-migration-status"/);
