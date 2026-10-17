@@ -294,7 +294,8 @@ $("#migrate-routines-to-vault").addEventListener("click", async () => {
     button.disabled = false;
   }
 });
-\n$("#export-custom-routines").addEventListener("click", () => {
+
+$("#export-custom-routines").addEventListener("click", () => {
   const payload = {format:"project-n-01-routines", version:1, routines:customRoutines.map(({name,steps})=>({name,steps}))};
   const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
   const url = URL.createObjectURL(blob);
