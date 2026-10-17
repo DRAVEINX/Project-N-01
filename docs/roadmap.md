@@ -8,15 +8,15 @@
 - [x] Communication phrase cards and browser text-to-speech support
 - [x] Text size, quiet view and reduced-motion controls
 - [x] Basic CI smoke tests
-- [ ] Verify GitHub Actions result and fix any failures
-- [ ] Manual keyboard and mobile viewport review
+- [ ] Verify GitHub Actions result and fix any failures (not confirmed from this session)
+- [ ] Manual keyboard, screen-reader and mobile/tablet viewport review
 
 ## Phase 2 — Make the prototype more robust
 - [x] Web app manifest and install metadata
 - [x] Service worker for caching prototype assets after first visit
 - [x] Offline fallback page
-- [ ] Add automated checks for manifest and service worker behavior
-- [ ] Add durable settings persistence only after privacy implications are documented
+- [x] Add static smoke checks for manifest metadata and service-worker safeguards (runtime offline behavior still needs manual verification)
+- [x] Persist only language/accessibility preferences in browser local storage; disclose this in the UI (not encrypted and not suitable for sensitive notes)
 - [ ] User testing with a range of accessibility needs
 
 ## Phase 3 — Product foundation
