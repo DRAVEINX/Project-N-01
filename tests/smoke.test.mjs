@@ -651,3 +651,8 @@ test("legacy migration refuses to initialize over an existing encrypted vault", 
   await assert.rejects(() => migrateLegacyRoutines({ storage, vault, passphrase: "een-veilige-testzin-123" }), /already exists/);
   assert.deepEqual(vault.read(), { existing: true });
 });
+
+test("tablet routine cards use two columns while phone layouts stay single-column", () => {
+  assert.match(css, /@media\(max-width:1100px\)[\s\S]*?\.routine-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
+  assert.match(css, /@media\(max-width:760px\)[\s\S]*?\.routine-grid\{grid-template-columns:1fr;gap:12px\}/);
+});
