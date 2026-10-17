@@ -9,3 +9,17 @@
 .routine-progress{color:var(--muted);font-size:.9rem;margin:.7rem 0}
 .routine-card li{list-style:none;margin:.15rem 0}
 .routine-card ol{padding-left:0}
+
+/* Custom routine builder */
+.custom-routine-panel{margin-top:1.5rem;padding:clamp(1rem,3vw,1.5rem);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+.custom-routine-panel h3{margin:.1rem 0 .35rem}
+.custom-routine-form{display:grid;gap:.65rem;max-width:760px;margin-top:1rem}
+.custom-routine-form label{font-weight:650}
+.custom-routine-form input,.custom-routine-form textarea{width:100%;min-width:0;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);padding:.8rem}
+.custom-routine-form textarea{resize:vertical}
+.privacy-hint{color:var(--muted);font-size:.88rem;margin:.3rem 0}
+.custom-routine-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:1rem;margin-top:1rem}
+.custom-routine-card h4{font-size:1.05rem;margin:.25rem 0 .5rem;overflow-wrap:anywhere}
+.custom-routine-card ol{padding-left:0}
+.custom-routine-card li{list-style:none}
+.custom-routine-card .secondary-button{margin-top:.5rem}
