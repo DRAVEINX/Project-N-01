@@ -722,3 +722,9 @@ test("leaving the notes view stops microphone recording and speech recognition",
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   assert.match(app, /if \(view !== "notes"\) \{[\s\S]*?if \(voiceRecorder && voiceRecorder\.state !== "inactive"\) voiceRecorder\.stop\(\);[\s\S]*?if \(dictationRecognition\) \{[\s\S]*?dictationRecognition\.stop\(\)/);
 });
+
+
+test("backgrounding the app stops active exercise and microphone features", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  assert.match(app, /document\.addEventListener\("visibilitychange", \(\) => \{[\s\S]*?document\.visibilityState !== "hidden"[\s\S]*?stopBreathing\(false\)[\s\S]*?voiceRecorder\.stop\(\)[\s\S]*?dictationRecognition\.stop\(\)/);
+});
