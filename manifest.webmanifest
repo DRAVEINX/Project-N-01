@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Project N-01 — jouw dag, op jouw manier",
+  "short_name": "Project N-01",
+  "description": "Een rustige, toegankelijke plek voor overzicht, routines en communicatie.",
+  "lang": "nl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0e111c",
+  "theme_color": "#101320",
+  "icons": [
+    {
+      "src": "/assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
