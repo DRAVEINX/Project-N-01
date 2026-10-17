@@ -379,7 +379,7 @@ test("encrypted migration UI is explicit, bilingual and preserves legacy routine
   assert.match(js, /import\("\.\/encrypted-vault\.js"\)/);
   assert.match(js, /import\("\.\/routine-migration\.js"\)/);
   assert.match(js, /readLegacyRoutines\(localStorage\)/);
-  assert.match(js, /activeVault\.exportEnvelope\(\)/);
+  assert.match(js, /vault\.exportEnvelope\(\)/);
   assert.match(js, /vault\.lock\(\)/);
   assert.match(js, /vaultRoutinePrivacy:"Je routines worden versleuteld opgeslagen/);
   assert.match(js, /vaultRoutinePrivacy:"Your routines are encrypted/);
@@ -387,8 +387,8 @@ test("encrypted migration UI is explicit, bilingual and preserves legacy routine
   assert.match(js, /routinePrivacy.textContent = encryptedVaultExists && !locked/);
   assert.match(js, /updateVaultControls\(\);/);
   assert.match(js, /if \(!\(await saveCustomRoutines\(\)\)\)/);
-  assert.match(js, /vaultMigrationSuccess:"De versleutelde kluis is gemaakt/);
-  assert.match(js, /vaultMigrationSuccess:"The encrypted vault was created/);
+  assert.match(js, /vaultMigrationSuccess:"De volledige versleutelde kluis-back-up is gedownload/);
+  assert.match(js, /vaultMigrationSuccess:"The full encrypted vault backup was downloaded/);
   assert.match(js, /De oorspronkelijke routines blijven staan en zijn nog steeds onversleuteld/);
 });
 
@@ -450,8 +450,8 @@ test("encrypted backup controls are present and accessible in Dutch and English"
   assert.match(html, /id="export-encrypted-routines"/);
   assert.match(html, /id="import-encrypted-routines"/);
   assert.match(html, /aria-describedby="backup-passphrase-help"/);
-  assert.match(js, /exportEncryptedRoutines:"Versleutelde back-up maken"/);
-  assert.match(js, /exportEncryptedRoutines:"Create encrypted backup"/);
+  assert.match(js, /exportEncryptedRoutines:"Versleutelde back-up van routines maken"/);
+  assert.match(js, /exportEncryptedRoutines:"Create encrypted routines backup"/);
   assert.match(js, /await import\("\.\/secure-storage\.js"\)/);
   assert.match(js, /file\.size > 1024 \* 1024/);
   assert.match(js, /project-n-01-routines-encrypted\.json/);
