@@ -11,7 +11,7 @@ Mivoryntra is an accessibility-first daily-life companion prototype for Android 
 - A drawing pad with pointer and keyboard controls, plus explicit PNG export.
 - Optional browser speech-to-text and temporary voice recording. Recording can be played back or downloaded by explicit action; audio is not uploaded or saved by this application.
 - An optional encrypted local vault for custom routines and explicitly saved personal features, with a separate routines-only backup and full-vault backup/restore flow.
-- Explicitly saved journal entries and drawings, a weekly appointment planner, mood check-ins, and a trusted-people list. These features write personal content only after a user action and only when the encrypted vault is unlocked.
+- Explicitly saved journal entries and drawings, a weekly appointment planner with add/edit/complete/delete actions, mood check-ins, and trusted contacts with add/edit/delete and optional photos. Personal changes are written only through the encrypted vault while it is unlocked.
 - A bilingual launch/splash screen with a first-run introduction, skip controls and reduced-motion support.
 - Install metadata, an offline app shell and an offline fallback page.
 
