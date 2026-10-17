@@ -40,3 +40,6 @@
 .encrypted-backup-panel h3,.encrypted-backup-panel p{margin:0}
 .encrypted-backup-panel input[type="password"]{width:100%;min-height:2.8rem;padding:.7rem;border-radius:.65rem;border:1px solid var(--border-color,rgba(160,170,190,.35));background:var(--surface,transparent);color:inherit;font:inherit}
 .encrypted-backup-panel input:focus-visible{outline:3px solid var(--focus-color,#8bb8ff);outline-offset:2px}
+
+.vault-migration-panel{display:grid;gap:.65rem;margin-top:1rem;padding:1rem;border:1px solid var(--line);border-radius:1rem;background:rgba(185,167,255,.04)}
+.vault-migration-panel h4,.vault-migration-panel p{margin:0}
