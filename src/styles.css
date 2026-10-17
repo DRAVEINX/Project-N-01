@@ -72,3 +72,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     outline: 1px solid Highlight;
   }
 }
+
+/* Large-text mode: keep the compact mobile navigation usable without overriding the rest of the larger-text setting. */
+@media (max-width:760px) {
+  body.large-text .nav-list .nav-item {
+    font-size:clamp(.6rem,2vw,.72rem);
+    line-height:1.2;
+    padding-left:0;
+    padding-right:0;
+    overflow-wrap:anywhere;
+  }
+  body.large-text .nav-item > span:first-child {
+    font-size:1.15rem;
+  }
+}
