@@ -175,6 +175,7 @@ test("encryption helper is clearly marked experimental and not yet integrated", 
 import { webcrypto } from "node:crypto";
 import { encryptJson, decryptJson } from "../src/secure-storage.js";
 import { EncryptedVault } from "../src/encrypted-vault.js";
+import { readLegacyRoutines, migrateLegacyRoutines, legacyRoutineStorageKey } from "../src/routine-migration.js";
 if (!globalThis.crypto) Object.defineProperty(globalThis, "crypto", { value: webcrypto });
 
 test("authenticated encryption round-trips JSON without serializing the passphrase", async () => {
@@ -287,4 +288,59 @@ test("vault restore authenticates before replacing stored data", async () => {
   await assert.rejects(() => second.restoreEnvelope("verkeerde-testzin-123", exported));
   assert.equal(secondStorage.getItem("vault-b"), before);
   assert.deepEqual(await second.restoreEnvelope("een-veilige-testzin-123", exported), { profile: "A" });
+});
+
+function createMemoryStorage() {
+  const values = new Map();
+  return {
+    getItem(key) { return values.has(key) ? values.get(key) : null; },
+    setItem(key, value) { values.set(key, String(value)); },
+    removeItem(key) { values.delete(key); }
+  };
+}
+test("legacy routine preview validates and normalizes data without changing the source", () => {
+  const storage = createMemoryStorage();
+  const original = JSON.stringify([
+    { id: "routine-1", name: "  Ochtend  ", steps: [" Water ", "Tas pakken"] },
+    { name: "", steps: ["skip"] },
+    { name: "Onjuist", steps: [42, "Geldig"] }
+  ]);
+  storage.setItem(legacyRoutineStorageKey, original);
+  const preview = readLegacyRoutines(storage);
+  assert.equal(preview.found, true);
+  assert.equal(preview.routines.length, 2);
+  assert.equal(preview.routines[0].name, "Ochtend");
+  assert.deepEqual(preview.routines[0].steps, ["Water", "Tas pakken"]);
+  assert.ok(preview.warnings.length > 0);
+  assert.equal(storage.getItem(legacyRoutineStorageKey), original);
+});
+test("legacy routine migration writes a verified encrypted copy and preserves plaintext source", async () => {
+  const storage = createMemoryStorage();
+  const source = [{ id: "r-1", name: "Rustig starten", steps: ["Ademhalen", "Water drinken"] }];
+  const original = JSON.stringify(source);
+  storage.setItem(legacyRoutineStorageKey, original);
+  const vault = new EncryptedVault(storage, "encrypted-vault");
+  const result = await migrateLegacyRoutines({ storage, vault, passphrase: "een-veilige-testzin-123" });
+  assert.equal(result.routineCount, 1);
+  assert.equal(result.legacyDataPreserved, true);
+  assert.equal(storage.getItem(legacyRoutineStorageKey), original);
+  assert.deepEqual(vault.read().routines, source);
+  assert.equal(storage.getItem("encrypted-vault").includes("Rustig starten"), false);
+});
+test("legacy migration refuses invalid source data and keeps the original intact", async () => {
+  const storage = createMemoryStorage();
+  const original = "{not valid json";
+  storage.setItem(legacyRoutineStorageKey, original);
+  const vault = new EncryptedVault(storage, "encrypted-vault");
+  await assert.rejects(() => migrateLegacyRoutines({ storage, vault, passphrase: "een-veilige-testzin-123" }), /invalid/);
+  assert.equal(storage.getItem(legacyRoutineStorageKey), original);
+  assert.equal(storage.getItem("encrypted-vault"), null);
+});
+test("legacy migration refuses to initialize over an existing encrypted vault", async () => {
+  const storage = createMemoryStorage();
+  storage.setItem(legacyRoutineStorageKey, JSON.stringify([{ name: "Routine", steps: ["Stap"] }]));
+  const vault = new EncryptedVault(storage, "encrypted-vault");
+  await vault.initialize("een-veilige-testzin-123", { existing: true });
+  await assert.rejects(() => migrateLegacyRoutines({ storage, vault, passphrase: "een-veilige-testzin-123" }), /already exists/);
+  assert.deepEqual(vault.read(), { existing: true });
 });
