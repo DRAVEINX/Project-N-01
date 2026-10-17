@@ -317,7 +317,15 @@ $("#import-encrypted-routines").addEventListener("change", async event => {
     }
     const imported = normaliseImportedRoutines(candidates);
     if (!imported.length) throw new Error("invalid");
+    const { EncryptedVault } = await import("./encrypted-vault.js");
     const previous = customRoutines;
+    if (encryptedVaultExists && (!activeVault || !activeVault.isUnlocked)) {
+      const vault = new EncryptedVault(localStorage);
+      const existing = await vault.unlock(passphrase);
+      if (!existing || !Array.isArray(existing.routines)) throw new Error("invalid-vault-data");
+      activeVault = vault;
+      customRoutines = normaliseImportedRoutines(existing.routines);
+    }
     const merged = [...customRoutines, ...imported].slice(0,50);
     if (encryptedVaultExists) {
       customRoutines = merged;
@@ -326,15 +334,14 @@ $("#import-encrypted-routines").addEventListener("change", async event => {
         throw new Error("storage");
       }
     } else {
-      const { EncryptedVault } = await import("./encrypted-vault.js");
       const vault = new EncryptedVault(localStorage);
       await vault.initialize(passphrase, { routines: merged });
       activeVault = vault;
       encryptedVaultExists = true;
       customRoutines = merged;
-      updateVaultControls();
-      scheduleVaultAutoLock();
     }
+    updateVaultControls();
+    scheduleVaultAutoLock();
     renderCustomRoutines();
     $("#custom-routine-status").textContent = t("encryptedBackupSuccess");
   } catch {
