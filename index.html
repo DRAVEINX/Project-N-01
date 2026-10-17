@@ -172,6 +172,15 @@
             </div>
             <audio id="voice-note-playback" controls hidden preload="none" data-i18n-aria-label="voiceNotePlaybackLabel" aria-label="Spraaknotitie afspelen"></audio>
             <p id="voice-note-status" class="inline-status" role="status" aria-live="polite"></p>
+          </section>
+          <section class="speech-to-text-panel" aria-labelledby="speech-to-text-title">
+            <h3 id="speech-to-text-title" data-i18n="speechToTextTitle">Spraak naar tekst</h3>
+            <p class="section-subtitle" data-i18n="speechToTextIntro">Spreek woorden in en voeg de herkende tekst toe aan je notitie. De herkenning kan door je browser of een externe dienst worden verwerkt; gebruik dit niet voor gevoelige informatie.</p>
+            <div class="voice-note-actions">
+              <button class="secondary-button" id="start-speech-to-text" type="button" data-i18n="startDictation">Start inspreken</button>
+              <button class="secondary-button" id="stop-speech-to-text" type="button" data-i18n="stopDictation" disabled>Stop inspreken</button>
+            </div>
+            <p id="speech-to-text-status" class="inline-status" role="status" aria-live="polite"></p>
           </section><section class="sketch-panel" aria-labelledby="sketch-title"><div class="sketch-heading"><div><h3 id="sketch-title" data-i18n="sketchTitle">Of maak een tekening</h3><p data-i18n="sketchIntro">Je kunt tekenen met je vinger, muis of toetsenbord. De tekening wordt niet opgeslagen.</p></div></div><canvas id="sketch-canvas" width="900" height="280" tabindex="0" role="img" aria-label="Tekenvlak. Gebruik de pijltjestoetsen om te tekenen en Shift plus een pijltjestoets om de pen te verplaatsen zonder te tekenen." data-i18n-aria-label="sketchCanvasLabel"></canvas><div class="sketch-actions"><label class="brush-control"><span data-i18n="brushSize">Pendikte</span><input id="brush-size" type="range" min="2" max="18" value="5" aria-label="Pendikte" data-i18n-aria-label="brushSize"></label><button class="secondary-button" id="clear-sketch" type="button" data-i18n="clearSketch">Wis tekening</button> <button class="secondary-button" id="export-sketch" type="button" data-i18n="exportSketch">Download tekening als PNG</button></div><p id="sketch-status" class="inline-status" role="status" aria-live="polite"></p></section><div class="notes-actions"><span class="privacy-note"><span class="privacy-dot"></span><span data-i18n="notSaved">Niet opgeslagen in deze demo</span></span><button class="primary-button" id="clear-note" data-i18n="clearNote">Leegmaken</button></div><p id="note-status" class="inline-status" role="status" aria-live="polite"></p></div>
       </section>
 
