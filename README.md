@@ -36,3 +36,6 @@ This repository is separate from MoodPress, KlaarKompas, and CreatorNexus. Do no
 
 
 **Local data controls:** The settings screen explains that custom routines and accessibility preferences are stored unencrypted in this prototype and provides a confirmation-gated way to clear those two categories. This does not clear browser caches, exported files, or data outside this app.
+
+
+**Encryption work in progress:** `src/secure-storage.js` is an experimental Web Crypto helper using PBKDF2-SHA-256 and AES-256-GCM. It has automated round-trip and tampering tests but is deliberately not connected to the prototype's `localStorage`. Existing routines/preferences remain unencrypted. See [`docs/DATA-PROTECTION.md`](docs/DATA-PROTECTION.md) before treating this as suitable for sensitive data.
