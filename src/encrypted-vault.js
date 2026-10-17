@@ -24,6 +24,7 @@ export class EncryptedVault {
     this.storageKey = storageKey;
     this.unlockedData = null;
     this.session = null;
+    this.persistedRaw = null;
     this.unlocked = false;
   }
 
@@ -36,7 +37,12 @@ export class EncryptedVault {
     const safeInitialData = cloneJson(initialData);
     const envelope = await encryptJson(safeInitialData, passphrase);
     const session = await openEncryptedJsonSession(envelope, passphrase);
-    this.storage.setItem(this.storageKey, JSON.stringify(envelope));
+    if (this.storage.getItem(this.storageKey) !== null) {
+      throw new Error("Vault was created by another session; unlock it instead.");
+    }
+    const raw = JSON.stringify(envelope);
+    this.storage.setItem(this.storageKey, raw);
+    this.persistedRaw = raw;
     this.session = session;
     this.unlockedData = safeInitialData;
     this.unlocked = true;
@@ -52,6 +58,7 @@ export class EncryptedVault {
     const session = await openEncryptedJsonSession(envelope, passphrase);
     const safeData = cloneJson(session.value);
     this.session = session;
+    this.persistedRaw = raw;
     this.unlockedData = safeData;
     this.unlocked = true;
     return cloneJson(safeData);
@@ -60,8 +67,14 @@ export class EncryptedVault {
   async save(value) {
     if (!this.unlocked || !this.session) throw new Error("Unlock the vault before saving.");
     const safeValue = cloneJson(value);
+    const expectedRaw = this.persistedRaw;
     const envelope = await this.session.encrypt(safeValue);
-    this.storage.setItem(this.storageKey, JSON.stringify(envelope));
+    if (this.storage.getItem(this.storageKey) !== expectedRaw) {
+      throw new Error("Vault changed in another session; unlock it again before saving.");
+    }
+    const raw = JSON.stringify(envelope);
+    this.storage.setItem(this.storageKey, raw);
+    this.persistedRaw = raw;
     this.unlockedData = safeValue;
     return cloneJson(safeValue);
   }
@@ -73,7 +86,12 @@ export class EncryptedVault {
     const verifiedSession = await openEncryptedJsonSession(JSON.parse(currentRaw), passphrase);
     const safeValue = cloneJson(value);
     const envelope = await verifiedSession.encrypt(safeValue);
-    this.storage.setItem(this.storageKey, JSON.stringify(envelope));
+    if (this.storage.getItem(this.storageKey) !== currentRaw) {
+      throw new Error("Vault changed in another session; unlock it again before saving.");
+    }
+    const raw = JSON.stringify(envelope);
+    this.storage.setItem(this.storageKey, raw);
+    this.persistedRaw = raw;
     this.session = verifiedSession;
     this.unlockedData = safeValue;
     return cloneJson(safeValue);
@@ -87,6 +105,7 @@ export class EncryptedVault {
   lock() {
     this.unlockedData = null;
     this.session = null;
+    this.persistedRaw = null;
     this.unlocked = false;
   }
 
@@ -99,7 +118,9 @@ export class EncryptedVault {
   async restoreEnvelope(passphrase, envelope) {
     const session = await openEncryptedJsonSession(envelope, passphrase);
     const restored = cloneJson(session.value);
-    this.storage.setItem(this.storageKey, JSON.stringify(envelope));
+    const raw = JSON.stringify(envelope);
+    this.storage.setItem(this.storageKey, raw);
+    this.persistedRaw = raw;
     this.session = session;
     this.unlockedData = restored;
     this.unlocked = true;
