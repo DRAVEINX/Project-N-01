@@ -12,6 +12,7 @@ on:
       - "assets/**"
       - "scripts/prepare-mobile.mjs"
       - "scripts/ensure-android-microphone-permission.mjs"
+      - "scripts/configure-android-signing.mjs"
       - "package.json"
       - "capacitor.config.json"
       - ".github/workflows/android.yml"
@@ -82,5 +83,26 @@ jobs:
         with:
           name: project-n-01-android-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Configure optional Android release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: node scripts/configure-android-signing.mjs
+
+      - name: Build Android release APK and app bundle
+        run: cd android && ./gradlew --no-daemon --stacktrace assembleRelease bundleRelease
+
+      - name: Upload Android release candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-n-01-android-release-candidate
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
           retention-days: 30
