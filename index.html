@@ -122,7 +122,11 @@
             <div class="vault-migration-panel">
               <h4 data-i18n="vaultMigrationTitle">Bestaande routines veilig kopiëren</h4>
               <p class="privacy-hint" data-i18n="vaultMigrationIntro">Kopieer je bestaande routines naar een lokale versleutelde kluis en download een versleutelde kopie. De oorspronkelijke routines blijven staan en zijn nog steeds onversleuteld in deze prototype-app.</p>
-              <button type="button" class="secondary-button" id="migrate-routines-to-vault" data-i18n="vaultMigrationAction">Versleutelde kopie maken</button>
+              <div class="routine-backup-tools">
+                <button type="button" class="secondary-button" id="migrate-routines-to-vault" data-i18n="vaultMigrationAction">Versleutelde opslag activeren / ontgrendelen</button>
+                <button type="button" class="secondary-button" id="lock-encrypted-vault" data-i18n="vaultLockAction">Kluis vergrendelen</button>
+                <button type="button" class="secondary-button" id="delete-plaintext-routines" data-i18n="vaultDeletePlaintextAction">Onversleutelde routinekopie verwijderen</button>
+              </div>
               <p id="vault-migration-status" class="inline-status" role="status" aria-live="polite"></p>
             </div>
           </section>
