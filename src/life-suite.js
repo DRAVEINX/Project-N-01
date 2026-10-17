@@ -20,6 +20,7 @@
   let saltB64 = null;
   let lockTimer = null;
   let activeTab = "dashboard";
+  let editingAppointmentId = "";
   let selectedDate = localDate(new Date());
   let calendarMode = "week";
   let draftPhoto = "";
@@ -134,8 +135,9 @@
     const items = state[key] || [];
     const profile = currentProfile();
     if (profile && profile.role !== "self" && scope) {
-      const allowed = state.consents.some(c => c.ownerId === (c.ownerId || "self") && c.viewerId === profile.id && c.scopes && c.scopes.indexOf(scope) >= 0 && c.revoked !== true);
-      if (!allowed) return [];
+      const owners = state.consents.filter(c => c.viewerId === profile.id && Array.isArray(c.scopes) && c.scopes.indexOf(scope) >= 0 && c.revoked !== true).map(c => c.ownerId);
+      if (!owners.length) return [];
+      return items.filter(item => owners.indexOf(item.profileId || "self") >= 0);
     }
     return items.filter(scopeMatches);
   }
@@ -304,7 +306,8 @@
       list = dates.join("");
     }
     const weeksummary = '<div class="ls-inline"><label class="ls-field"><span>' + esc(t("selectDate")) + '</span><input id="ls-selected-date" type="date" value="' + esc(selectedDate) + '"></label><div class="ls-actions">' + button(t("dayView"),"mode-day",calendarMode === "day" ? "primary-button" : "secondary-button") + button(t("weekView"),"mode-week",calendarMode === "week" ? "primary-button" : "secondary-button") + button(t("monthView"),"mode-month",calendarMode === "month" ? "primary-button" : "secondary-button") + '</div></div>';
-    return panel(t("upcoming"), weeksummary + (calendarMode === "month" ? list : '<div class="ls-day-list">' + list + '</div>'), "ls-calendar-panel") + panel(t("addAppointment"),appointmentForm(), "ls-form-panel");
+    const editing = editingAppointmentId ? state.appointments.find(a => a.id === editingAppointmentId) : null;
+    return panel(t("upcoming"), weeksummary + (calendarMode === "month" ? list : '<div class="ls-day-list">' + list + '</div>'), "ls-calendar-panel") + panel(editing ? t("editAppointment") : t("addAppointment"),appointmentForm(editing), "ls-form-panel");
   }
   function dashboardView() {
     const today = localDate(new Date());
@@ -439,6 +442,7 @@
     const profileSelect = $('select[name="active-profile"]');
     if (profileSelect) profileSelect.addEventListener("change",async()=>{state.currentProfileId=profileSelect.value;recordAudit("profile-switched",state.currentProfileId);await saveState(false);renderApp();});
     $$("[data-ls-action]").forEach(el=>el.addEventListener("click",()=>handleAction(el.dataset.lsAction,el.dataset.id,el)));
+    $$("[data-guide-step]").forEach(el=>el.addEventListener("change",async()=>{const guide=state.guides.find(g=>g.id===el.dataset.guideStep);if(!guide)return;const idx=Number(el.dataset.stepIndex);guide.doneSteps=Array.isArray(guide.doneSteps)?guide.doneSteps:[];guide.doneSteps=el.checked?Array.from(new Set(guide.doneSteps.concat(idx))):guide.doneSteps.filter(n=>n!==idx);guide.updatedAt=new Date().toISOString();if(await saveState(false))setStatus(t("saved"));}));
     const selected = $("#ls-selected-date");
     if (selected) selected.addEventListener("change",()=>{selectedDate=selected.value || localDate(new Date());renderApp();});
     $$("[data-ls-date]").forEach(el=>el.addEventListener("click",()=>{selectedDate=el.dataset.lsDate;calendarMode="day";renderApp();}));
@@ -454,6 +458,7 @@
       if (conflict && !window.confirm(t("overlap") + " " + t("overlapInfo"))) return;
       state.appointments=state.appointments.filter(x=>x.id!==a.id);
       state.appointments.push.apply(state.appointments,addAppointmentRepeat(a));
+      editingAppointmentId = "";
       recordAudit(existing?"appointment-updated":"appointment-created",a.title);
       const ok=await saveState(false);if(ok){selectedDate=a.date;renderApp();setStatus(t("saved"));} 
     });
@@ -464,14 +469,15 @@
       catch {setStatus(t("photoTooLarge"),true);}
     });
     const shiftForm = $("#ls-shift-form");
-    if (shiftForm) shiftForm.addEventListener("submit",async event=>{event.preventDefault();const v=formData(shiftForm);if(!v.workerId||!v.date||!v.start||!v.end||minutes(v.end)<=minutes(v.start)){setStatus(t("invalid"),true);return;}state.shifts.push({id:uid("shift"),profileId:state.currentProfileId,workerId:v.workerId,date:v.date,start:v.start,end:v.end,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});recordAudit("shift-added",v.date);if(await saveState(false))renderApp();});
+    if (shiftForm) shiftForm.addEventListener("submit",async event=>{event.preventDefault();const v=formData(shiftForm);if(!v.workerId||!v.date||!v.start||!v.end||minutes(v.end)<=minutes(v.start)){setStatus(t("invalid"),true);return;}const editingId=shiftForm.dataset.editId;const old=editingId?state.shifts.find(s=>s.id===editingId):null;const item={id:editingId||uid("shift"),profileId:old?old.profileId:state.currentProfileId,workerId:v.workerId,date:v.date,start:v.start,end:v.end,createdAt:old?old.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};state.shifts=state.shifts.filter(s=>s.id!==item.id);state.shifts.push(item);delete shiftForm.dataset.editId;recordAudit(old?"shift-updated":"shift-added",v.date);if(await saveState(false))renderApp();});
     const journalForm=$("#ls-journal-form");
     if(journalForm) journalForm.addEventListener("submit",async event=>{
       event.preventDefault();const v=formData(journalForm);const picked=$('input[name="mood"]:checked');
-      if(!v.text.trim() && !draftJournalAudio){setStatus(t("invalid"),true);return;}
+      if(!v.text.trim()&&!draftJournalAudio&&!picked){setStatus(t("invalid"),true);return;}
       const today=localDate(new Date());const emoji=picked?({"1":"😞","2":"🙁","3":"😐","4":"🙂","5":"😄"})[picked.value]:"😐";
-      const entry={id:uid("journal"),profileId:state.currentProfileId,title:(v.title||"").trim()||(lang==="nl"?"Dagboekmoment":"Journal entry"),text:(v.text||"").trim(),audio:draftJournalAudio,date:today,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-      state.journal.push(entry);state.moods.push({id:uid("mood"),profileId:state.currentProfileId,date:today,emoji:emoji,note:entry.text.slice(0,300),createdAt:new Date().toISOString()});recordAudit("journal-entry-created",entry.id);
+      let entry=null;
+      if(v.text.trim()||draftJournalAudio){entry={id:uid("journal"),profileId:state.currentProfileId,title:(v.title||"").trim()||(lang==="nl"?"Dagboekmoment":"Journal entry"),text:(v.text||"").trim(),audio:draftJournalAudio,date:today,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};state.journal.push(entry);}
+      state.moods.push({id:uid("mood"),profileId:state.currentProfileId,date:today,emoji:emoji,note:entry?entry.text.slice(0,300):"",createdAt:new Date().toISOString()});recordAudit(entry?"journal-entry-created":"mood-saved",entry?entry.id:emoji);
       if(await saveState(false)){draftJournalAudio="";renderApp();}
     });
     const guideForm=$("#ls-guide-form");
@@ -566,11 +572,11 @@
   async function handleAction(action,id,el) {
     if(action==="lock"){lockVault(true);return;}
     if(action==="go-agenda"){activeTab="agenda";renderApp();return;}if(action==="go-roster"){activeTab="roster";renderApp();return;}if(action==="go-mood"){activeTab="mood";renderApp();return;}if(action==="go-guides"){activeTab="guides";renderApp();return;}
-    if(action==="cancel-edit"){renderApp();return;}
-    if(action==="edit-appointment"){const a=state.appointments.find(x=>x.id===id);if(a){root.querySelector("#ls-appointment-form")?.remove();const wrap=document.querySelector("#view-life");const holder=wrap&&wrap.querySelector(".ls-form-panel");if(holder){holder.innerHTML=panel(t("editAppointment"),appointmentForm(a));bindEvents();}}return;}
+    if(action==="cancel-edit"){editingAppointmentId="";renderApp();return;}
+    if(action==="edit-appointment"){editingAppointmentId=id;activeTab="agenda";renderApp();const title=$("#ls-appointment-form input[name=\"title\"]");if(title)title.focus();return;}
     if(action==="delete-appointment"){if(!window.confirm(t("deleteItem")))return;state.appointments=state.appointments.filter(x=>x.id!==id);recordAudit("appointment-deleted",id);if(await saveState(false))renderApp();return;}
     if(action==="delete-worker"){if(!window.confirm(t("deleteItem")))return;state.workers=state.workers.filter(x=>x.id!==id);state.shifts=state.shifts.filter(x=>x.workerId!==id);recordAudit("worker-deleted",id);if(await saveState(false))renderApp();return;}
-    if(action==="edit-shift"){const s=state.shifts.find(x=>x.id===id);if(!s)return;const f=$("#ls-shift-form");if(f){f.elements.workerId.value=s.workerId;f.elements.date.value=s.date;f.elements.start.value=s.start;f.elements.end.value=s.end;f.dataset.editId=s.id;f.querySelector("button[type=submit]").textContent=t("edit");f.onsubmit=async event=>{event.preventDefault();const v=formData(f);const index=state.shifts.findIndex(x=>x.id===s.id);state.shifts[index]=Object.assign({},s,v,{updatedAt:new Date().toISOString()});if(await saveState(false))renderApp();};}return;}
+    if(action==="edit-shift"){const s=state.shifts.find(x=>x.id===id);if(!s)return;const f=$("#ls-shift-form");if(f){f.elements.workerId.value=s.workerId;f.elements.date.value=s.date;f.elements.start.value=s.start;f.elements.end.value=s.end;f.dataset.editId=s.id;f.querySelector("button[type=submit]").textContent=t("edit");f.scrollIntoView({behavior:"auto",block:"center"});}return;}
     if(action==="delete-shift"||action==="delete-reminder"||action==="delete-guide"||action==="delete-journal"||action==="delete-drawing"||action==="revoke-consent"||action==="delete-profile"){
       if(!window.confirm(t("deleteItem")))return;
       const map={"delete-shift":"shifts","delete-reminder":"reminders","delete-guide":"guides","delete-journal":"journal","delete-drawing":"drawings","revoke-consent":"consents","delete-profile":"profiles"};
@@ -601,6 +607,16 @@
       if(!state||!sessionKey||document.visibilityState==="hidden")return;
       const now=Date.now();
       let changed=false;
+      for(const a of state.appointments){
+        const due=new Date(a.date+"T"+a.start+":00").getTime()-(Number(a.reminderMins)||0)*60000;
+        const logId="appointment:"+a.id;
+        if(Number(a.reminderMins)>0&&due<=now&&due>now-10*60000&&!state.notificationLog.some(n=>n.id===logId)){
+          state.notificationLog.push({id:logId,at:new Date().toISOString()});changed=true;
+          if("Notification" in window&&Notification.permission==="granted"){try{new Notification(t("reminderFired"),{body:a.title,tag:logId});}catch{setStatus(t("reminderFired")+": "+a.title);}}
+          else{setStatus(t("reminderFired")+": "+a.title);}
+        }
+      }
+      state.notificationLog=state.notificationLog.slice(-1000);
       for(const r of state.reminders){
         if(r.notifiedAt||new Date(r.when).getTime()>now||new Date(r.when).getTime()<now-10*60*1000)continue;
         r.notifiedAt=new Date().toISOString();changed=true;
