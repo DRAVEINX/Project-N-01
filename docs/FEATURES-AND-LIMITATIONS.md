@@ -9,7 +9,7 @@
 - **Trusted contacts:** store a contact and emergency notes; a prominent help action opens the device dialer or messaging app only after user confirmation.
 - **Profiles and consent:** local user/support-worker/parent/guardian profiles, per-category consent records, consent revocation and a local invitation-code placeholder. Sharing defaults to off.
 - **Reminders:** appointment reminders and one-off/daily/weekly reminders; avoid duplicate reminder records; snooze a reminder; request browser notification permission.
-- **Search and data controls:** search stored records; encrypted backup export; backup import with merge/replace choice; confirm-before-delete data control; audit events for important local changes.
+- **Search and data controls:** search stored records; encrypted backup export; backup import with merge/replace choice; a separate encrypted recovery file protected by a randomly generated recovery code that is shown once; confirm-before-delete data control; audit events for important local changes.
 - **Accessibility:** responsive layouts, labeled fields, keyboard-focus styles, larger-text/high-contrast/reduced-motion modes, semantic status areas and large touch controls.
 
 ## Security behavior
