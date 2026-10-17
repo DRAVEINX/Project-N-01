@@ -2,11 +2,11 @@
 
 ## Current state (prototype)
 
-- Custom routines and accessibility preferences are stored in browser `localStorage` and are **not encrypted**.
+- When encrypted routine storage is not enabled, custom routines are stored in browser `localStorage` and are **not encrypted**. After the user enables the vault and optionally removes the old plaintext copy, custom routine templates are stored in an authenticated encrypted envelope. Accessibility preferences remain unencrypted in `localStorage`.
 - Routine JSON exports are plaintext and must be treated as readable by anyone who obtains the file.
 - Notes and drawings are currently temporary and are not persisted.
 - The experimental `src/secure-storage.js` module provides Web Crypto AES-256-GCM encryption with a random 128-bit salt, random 96-bit IV, PBKDF2-SHA-256 key derivation, and a 128-bit authentication tag.
-- The encryption module is **not connected to application storage**. It is a technical starting point, not a security guarantee or release-ready feature.
+- The optional encrypted vault is connected to custom routine-template persistence. The user must unlock it with a passphrase on each page load; a derived `CryptoKey` is retained only in an in-memory closure while unlocked and is discarded on lock. This prototype has no inactivity auto-lock, key recovery or independent security review, so it is not yet a release-ready security guarantee.
 - Browser encryption does not protect data from a compromised device, malicious browser extension, injected script, or someone with access to an unlocked app session.
 
 ## Proposed data categories
@@ -24,7 +24,7 @@
 1. Agree a threat model and decide whether the app is single-user per device or supports multiple profiles.
 2. Design passphrase setup, unlock, lock timeout, password change and account/data deletion.
 3. Define recovery honestly: if a user loses the passphrase and has no recovery key, encrypted data may be unrecoverable. Do not create a hidden server-side backdoor.
-4. Add a versioned encrypted storage repository and migrate existing plaintext routines only after clear consent and a recoverable backup.
+4. Continue reviewing the versioned encrypted storage repository; existing plaintext routines are copied only after a deliberate user action. Keep the plaintext copy until the user explicitly deletes it after checking the encrypted vault and downloaded backup.
 5. Do not store the passphrase or derived key beside ciphertext. Keep keys in memory only for the minimum session and clear references on lock where feasible.
 6. Encrypt backups with a separate user-held passphrase or key; validate file size, schema and version before importing.
 7. Add cryptographic unit tests for round trip, wrong passphrase, modified ciphertext, invalid envelope, unsupported version, large payload and storage failure.
