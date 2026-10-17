@@ -33,3 +33,6 @@ Then open http://localhost:4173. The serve script uses Node's built-in modules a
 
 ## Project boundaries
 This repository is separate from MoodPress, KlaarKompas, and CreatorNexus. Do not copy over or modify those projects as part of this work.
+
+
+**Local data controls:** The settings screen explains that custom routines and accessibility preferences are stored unencrypted in this prototype and provides a confirmation-gated way to clear those two categories. This does not clear browser caches, exported files, or data outside this app.
