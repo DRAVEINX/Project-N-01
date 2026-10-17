@@ -185,6 +185,8 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 window.addEventListener("pagehide", () => {
+  clearTimeout(toastTimeout);
+  toastTimeout = null;
   if (activeVault) lockVaultSession(t("vaultLockedStatus"));
   else {
     if (vaultAutoLockTimer !== null) window.clearTimeout(vaultAutoLockTimer);
