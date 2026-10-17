@@ -1090,6 +1090,10 @@ test("daily and weekly staff roster supports photos, editing and deleting throug
   assert.match(features, /agenda-filter/);
   assert.match(features, /filterUpcoming/);
   assert.match(features, /moodDelete/);
+  assert.match(features, /agendaMonthTitle/);
+  assert.match(features, /agenda-month-grid/);
+  assert.match(features, /renderAgendaMonth/);
+  assert.match(features, /selectedAgendaDate/);
   assert.match(features, /agenda-filter-toolbar/);
   assert.match(features, /agenda-search/);
   assert.match(features, /agenda-filter/);
