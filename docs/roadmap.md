@@ -33,12 +33,12 @@
 - [ ] Backup/export and deletion design
 - [x] Draft data-protection threat model and encryption integration checklist (`docs/DATA-PROTECTION.md`); review still required
 - [x] Web Crypto AES-GCM/PBKDF2 helper with an in-memory derived-key session for the optional routine vault
-- [x] Encrypted routine backup export/restore with passphrase prompt, input validation and a 1 MiB import limit; restored routines still use unencrypted browser storage
+- [x] Encrypted routine backup export/restore with passphrase prompt, input validation and a 1 MiB import limit; imports write to the active routine store
 - [x] Encryption helper rejects non-JSON values and oversized payloads with regression tests
 - [ ] Security expert review and threat-model sign-off
 - [x] Add encrypted vault adapter with an in-memory key session, authenticated unlock, encrypted saves, lock and restore tests
 - [x] Add non-destructive legacy routine preview/copy helper with validation and tests; original plaintext remains untouched
-- [x] Add an explicit UI action to copy existing routines into the encrypted vault and download the encrypted envelope; the original plaintext remains in place
+- [x] Add explicit UI setup/unlock, lock, encrypted routine persistence and encrypted vault download
 - [x] Connect custom-routine create/edit/delete/import persistence to the opt-in encrypted vault; passphrase is required again after reload
 - [ ] Move accessibility preferences to an appropriate protected storage design if needed, add inactivity auto-lock and recovery, and validate rollback/migration on real devices
 
