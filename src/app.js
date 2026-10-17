@@ -43,11 +43,11 @@ function applyLanguage(next) {
   $("#language").value = language;
   $("#language-settings").value = language;
   $("#language").setAttribute("aria-label", t("language"));
-  $("[data-complete-routine]").forEach(button => { const done = button.dataset.done === "true"; button.textContent = done ? t("routineMarkedDone") : t("routineMarkDone"); });
+  $$("[data-complete-routine]").forEach(button => { const done = button.dataset.done === "true"; button.textContent = done ? t("routineMarkedDone") : t("routineMarkDone"); });
   $("#today-date").textContent = new Intl.DateTimeFormat(language === "nl" ? "nl-NL" : "en-GB", {weekday:"short",day:"numeric",month:"short"}).format(new Date());
   $("#task-status").textContent = "";
   $("#routine-status").textContent = "";
-  $("[data-routine-step]").forEach(input => updateRoutineProgress(input.dataset.routineStep));
+  $$("[data-routine-step]").forEach(input => updateRoutineProgress(input.dataset.routineStep));
   $("#breath-word").textContent = t("ready");
   $("#breath-instruction").textContent = t("breathIntro");
 }
@@ -74,11 +74,11 @@ function updateRoutineProgress(routine) {
     button.classList.toggle("secondary-button", !complete);
   }
 }
-$$("[data-routine-step]").forEach(input => input.addEventListener("change", () => {
+$$$("[data-routine-step]").forEach(input => input.addEventListener("change", () => {
   updateRoutineProgress(input.dataset.routineStep);
   $("#routine-status").textContent = input.checked ? t("routineStepDone") : "";
 }));
-$$("[data-complete-routine]").forEach(button => button.addEventListener("click", () => {
+$$$("[data-complete-routine]").forEach(button => button.addEventListener("click", () => {
   const routine = button.dataset.completeRoutine;
   const steps = $$("[data-routine-step]").filter(input => input.dataset.routineStep === routine);
   const complete = steps.length > 0 && steps.every(input => input.checked);
