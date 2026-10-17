@@ -80,6 +80,11 @@ test("notes can be copied to the clipboard with accessible success and failure m
   assert.match(js, /if \(!note\.trim\(\)\)/);
 });
 
+test("note character count refreshes immediately when the language changes", () => {
+  assert.match(js, /\$\("#language"\)\.addEventListener\("change", event => \{ applyLanguage\(event\.target\.value\); updateNoteCharacterCount\(\); savePreferences\(\); \}\)/);
+  assert.match(js, /\$\("#language-settings"\)\.addEventListener\("change", event => \{ applyLanguage\(event\.target\.value\); updateNoteCharacterCount\(\); savePreferences\(\); \}\)/);
+});
+
 test("notes explicitly warn that the prototype does not save them", () => {
   assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
 });
