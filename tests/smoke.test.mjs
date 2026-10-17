@@ -171,3 +171,29 @@ test("encryption helper is clearly marked experimental and not yet integrated", 
   assert.match(secureStorage, /not wired into app data persistence yet/i);
   assert.doesNotMatch(html, /secure-storage\.js/);
 });
+
+import { webcrypto } from "node:crypto";
+import { encryptJson, decryptJson } from "../src/secure-storage.js";
+if (!globalThis.crypto) Object.defineProperty(globalThis, "crypto", { value: webcrypto });
+
+test("authenticated encryption round-trips JSON without serializing the passphrase", async () => {
+  const source = { routines: [{ name: "Rustig starten", steps: ["Water drinken", "Tas pakken"] }], version: 1 };
+  const passphrase = "een-veilige-testzin-123";
+  const envelope = await encryptJson(source, passphrase);
+  assert.deepEqual(await decryptJson(envelope, passphrase), source);
+  assert.equal(JSON.stringify(envelope).includes(passphrase), false);
+  assert.equal(envelope.cipher, "AES-256-GCM");
+  assert.notEqual(envelope.salt, envelope.iv);
+});
+
+test("authenticated encryption rejects wrong passphrases and modified ciphertext", async () => {
+  const envelope = await encryptJson({ private: "test" }, "een-veilige-testzin-123");
+  await assert.rejects(() => decryptJson(envelope, "een-andere-testzin-456"));
+  const tampered = { ...envelope, ciphertext: envelope.ciphertext.slice(0, -4) + "AAAA" };
+  await assert.rejects(() => decryptJson(tampered, "een-veilige-testzin-123"));
+});
+
+test("encryption rejects short passphrases and unsupported envelopes", async () => {
+  await assert.rejects(() => encryptJson({ ok: true }, "kort"));
+  await assert.rejects(() => decryptJson({ format: "unknown" }, "een-veilige-testzin-123"), /Unsupported encrypted data format/);
+});
