@@ -69,8 +69,12 @@ function applyLanguage(next) {
 
 const customRoutineStorageKey = "project-n-01-custom-routines-v1";
 const encryptedVaultStorageKey = "project-n-01-encrypted-vault-v1";
+function safeLocalStorageGetItem(key) {
+  try { return localStorage.getItem(key); }
+  catch { return null; }
+}
 let activeVault = null;
-let encryptedVaultExists = localStorage.getItem(encryptedVaultStorageKey) !== null;
+let encryptedVaultExists = safeLocalStorageGetItem(encryptedVaultStorageKey) !== null;
 let customRoutines = encryptedVaultExists ? [] : readCustomRoutines();
 
 function updateVaultControls() {
@@ -79,7 +83,7 @@ function updateVaultControls() {
   ["#clear-custom-routines", "#export-custom-routines", "#import-custom-routines", "#export-encrypted-routines", "#import-encrypted-routines"]
     .forEach(selector => { const control = $(selector); if (control) control.disabled = locked; });
   $("#lock-encrypted-vault").disabled = !activeVault || !activeVault.isUnlocked;
-  $("#delete-plaintext-routines").hidden = !activeVault || !activeVault.isUnlocked || localStorage.getItem(customRoutineStorageKey) === null;
+  $("#delete-plaintext-routines").hidden = !activeVault || !activeVault.isUnlocked || safeLocalStorageGetItem(customRoutineStorageKey) === null;
   const routinePrivacy = document.querySelector('[data-i18n="customRoutinePrivacy"]');
   if (routinePrivacy) routinePrivacy.textContent = encryptedVaultExists && !locked ? t("vaultRoutinePrivacy") : encryptedVaultExists ? t("vaultLockedPrivacy") : t("customRoutinePrivacy");
 }
