@@ -162,6 +162,10 @@
       <section class="view" id="view-notes" aria-labelledby="notes-title">
         <div class="section-heading"><div><p class="eyebrow" data-i18n="privateSpace">ALLEEN VOOR JOU</p><h2 id="notes-title" data-i18n="notesTitle">Mijn notities</h2><p class="section-subtitle" data-i18n="notesIntro">Een plek om iets van je af te schrijven. In deze prototypeversie wordt niets opgeslagen.</p></div></div>
         <div class="panel notes-panel"><label for="note-text" data-i18n="notePrompt">Wat wil je onthouden of kwijt?</label><textarea id="note-text" rows="6" data-i18n-placeholder="notePlaceholder" placeholder="Je mag het kort houden. Een paar woorden zijn genoeg."></textarea>
+          <div class="note-tools">
+            <p id="note-character-count" class="inline-status" aria-live="polite">0 tekens</p>
+            <button class="secondary-button" id="download-text-note" type="button" data-i18n="downloadTextNote">Download notitie als tekstbestand</button>
+          </div>
           <section class="voice-note-panel" aria-labelledby="voice-note-title">
             <h3 id="voice-note-title" data-i18n="voiceNoteTitle">Spraaknotitie</h3>
             <p class="section-subtitle" data-i18n="voiceNoteIntro">Neem lokaal een korte spraaknotitie op. Je opname wordt niet automatisch opgeslagen of geüpload.</p>
