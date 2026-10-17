@@ -34,6 +34,9 @@
 - [x] Add appointment durations, time-overlap and transition-buffer checks, and bounded weekly recurrence (up to eight separate appointments).
 - [x] Add opt-in browser notifications for appointment reminders while the app is open; closed-app delivery is not guaranteed.
 - [x] Add a copy-previous-week action for staff rosters, skipping duplicate same-name/day assignments and reusing encrypted staff profiles.
+- [x] Add agenda month navigation and date selection, appointment search and status filters, and individual mood-entry deletion.
+- [x] Add optional staff shift start/end times with validation and backup-restore checks.
+- [x] Build Android test/release candidates from the feature branch in GitHub Actions; real-device install and usability review remain manual.
 - [x] Add an editable “Who is working today?” roster with previous/next week navigation, date-specific assignments, name, role, notes and photo.
 - [x] Store each staff photo once in the encrypted staff directory and reference the profile from daily assignments; edits and deletion update the current assignment and remove unused profiles.
 - [x] Prevent the same normalized staff name from being scheduled twice on the same date; permit the same staff member on different dates.
