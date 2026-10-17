@@ -29,6 +29,14 @@ function updateDocumentTitle() {
 function setView(view) {
   // Stop the breathing timer when leaving its view so it cannot run invisibly in the background.
   if (view !== "calm" && breathInterval !== null) stopBreathing(false);
+  // Stop note capture when leaving the notes view so microphone services do not continue in the background.
+  if (view !== "notes") {
+    if (voiceRecorder && voiceRecorder.state !== "inactive") voiceRecorder.stop();
+    else releaseVoiceStream();
+    if (dictationRecognition) {
+      try { dictationRecognition.stop(); } catch {}
+    }
+  }
   $$(".view").forEach(section => section.classList.toggle("active", section.id === `view-${view}`));
   $$(".nav-item[data-view]").forEach(button => {
     const isCurrent = button.dataset.view === view;
