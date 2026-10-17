@@ -739,3 +739,15 @@ test("drawing canvas supports keyboard movement and non-drawing repositioning", 
   assert.match(app, /Math\.max\(0, Math\.min\(sketchCanvas\.width/);
   assert.match(app, /Math\.max\(0, Math\.min\(sketchCanvas\.height/);
 });
+
+
+test("language switching updates document language, translated labels and placeholders", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  assert.match(app, /function applyLanguage\(next\) \{[\s\S]*?document\.documentElement\.lang = language/);
+  assert.match(app, /\$\$\("\[data-i18n\]"\)\.forEach/);
+  assert.match(app, /\$\$\("\[data-i18n-placeholder\]"\)\.forEach/);
+  assert.match(app, /\$\$\("\[data-i18n-aria-label\]"\)\.forEach/);
+  assert.match(app, /\$\("#language"\)\.value = language/);
+  assert.match(app, /\$\("#language-settings"\)\.value = language/);
+  assert.match(app, /\$\("#language"\)\.setAttribute\("aria-label", t\("language"\)\)/);
+});
