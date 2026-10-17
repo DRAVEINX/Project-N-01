@@ -739,16 +739,33 @@ test("new personal modules use the unlocked encrypted vault and do not write pri
   assert.match(serviceWorker, /"\/src\/next-features.js"/);
 });
 
-test("trusted people can store a bounded optional photo only through encrypted feature data", async () => {
+test("trusted people can store bounded photos, edit contacts, and preserve an existing photo", async () => {
   const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
   assert.match(features, /peoplePhotoTooLarge/);
   assert.match(features, /photoFile\.size>120\*1024/);
-  assert.match(features, /data\.trustedPeople\.push\(person\)/);
-  assert.ok(features.includes("person.photo") && features.includes("data.trustedPeople.push(person)"));
+  assert.match(features, /data\.trustedPeople\.push\(\{id:id\("person"\),\.\.\.values,createdAt:new Date\(\)\.toISOString\(\)\}\)/);
+  assert.match(features, /editingPersonPhoto=""/);
+  assert.match(features, /let photo=targetId\?editingPersonPhoto:""/);
+  assert.match(features, /data\.trustedPeople\[index\]=\{\.\.\.data\.trustedPeople\[index\],\.\.\.values/);
+  assert.match(features, /button\(text\("peopleEdit"\),"secondary-button",\(\)=>beginPersonEdit\(person\)\)/);
+  assert.match(features, /peopleCancelEdit/);
+  assert.match(features, /peopleUpdate/);
   assert.match(css, /\.trusted-photo/);
   assert.doesNotMatch(features, /localStorage\.setItem/);
 });
 
+
+test("appointments can be edited in the encrypted vault without creating duplicates", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(features, /function beginAppointmentEdit\(item\)/);
+  assert.match(features, /button\(text\("agendaEdit"\),"secondary-button",\(\)=>beginAppointmentEdit\(item\)\)/);
+  assert.match(features, /const targetId=editingAppointmentId/);
+  assert.match(features, /const found=data\.agendaItems\.find\(item=>item && item\.id===targetId\)/);
+  assert.match(features, /Object\.assign\(found, values, \{updatedAt:new Date\(\)\.toISOString\(\)\}\)/);
+  assert.match(features, /agendaCancelEdit/);
+  assert.match(features, /agendaUpdated/);
+  assert.doesNotMatch(features, /localStorage\.setItem/);
+});
 test("mood selection requires an intentional choice instead of preselecting a mood", async () => {
   const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
   assert.match(features, /chooseMood:"Choose a mood…"/);
