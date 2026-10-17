@@ -115,13 +115,18 @@ test("clipboard failure selects the note for manual copying and has its own empt
   assert.match(js, /\$\("#note-text"\)\.focus\(\);\s*\$\("#note-text"\)\.select\(\);/);
 });
 
-test("notes explicitly warn that the prototype does not save them", () => {
-  assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
+test("notes are only persisted after an explicit encrypted save action", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(html, /data-i18n="notesIntro"/);
+  assert.match(js, /notesIntro:"[^"]*versleuteld opslaat/);
+  assert.match(features, /saveJournal/);
+  assert.match(features, /isVaultUnlocked\(\)/);
+  assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
 });
 const manifest = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 test("service worker cache version is bumped when shipping updated app assets", () => {
-  assert.match(serviceWorker, /project-n-01-prototype-v10/);
+  assert.match(serviceWorker, /project-n-01-prototype-v11/);
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v9/);
 });
 
@@ -160,7 +165,7 @@ test("routine checkbox and completion listeners use the shared query helper", ()
 
 test("document title follows the active view and updates when language changes", () => {
   assert.match(js, /function updateDocumentTitle\(\)/);
-  assert.match(js, /document\.title = pageName \? `\$\{pageName\} · Project N-01` : "Project N-01"/);
+  assert.match(js, /document\.title = pageName \? `\$\{pageName\} · Mivoryntra` : "Project N-01"/);
   assert.match(js, /updateDocumentTitle\(\);/);
 });
 
@@ -184,10 +189,10 @@ test("prototype does not depend on external runtime scripts or styles", () => {
 
 test("install metadata and offline assets are present", () => {
   const parsed = JSON.parse(manifest);
-  assert.equal(parsed.name.startsWith("Project N-01"), true);
+  assert.equal(parsed.name.startsWith("Mivoryntra"), true);
   assert.equal(parsed.display, "standalone");
   assert.ok(parsed.icons.some(icon => icon.src === "/assets/app-icon.svg"));
-  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/offline.html"]) {
+  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/brand-intro.js", "/src/next-features.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/offline.html"]) {
     assert.ok(serviceWorker.includes(`"${asset}"`), `offline shell missing ${asset}`);
   }
 });
@@ -204,7 +209,7 @@ test("preferences persist locally without persisting private notes", () => {
   assert.ok(js.includes('reducedMotion: $("#less-motion").checked'));
   assert.ok(js.includes('quietView: $("#quiet-view").checked'));
   assert.match(html, /voorkeuren worden lokaal in deze browser bewaard/i);
-  assert.match(html, /notities worden niet opgeslagen/i);
+  assert.match(html, /notities worden alleen bewaard/i);
   assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
 });
 
@@ -216,8 +221,8 @@ test("drawing pad provides a bilingual PNG export without storing the drawing", 
   assert.match(js, /sketchEmpty:/);
   assert.match(js, /sketchExportError:/);
   assert.match(js, /sketchExported:/);
-  assert.match(js, /De tekening wordt niet opgeslagen/);
-  assert.match(js, /The drawing is not saved/);
+  assert.match(js, /De tekening wordt niet automatisch bewaard/);
+  assert.match(js, /The drawing is not saved automatically/);
 });
 
 test("drawing pad supports pointer and keyboard input without persistent storage", () => {
@@ -683,11 +688,45 @@ test("tablet routine cards use two columns while phone layouts stay single-colum
 
 test("offline app shell cache version is refreshed and includes core app assets", async () => {
   const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(serviceWorker, /project-n-01-prototype-v10/);
-  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/manifest.webmanifest", "/assets/app-icon.svg", "/offline.html"]) {
+  assert.match(serviceWorker, /project-n-01-prototype-v11/);
+  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/brand-intro.js", "/src/next-features.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/manifest.webmanifest", "/assets/app-icon.svg", "/offline.html"]) {
     assert.ok(serviceWorker.includes(JSON.stringify(asset)), `offline shell missing ${asset}`);
   }
   assert.match(serviceWorker, /key !== CACHE_NAME/);
+});
+
+test("Mivoryntra splash screen is bilingual, keyboard dismissible and respects reduced motion", async () => {
+  const intro = await readFile(new URL("../src/brand-intro.js", import.meta.url), "utf8");
+  assert.match(html, /src="src\/brand-intro.js" defer/);
+  assert.match(intro, /aria-modal/);
+  assert.match(intro, /event.key === "Escape"/);
+  assert.match(intro, /prefers-reduced-motion: reduce/);
+  assert.match(intro, /introTitle/);
+  assert.match(intro, /Your day. Your pace. Your space./);
+  assert.match(css, /launch-screen/);
+});
+
+test("new personal modules use the unlocked encrypted vault and do not write private data to local storage", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(js, /window.ProjectNApp =/);
+  assert.match(js, /async updateVaultData\(mutator\)/);
+  assert.match(js, /\.\.\.activeVault\.read\(\), routines: customRoutines/);
+  for (const key of ["journalEntries", "savedDrawings", "agendaItems", "moodEntries", "trustedPeople"]) {
+    assert.ok(features.includes(key), `missing secure data collection ${key}`);
+  }
+  assert.match(features, /isVaultUnlocked\(\)/);
+  assert.match(features, /updateVaultData\(/);
+  assert.match(features, /data-feature-text/);
+  assert.doesNotMatch(features, /localStorage\.setItem/);
+  assert.match(serviceWorker, /"\/src\/next-features.js"/);
+});
+
+test("Mivoryntra manifest and visible app shell use the new provisional product name", () => {
+  assert.match(html, /<title>Mivoryntra/);
+  assert.match(html, /<strong>Mivoryntra<\/strong>/);
+  const parsed = JSON.parse(manifest);
+  assert.equal(parsed.short_name, "Mivoryntra");
+  assert.match(parsed.name, /Mivoryntra/);
 });
 
 test("offline page marks Dutch and English text with the correct language", async () => {
