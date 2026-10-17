@@ -117,7 +117,7 @@ test("mobile-first accessible styling and offline cache include the new module",
   assert.match(css, /ls-high-contrast/);
   assert.match(css, /ls-large-text/);
   assert.match(css, /ls-reduced-motion/);
-  assert.match(serviceWorker, /project-n-01-prototype-v13/);
+  assert.match(serviceWorker, /project-n-01-prototype-v14/);
   assert.match(serviceWorker, /"\/src\/life-suite\.js"/);
   assert.match(serviceWorker, /"\/src\/life-suite\.css"/);
   assert.match(workflow, /node --check src\/life-suite\.js/);
@@ -136,6 +136,7 @@ test("Windows desktop MSI and iOS archive pipelines are configured separately", 
   assert.match(desktopMain, /const LOCAL_PORT = 41739/);
   assert.match(desktopMain, /filename.startsWith\(WEB_ROOT \+ path.sep\)/);
   assert.equal(desktopPackage.build.win.target[0].target, "msi");
+  assert.equal(desktopPackage.build.win.icon, "build/icon.svg");
   assert.match(windowsWorkflow, /windows-latest/);
   assert.match(windowsWorkflow, /project-n-01-windows-msi-unsigned/);
   assert.match(iosWorkflow, /macos-26/);
