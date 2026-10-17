@@ -99,6 +99,14 @@ test("service worker cache version is bumped when shipping updated app assets", 
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v5/);
 });
 
+test("navigation exposes the current page and localizes its accessible label", () => {
+  assert.match(html, /data-i18n-aria-label="mainNavigationLabel"/);
+  assert.match(html, /data-view="home" aria-current="page"/);
+  assert.match(js, /button\.setAttribute\("aria-current", "page"\)/);
+  assert.match(js, /button\.removeAttribute\("aria-current"\)/);
+  assert.match(js, /mainNavigationLabel:"Main navigation"/);
+});
+
 test("prototype does not depend on external runtime scripts or styles", () => {
   assert.doesNotMatch(html, /https?:\/\//);
 });
