@@ -751,3 +751,12 @@ test("language switching updates document language, translated labels and placeh
   assert.match(app, /\$\("#language-settings"\)\.value = language/);
   assert.match(app, /\$\("#language"\)\.setAttribute\("aria-label", t\("language"\)\)/);
 });
+
+
+test("backgrounding the app clears temporary toast notifications safely", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  assert.match(app, /let toastTimeout/);
+  assert.match(app, /toastTimeout = setTimeout\(\(\) => toast\.classList\.remove\("show"\), 2800\)/);
+  assert.match(app, /function showToast\(message\) \{[\s\S]*?clearTimeout\(toastTimeout\)/);
+  assert.match(app, /window\.addEventListener\("pagehide", \(\) => \{[\s\S]*?clearTimeout\(toastTimeout\)/);
+});
