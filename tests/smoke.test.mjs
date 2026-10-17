@@ -770,3 +770,9 @@ test("reduced-motion preference also disables smooth scrolling", async () => {
   assert.match(css, /body\.reduced-motion\s+\*[^{}]*\{[^}]*animation-duration:\s*\.01ms\s*!important/s);
   assert.match(css, /body\.reduced-motion\s+\*[^{}]*\{[^}]*transition-duration:\s*\.01ms\s*!important/s);
 });
+
+test("keyboard skip link targets the main content and becomes visible on focus", () => {
+  assert.match(html, /<a[^>]*class="skip-link"[^>]*href="#main"/);
+  assert.match(html, /<main id="main"/);
+  assert.match(css, /\.skip-link:focus\s*\{[^}]*top:\s*1rem/s);
+});
