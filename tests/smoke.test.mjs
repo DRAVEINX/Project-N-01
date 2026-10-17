@@ -72,6 +72,18 @@ test("preferences persist locally without persisting private notes", () => {
   assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
 });
 
+test("drawing pad provides a bilingual PNG export without storing the drawing", () => {
+  assert.match(html, /id="export-sketch"/);
+  assert.match(js, /\$\("#export-sketch"\)\.addEventListener\("click"/);
+  assert.match(js, /sketchCanvas\.toBlob\(blob =>/);
+  assert.match(js, /link\.download = "mijn-tekening\.png"/);
+  assert.match(js, /sketchEmpty:/);
+  assert.match(js, /sketchExportError:/);
+  assert.match(js, /sketchExported:/);
+  assert.match(js, /De tekening wordt niet opgeslagen/);
+  assert.match(js, /The drawing is not saved/);
+});
+
 test("drawing pad supports pointer and keyboard input without persistent storage", () => {
   assert.match(html, /id="sketch-canvas"/);
   assert.match(html, /data-i18n="sketchTitle"/);
