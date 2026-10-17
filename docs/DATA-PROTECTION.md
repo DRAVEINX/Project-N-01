@@ -49,3 +49,10 @@ The routine screen now offers a separate encrypted JSON backup and restore flow.
 ## Payload-size guard
 
 The experimental Web Crypto helper now rejects values that cannot be serialized as JSON and caps plaintext and decrypted data at 1,000,000 bytes. Encrypted input is rejected if its decoded ciphertext exceeds the corresponding limit plus the 16-byte AES-GCM authentication tag. This defensive resource limit is not a substitute for a security review.
+
+
+## Experimental encrypted vault adapter
+
+`src/encrypted-vault.js` adds a standalone storage adapter that stores one AES-GCM envelope under a dedicated storage key, requires an explicit unlock, clears its in-memory plaintext on lock, and verifies the supplied passphrase against the existing envelope before replacing data. Restore authenticates the incoming envelope before writing it. Automated tests cover persistence shape, wrong passphrases, save and restore behavior.
+
+This adapter is **not integrated into the app's current routine/preferences flow**. It does not migrate or delete existing plaintext data, does not provide inactivity auto-lock or recovery, and has not received an independent security review. The current app still stores routines and preferences unencrypted in `localStorage`; do not store sensitive information in the prototype.
