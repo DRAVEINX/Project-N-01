@@ -24,10 +24,13 @@ jobs:
       - name: Run automated smoke tests
         run: npm test
       - name: Check JavaScript syntax
-        run: node --check src/app.js && node --check scripts/serve.mjs
+        run: node --check src/app.js && node --check scripts/serve.mjs && node --check service-worker.js
       - name: Verify expected project files
         run: |
           test -f index.html
           test -f src/styles.css
           test -f src/app.js
+          test -f service-worker.js
+          test -f manifest.webmanifest
+          test -f tests/smoke.test.mjs
           test -f README.md
