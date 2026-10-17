@@ -568,6 +568,23 @@ test("vault restore authenticates before replacing stored data", async () => {
   assert.deepEqual(await second.restoreEnvelope("een-veilige-testzin-123", exported), { profile: "A" });
 });
 
+test("full-vault restore validates decrypted data before replacing a valid existing vault", async () => {
+  const firstStorage = createMemoryStorage();
+  const first = new EncryptedVault(firstStorage, "vault-a");
+  await first.initialize("een-veilige-testzin-123", { profile: "A" });
+  const exported = first.exportEnvelope();
+  const secondStorage = createMemoryStorage();
+  const second = new EncryptedVault(secondStorage, "vault-b");
+  await second.initialize("een-veilige-testzin-123", { profile: "B" });
+  const before = secondStorage.getItem("vault-b");
+  await assert.rejects(
+    () => second.restoreEnvelope("een-veilige-testzin-123", exported, data => Boolean(data && Array.isArray(data.routines))),
+    /validation/i
+  );
+  assert.equal(secondStorage.getItem("vault-b"), before);
+  assert.deepEqual(second.read(), { profile: "B" });
+});
+
 test("vault save keeps the prior in-memory and persisted data when storage write fails", async () => {
   const storage = createMemoryStorage();
   const vault = new EncryptedVault(storage, "atomic-vault");
