@@ -62,6 +62,16 @@ test("speech-to-text is optional, bilingual, and warns about external processing
   assert.match(js, /dictationPermissionError/);
 });
 
+test("notes can be explicitly downloaded as text and have a live character count", () => {
+  assert.match(html, /id="download-text-note"/);
+  assert.match(html, /id="note-character-count"/);
+  assert.match(html, /id="note-status"/);
+  assert.match(js, /new Blob\(\[note\], \{type:"text\/plain;charset=utf-8"\}\)/);
+  assert.match(js, /noteTextEmpty/);
+  assert.match(js, /updateNoteCharacterCount\(\)/);
+  assert.match(js, /link\.download = language === "nl" \? "mijn-notitie\.txt" : "my-note\.txt"/);
+});
+
 test("notes explicitly warn that the prototype does not save them", () => {
   assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
 });
