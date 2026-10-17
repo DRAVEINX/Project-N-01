@@ -51,7 +51,7 @@ test("install metadata and offline assets are present", () => {
   assert.equal(parsed.name.startsWith("Project N-01"), true);
   assert.equal(parsed.display, "standalone");
   assert.ok(parsed.icons.some(icon => icon.src === "/assets/app-icon.svg"));
-  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/offline.html"]) {
+  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/offline.html"]) {
     assert.ok(serviceWorker.includes(`"${asset}"`), `offline shell missing ${asset}`);
   }
 });
