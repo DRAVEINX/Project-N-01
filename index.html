@@ -147,6 +147,12 @@
           <div class="setting-row"><span><strong data-i18n="languageSetting">Taal</strong><small data-i18n="languageSub">Nederlands of Engels</small></span><select id="language-settings" aria-label="Language setting"><option value="nl">Nederlands</option><option value="en">English</option></select></div>
         </div>
         <p class="settings-footnote" data-i18n="settingsFootnote">Je voorkeuren worden lokaal in deze browser bewaard. Notities worden niet opgeslagen.</p>
+        <section class="panel privacy-panel" aria-labelledby="privacy-title">
+          <h3 id="privacy-title" data-i18n="privacyTitle">Privacy en lokale gegevens</h3>
+          <p data-i18n="privacyDetails">Deze prototype-app bewaart eigen routines en toegankelijkheidsvoorkeuren in browseropslag zonder versleuteling. Notities en tekeningen worden niet bewaard.</p>
+          <button type="button" class="secondary-button danger-button" id="clear-local-app-data" data-i18n="clearLocalData">Wis lokale appgegevens</button>
+          <p id="local-data-status" class="inline-status" role="status" aria-live="polite"></p>
+        </section>
       </section>
 
       <footer class="app-footer"><span>✦ Project N-01</span><span data-i18n="footerText">Een kleine stap is ook een stap.</span></footer>
