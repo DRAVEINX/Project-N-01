@@ -97,3 +97,14 @@ test("routine completion state is accessible and follows the selected language",
   assert.match(js, /\$\$\("\[data-i18n-placeholder\]"\)\.forEach/);
   assert.match(js, /\$\$\("\[data-i18n-aria-label\]"\)\.forEach/);
 });
+
+test("routines can be completed one step at a time", () => {
+  for (const routine of ["morning", "afternoon", "evening"]) {
+    assert.equal((html.match(new RegExp('data-routine-step="' + routine + '"', "g")) || []).length, 3);
+    assert.match(html, new RegExp('data-routine-progress="' + routine + '"'));
+  }
+  assert.match(js, /function updateRoutineProgress\(routine\)/);
+  assert.match(js, /input\.addEventListener\("change", \(\) => \{/);
+  assert.match(js, /steps\.forEach\(input => \{ input\.checked = !complete; \}\)/);
+  assert.match(js, /\$\$\("\[data-complete-routine\]"\)\.forEach/);
+});
