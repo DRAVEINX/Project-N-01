@@ -1,9 +1,9 @@
 /**
  * Experimental browser-side encryption primitives for Project N-01.
  *
- * This module is not wired into app data persistence yet. Do not claim existing
- * routines/preferences are encrypted until a reviewed integration and migration
- * path are implemented. Requires Web Crypto in a secure context.
+ * Used by the optional encrypted routine vault and encrypted backup flow.
+ * Preferences remain unencrypted; sensitive journal/voice data is not persisted.
+ * Requires Web Crypto in a secure context.
  */
 const FORMAT = "project-n-01-encrypted-json";
 const VERSION = 1;
