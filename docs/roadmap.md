@@ -7,6 +7,7 @@
 - [x] Calm/breathing interaction
 - [x] Communication phrase cards and browser text-to-speech support
 - [x] Text size, quiet view and reduced-motion controls
+- [x] Bilingual drawing pad in the notes view, with pointer and keyboard input; drawings are temporary and not stored
 - [x] Basic CI smoke tests
 - [ ] Verify GitHub Actions result and fix any failures (not confirmed from this session)
 - [ ] Manual keyboard, screen-reader and mobile/tablet viewport review
