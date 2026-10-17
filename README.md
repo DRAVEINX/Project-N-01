@@ -11,7 +11,7 @@ An independent, accessibility-first daily-life companion for Android phones, And
 - No medical claims; the app supports daily routines and communication and is not a replacement for professional care.
 
 ## Current stage
-The current deliverable is a responsive web prototype with a web app manifest and service-worker caching for offline use after the first successful visit when served over HTTPS or localhost. Users can opt in to an encrypted local vault for custom routine templates: they set a passphrase, unlock the vault after reload, and routine changes are written to an AES-256-GCM encrypted envelope. The vault auto-locks after five minutes without activity and when the page is hidden or left. Existing plaintext routine data is deliberately preserved during migration; users must unlock and check the vault, download the encrypted envelope, then separately choose to remove the old plaintext copy. Daily checklist and built-in routine progress are stored unencrypted in browser local storage for the current local date and reset automatically the next day; the settings cleanup control removes this progress. Accessibility preferences also remain unencrypted in browser local storage. Plaintext exports remain possible and are labelled as such. Notes and drawings are temporary and not saved. Do not store sensitive journal, mood, voice, or caregiver data in this prototype. CI status and manual keyboard/screen-reader/offline checks still need verification. This is not yet a native Android or Windows release and is not production-ready.
+The repository contains a responsive web prototype and a new Daily Life Suite module accessible from “Mijn leven / My life”. The suite provides calendar day/week/month views, appointment create/edit/delete with same-start duplicate blocking and overlap confirmation, support-worker names/photos and dated shifts, mood check-ins, saved journal entries, saved drawings, step-by-step guides with a photo and audio attachment, trusted contact actions, local profiles and consent records, reminder controls, search, encrypted backup/restore and data deletion. The suite stores its own records inside a passphrase-protected AES-256-GCM encrypted local envelope and locks after five minutes of inactivity or when the page is hidden. Existing routine storage and daily checklist data remain separate: daily checklist progress and accessibility preferences in the original app are still unencrypted. The old notes view remains temporary; the new suite has its own encrypted journal and drawing store. This is still a browser/Capacitor web-content prototype, not a production-ready product or a verified native Windows/iOS release. Browser reminders only run while the suite is open and unlocked. Secure cross-device identity, real remote invitations, background scheduled notifications, Android-native key storage and independent security/accessibility review remain open work; local profiles/consent records are not a substitute for authenticated separate accounts.
 
 ## Run locally
 Requires Node.js 20 or newer.
@@ -23,13 +23,18 @@ npm run serve
 
 Then open http://localhost:4173. The serve script uses Node's built-in modules and has no runtime dependencies.
 
-## Planned milestones
-1. Accessible prototype and automated smoke tests.
-2. Validate flows with users and accessibility checks.
-3. Add native Android phone/tablet application shell and platform-specific layouts.
-4. Add secure local persistence, export/recovery, and privacy controls.
-5. Build and verify Windows packaging and platform release workflows.
-6. Choose final product name only after availability research.
+## Current feature implementation
+- The new Daily Life Suite is integrated as a separate view, preserving the original home, routines, calm, communication, notes and settings views.
+- Suite records use a local encrypted vault. The user must create and remember a passphrase of at least 12 characters; the project does not have a recovery backdoor.
+- Agenda/roster, mood/journal/drawings, guides, contacts, local consent, reminders, search, and encrypted import/export now have a first implementation. See [feature status and limitations](docs/FEATURES-AND-LIMITATIONS.md).
+- Automated checks cover the module's wiring and privacy-sensitive storage rules. A green CI run is still required after the latest change, followed by real-device and accessibility testing.
+
+## Remaining milestones
+1. Run CI and fix every failing test; validate phone/tablet layout manually.
+2. Add authenticated accounts and a secure server-side invitation/consent flow before claiming remote caregiver access.
+3. Implement native background reminders and platform key storage where appropriate.
+4. Implement authenticated cross-device sync with conflict review, then test Android phone/tablet, Windows packaging and any iOS target separately.
+5. Complete independent security, privacy and accessibility reviews before storing real sensitive data.
 
 ## Project boundaries
 This repository is separate from MoodPress, KlaarKompas, and CreatorNexus. Do not copy over or modify those projects as part of this work.
