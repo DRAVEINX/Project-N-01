@@ -497,24 +497,31 @@ $("#import-custom-routines").addEventListener("change", async event => {
     if (file.size > 1024 * 1024) throw new Error("too-large");
     const parsed = JSON.parse(await file.text());
     const candidates = parsed && parsed.format === "project-n-01-routines" ? parsed.routines : parsed;
+    const validCandidateCount = Array.isArray(candidates) ? candidates.filter(item =>
+      item && typeof item.name === "string" && Array.isArray(item.steps) &&
+      item.name.trim() && item.steps.some(step => typeof step === "string" && step.trim())
+    ).length : 0;
+    if (validCandidateCount > 50) throw new Error("routine-limit");
     const imported = normaliseImportedRoutines(candidates);
     if (!imported.length) throw new Error("invalid");
+    if (customRoutines.length + imported.length > 50) throw new Error("routine-limit");
     const previous = customRoutines;
-    customRoutines = [...customRoutines, ...imported].slice(0,50);
+    customRoutines = [...customRoutines, ...imported];
     if (!(await saveCustomRoutines())) {
       customRoutines = previous;
       throw new Error("storage");
     }
     renderCustomRoutines();
     $("#custom-routine-status").textContent = t("routineImportSuccess");
-  } catch {
-    $("#custom-routine-status").textContent = t("routineImportError");
+  } catch (error) {
+    $("#custom-routine-status").textContent = error?.message === "routine-limit"
+      ? t("routineImportLimit") : t("routineImportError");
   } finally {
     event.target.value = "";
   }
 });
 
-$$("[data-view]").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
+$("[data-view]").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
 $("#language").addEventListener("change", event => { applyLanguage(event.target.value); updateNoteCharacterCount(); savePreferences(); });
 $("#language-settings").addEventListener("change", event => { applyLanguage(event.target.value); updateNoteCharacterCount(); savePreferences(); });
 $$("[data-task]").forEach(input => input.addEventListener("change", () => {
