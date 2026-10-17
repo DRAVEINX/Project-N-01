@@ -82,3 +82,9 @@ test("drawing pad supports pointer and keyboard input without persistent storage
   assert.match(js, /clearRect\(0, 0, sketchCanvas\.width, sketchCanvas\.height\)/);
   assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*sketch/i);
 });
+
+test("language changes update all translated placeholders and accessible labels", () => {
+  assert.match(js, /\$\$\("\[data-i18n-placeholder\]"\)/);
+  assert.match(js, /\$\$\("\[data-i18n-aria-label\]"\)/);
+  assert.match(html, /data-i18n-aria-label="sketchCanvasLabel"/);
+});
