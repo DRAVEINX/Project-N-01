@@ -712,7 +712,7 @@
     if(action==="lock"){lockVault(true);return;}
     if(action==="go-weekplan"){activeTab="weekplan";renderApp();return;}if(action==="go-agenda"){activeTab="agenda";renderApp();return;}if(action==="go-roster"){activeTab="roster";renderApp();return;}if(action==="go-mood"){activeTab="mood";renderApp();return;}if(action==="go-guides"){activeTab="guides";renderApp();return;}
     if(action==="cancel-edit"){editingAppointmentId="";renderApp();return;}
-    if(action==="edit-appointment"){const item=state.appointments.find(x=>x.id===id);if(!item||!requireModify("calendar",item))return;editingAppointmentId=id;activeTab="agenda";renderApp();const title=$("#ls-appointment-form input[name=\"title\"]");if(title)title.focus();return;}
+    if(action==="edit-appointment"){const item=state.appointments.find(x=>x.id===id);if(!item||!requireModify("calendar",item))return;editingAppointmentId=id;selectedDate=item.date;activeTab="agenda";renderApp();const title=$("#ls-appointment-form input[name=\"title\"]");if(title)title.focus();return;}
     if(action==="edit-journal"){const item=state.journal.find(x=>x.id===id);if(!item||!requireModify("journal",item))return;editingJournalId=id;draftJournalAudio="";activeTab="mood";renderApp();const title=$("#ls-journal-form input[name=\"title\"]");if(title)title.focus();return;}
     if(action==="cancel-journal-edit"){editingJournalId="";draftJournalAudio="";renderApp();return;}
     if(action==="edit-drawing"){const item=state.drawings.find(x=>x.id===id);if(!item||!requireModify("journal",item))return;editingDrawingId=id;activeTab="mood";renderApp();const title=$('input[name="drawing-title"]');if(title)title.focus();return;}
@@ -777,13 +777,30 @@
       }
       state.notificationLog=state.notificationLog.slice(-1000);
       for(const r of state.reminders){
-        if(r.notifiedAt||new Date(r.when).getTime()>now||new Date(r.when).getTime()<now-10*60*1000)continue;
+        if(r.notifiedAt)continue;
+        let reminderTime=new Date(r.when).getTime();
+        if(!Number.isFinite(reminderTime)||reminderTime>now)continue;
+        const repeating=r.repeat==="daily"||r.repeat==="weekly";
+        if(now-reminderTime>10*60*1000){
+          if(repeating){
+            const d=new Date(reminderTime);
+            const step=r.repeat==="daily"?1:7;
+            while(d.getTime()<=now)d.setDate(d.getDate()+step);
+            r.when=d.toISOString();r.updatedAt=new Date().toISOString();changed=true;
+          } else {
+            // Mark old one-off reminders as missed so they do not remain stuck overdue.
+            r.notifiedAt=new Date().toISOString();changed=true;
+          }
+          continue;
+        }
         r.notifiedAt=new Date().toISOString();changed=true;
         const title=t("reminderFired");
         if("Notification" in window && Notification.permission==="granted"){try{new Notification(title,{body:r.title,tag:"project-n-reminder-"+r.id});}catch{setStatus(title+": "+r.title);}}
         else {setStatus(title+": "+r.title);}
-        if(r.repeat==="daily"||r.repeat==="weekly"){
-          const d=new Date(r.when);d.setDate(d.getDate()+(r.repeat==="daily"?1:7));r.when=d.toISOString();r.notifiedAt="";
+        if(repeating){
+          const d=new Date(r.when);const step=r.repeat==="daily"?1:7;
+          do { d.setDate(d.getDate()+step); } while(d.getTime()<=now);
+          r.when=d.toISOString();r.notifiedAt="";
         }
       }
       if(changed)await saveState(false);
