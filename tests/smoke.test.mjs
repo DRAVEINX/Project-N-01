@@ -572,6 +572,39 @@ test("vault restore keeps the current vault unchanged when storage write fails",
   source.lock();
 });
 
+test("stale unlocked vault cannot overwrite data saved by another vault instance", async () => {
+  const storage = createMemoryStorage();
+  const first = new EncryptedVault(storage, "shared-vault");
+  await first.initialize("een-veilige-testzin-123", { routines: ["eerste"] });
+  const second = new EncryptedVault(storage, "shared-vault");
+  await second.unlock("een-veilige-testzin-123");
+  await first.save({ routines: ["nieuwste"] });
+  const latestRaw = storage.getItem("shared-vault");
+  await assert.rejects(
+    () => second.save({ routines: ["verouderd"] }),
+    /Vault changed in another session/
+  );
+  assert.equal(storage.getItem("shared-vault"), latestRaw);
+  assert.deepEqual(first.read(), { routines: ["nieuwste"] });
+  assert.deepEqual(second.read(), { routines: ["eerste"] });
+  first.lock();
+  second.lock();
+});
+
+test("concurrent vault initialization does not overwrite an existing vault", async () => {
+  const storage = createMemoryStorage();
+  const first = new EncryptedVault(storage, "shared-init-vault");
+  const second = new EncryptedVault(storage, "shared-init-vault");
+  await first.initialize("een-veilige-testzin-123", { owner: "first" });
+  const before = storage.getItem("shared-init-vault");
+  await assert.rejects(
+    () => second.initialize("een-andere-veilige-zin-456", { owner: "second" }),
+    /Vault already exists/
+  );
+  assert.equal(storage.getItem("shared-init-vault"), before);
+  first.lock();
+});
+
 test("legacy routine preview validates and normalizes data without changing the source", () => {
   const storage = createMemoryStorage();
   const original = JSON.stringify([
