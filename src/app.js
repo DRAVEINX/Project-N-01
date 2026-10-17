@@ -314,6 +314,7 @@ $("#export-encrypted-routines").addEventListener("click", async () => {
   }
 });
 $("#import-encrypted-routines").addEventListener("change", async event => {
+  let unlockedForThisImport = false;
   const file = event.target.files && event.target.files[0];
   if (!file) return;
   const passphrase = $("#backup-passphrase").value;
