@@ -673,3 +673,10 @@ test("offline page marks Dutch and English text with the correct language", asyn
   assert.match(offlinePage, /<p lang="en">This page isn't available/);
   assert.match(offlinePage, /<span lang="nl">Terug naar de startpagina<\/span> \/ <span lang="en">Back to home<\/span>/);
 });
+
+test("local preview server rejects paths outside the project directory", async () => {
+  const server = await readFile(new URL("../scripts/serve.mjs", import.meta.url), "utf8");
+  assert.match(server, /import \{ extname, normalize, join, sep \} from "node:path"/);
+  assert.match(server, /path !== root && !path\.startsWith\(root \+ sep\)/);
+  assert.match(server, /res\.writeHead\(403\)/);
+});
