@@ -50,6 +50,18 @@ test("voice notes can be recorded, played and explicitly downloaded without app 
   assert.match(js, /voiceNoteIntro:"[^"]*niet automatisch opgeslagen of geüpload/);
 });
 
+test("speech-to-text is optional, bilingual, and warns about external processing", () => {
+  assert.match(html, /id="start-speech-to-text"/);
+  assert.match(html, /id="stop-speech-to-text"/);
+  assert.match(html, /id="speech-to-text-status"/);
+  assert.match(html, /external service|externe dienst/i);
+  assert.match(js, /window\.SpeechRecognition \|\| window\.webkitSpeechRecognition/);
+  assert.match(js, /dictationRecognition\.lang = language === "nl" \? "nl-NL" : "en-GB"/);
+  assert.match(js, /noteTextField\.dispatchEvent\(new Event\("input"/);
+  assert.match(js, /dictationUnsupported/);
+  assert.match(js, /dictationPermissionError/);
+});
+
 test("notes explicitly warn that the prototype does not save them", () => {
   assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
 });
