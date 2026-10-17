@@ -65,7 +65,7 @@ export function findAppointmentConflict(candidate, appointments, excludeId = nul
   for (const existing of appointments) {
     if (!existing || typeof existing !== "object" || existing.done) continue;
     if (excludeId && existing.id === excludeId) continue;
-    if (existing.date !== candidate.date) continue;
+    if (existing.done || existing.date !== candidate.date) continue;
     const otherStart = timeToMinutes(existing.time);
     if (otherStart === null) continue;
     const otherDuration = Number.isInteger(Number(existing.durationMinutes)) && Number(existing.durationMinutes) > 0
