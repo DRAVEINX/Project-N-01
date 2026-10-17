@@ -776,3 +776,10 @@ test("keyboard skip link targets the main content and becomes visible on focus",
   assert.match(html, /<main id="main"/);
   assert.match(css, /\.skip-link:focus\s*\{[^}]*top:\s*1rem/s);
 });
+
+test("reduced-motion preference respects the system default unless the user saved a choice", () => {
+  assert.match(js, /const systemPrefersReducedMotion = typeof window\.matchMedia === "function" && window\.matchMedia\("\(prefers-reduced-motion: reduce\)"\)\.matches/);
+  assert.match(js, /typeof preferences\.reducedMotion === "boolean" \? preferences\.reducedMotion : systemPrefersReducedMotion/);
+  assert.match(js, /reducedMotion: \$\("#less-motion"\)\.checked/);
+  assert.match(js, /\$\("#less-motion"\)\.addEventListener\("change", event => \{[\s\S]*?savePreferences\(\)/);
+});
