@@ -909,8 +909,10 @@ function savePreferences() {
 }
 function applyPreferences() {
   const preferences = readPreferences();
+  const systemPrefersReducedMotion = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reducedMotion = typeof preferences.reducedMotion === "boolean" ? preferences.reducedMotion : systemPrefersReducedMotion;
   $("#large-text").checked = preferences.largeText === true;
-  $("#less-motion").checked = preferences.reducedMotion === true;
+  $("#less-motion").checked = reducedMotion;
   $("#quiet-view").checked = preferences.quietView === true;
   document.body.classList.toggle("large-text", $("#large-text").checked);
   document.body.classList.toggle("reduced-motion", $("#less-motion").checked);
