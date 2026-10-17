@@ -492,8 +492,12 @@
       const id = v.id || uid("appointment");
       const repeat = v.repeat || "none";
       const a = {id:id,profileId:state.currentProfileId,title:v.title.trim(),date:v.date,start:v.start,end:v.end,location:v.location.trim(),notes:v.notes.trim(),preparation:v.preparation.trim(),reminderMins:Number(v.reminderMins)||0,repeat:repeat,createdAt:existing?existing.createdAt:now,updatedAt:now};
-      if(repeat==="weekly") a.seriesId = oldSeries || id;
-      else if(oldSeries && existing && existing.repeat==="weekly") a.seriesId = oldSeries;
+      if(repeat==="weekly") {
+        const editingSeriesRoot=existing && existing.repeat==="weekly" && (!existing.seriesId || existing.seriesId===existing.id);
+        a.seriesId=editingSeriesRoot ? (oldSeries || id) : id;
+      } else if(existing && existing.repeat!=="weekly" && existing.seriesId) {
+        a.seriesId=existing.seriesId;
+      }
       const removeIds = new Set();
       if(existing) {
         if(existing.repeat==="weekly" && (!existing.seriesId || existing.seriesId===existing.id)) {
@@ -672,7 +676,7 @@
     if(action==="cancel-guide-edit"){editingGuideId="";draftGuideAudio="";renderApp();return;}
     if(action==="edit-contact"){editingContactId=id;activeTab="help";renderApp();const title=$("#ls-contact-form input[name=\"name\"]");if(title)title.focus();return;}
     if(action==="cancel-contact-edit"){editingContactId="";renderApp();return;}
-    if(action==="delete-appointment"){if(!window.confirm(t("deleteItem")))return;state.appointments=state.appointments.filter(x=>x.id!==id);recordAudit("appointment-deleted",id);if(await saveState(false))renderApp();return;}
+    if(action==="delete-appointment"){if(!window.confirm(t("deleteItem")))return;const target=state.appointments.find(x=>x.id===id);const seriesRoot=target&&target.repeat==="weekly"&&(!target.seriesId||target.seriesId===target.id);state.appointments=state.appointments.filter(x=>seriesRoot?(x.id!==target.id&&x.seriesId!==target.id):x.id!==id);recordAudit("appointment-deleted",id);if(await saveState(false))renderApp();return;}
     if(action==="edit-worker"){const w=state.workers.find(x=>x.id===id);const f=$("#ls-worker-form");if(w&&f){f.elements.name.value=w.name;f.elements.role.value=w.role||"";f.dataset.editId=w.id;f.querySelector("button[type=submit]").textContent=t("edit");f.scrollIntoView({behavior:"auto",block:"center"});}return;}
     if(action==="delete-worker"){if(!window.confirm(t("deleteItem")))return;state.workers=state.workers.filter(x=>x.id!==id);state.shifts=state.shifts.filter(x=>x.workerId!==id);recordAudit("worker-deleted",id);if(await saveState(false))renderApp();return;}
     if(action==="edit-shift"){const s=state.shifts.find(x=>x.id===id);if(!s)return;const f=$("#ls-shift-form");if(f){f.elements.workerId.value=s.workerId;f.elements.date.value=s.date;f.elements.start.value=s.start;f.elements.end.value=s.end;f.dataset.editId=s.id;f.querySelector("button[type=submit]").textContent=t("edit");f.scrollIntoView({behavior:"auto",block:"center"});}return;}
