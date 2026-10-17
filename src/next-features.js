@@ -110,6 +110,7 @@
       agendaItems: Array.isArray(data.agendaItems) ? data.agendaItems : [],
       moodEntries: Array.isArray(data.moodEntries) ? data.moodEntries : [],
       trustedPeople: Array.isArray(data.trustedPeople) ? data.trustedPeople : [],
+      workStaff: Array.isArray(data.workStaff) ? data.workStaff : [],
       workSchedules: Array.isArray(data.workSchedules) ? data.workSchedules : []
     };
   }
@@ -117,7 +118,7 @@
     if (!app() || !app().isVaultUnlocked()) throw new Error("vault-locked");
     return app().updateVaultData(current => {
       const data = current && typeof current === "object" ? current : {};
-      for (const key of ["routines","journalEntries","savedDrawings","agendaItems","moodEntries","trustedPeople","workSchedules"]) {
+      for (const key of ["routines","journalEntries","savedDrawings","agendaItems","moodEntries","trustedPeople","workStaff","workSchedules"]) {
         if (!Array.isArray(data[key])) data[key] = [];
       }
       const nextData = mutator(data) || data;
@@ -418,16 +419,28 @@
       const values={date:date.value,name:name.value.trim().slice(0,80),role:role.value.trim().slice(0,80),photo,notes:notes.value.trim().slice(0,400)};
       if(!values.date||!values.name)return;
       try{
-        const {findDuplicateWorkAssignment}=await import("./appointment-rules.js");
+        const {findDuplicateWorkAssignment,normaliseAppointmentTitle}=await import("./appointment-rules.js");
         await updateSecure(data=>{
           if(findDuplicateWorkAssignment(values,data.workSchedules,targetId))throw new Error("duplicate-work");
+          let profile=data.workStaff.find(person=>person&&normaliseAppointmentTitle(person.name)===normaliseAppointmentTitle(values.name));
+          if(!profile){
+            if(data.workStaff.length>=100)throw new Error("work-limit");
+            profile={id:id("work-person"),name:values.name,role:values.role,photo:photo||"",createdAt:new Date().toISOString()};
+            data.workStaff.push(profile);
+          }else{
+            profile.name=values.name;
+            profile.role=values.role;
+            if(photo)profile.photo=photo;
+            profile.updatedAt=new Date().toISOString();
+          }
+          const assignment={date:values.date,name:values.name,role:values.role,notes:values.notes,staffId:profile.id};
           if(targetId){
             const index=data.workSchedules.findIndex(item=>item&&item.id===targetId);
             if(index<0)throw new Error("work-not-found");
-            data.workSchedules[index]={...data.workSchedules[index],...values,updatedAt:new Date().toISOString()};
+            data.workSchedules[index]={...data.workSchedules[index],...assignment,updatedAt:new Date().toISOString()};
           }else{
             if(data.workSchedules.length>=500)throw new Error("work-limit");
-            data.workSchedules.push({id:id("work"),...values,createdAt:new Date().toISOString()});
+            data.workSchedules.push({id:id("work"),...assignment,createdAt:new Date().toISOString()});
           }
           return data;
         });
@@ -674,7 +687,9 @@
   }
   function beginWorkScheduleEdit(item){
     editingWorkScheduleId=item.id;
-    editingWorkSchedulePhoto=typeof item.photo==="string"?item.photo:"";
+    const stored=secureData();
+    const profile=stored.workStaff.find(person=>person&&person.id===item.staffId);
+    editingWorkSchedulePhoto=profile&&typeof profile.photo==="string"?profile.photo:"";
     const form=$("#work-schedule-form");if(form)form.reset();
     $("#work-date").value=item.date||localDate();
     $("#work-name").value=item.name||"";
@@ -699,8 +714,8 @@
     const first=workWeekStart;
     const last=addDays(first,6);
     range.textContent=dateLabel(localDate(first))+" – "+dateLabel(localDate(last));
-    let records=[];
-    try{records=secureData().workSchedules;}catch{return;}
+    let records=[],profiles=[];
+    try{const data=secureData();records=data.workSchedules;profiles=data.workStaff;}catch{return;}
     const today=localDate();
     for(let offset=0;offset<7;offset++){
       const dayDate=addDays(first,offset);
@@ -729,8 +744,10 @@
             })
           ];
           const card=createItemCard(item.name,item.role||"",item.notes||"",actions);
-          if(typeof item.photo==="string"&&/^data:image\/(png|jpeg|webp);base64,/.test(item.photo)&&item.photo.length<=180000){
-            const img=make("img","work-assignment-photo");img.src=item.photo;img.alt=text("workPhotoAlt")+" "+item.name;img.loading="lazy";card.prepend(img);
+          const profile=profiles.find(person=>person&&person.id===item.staffId);
+          const staffPhoto=profile&&typeof profile.photo==="string"?profile.photo:"";
+          if(/^data:image\/(png|jpeg|webp);base64,/.test(staffPhoto)&&staffPhoto.length<=180000){
+            const img=make("img","work-assignment-photo");img.src=staffPhoto;img.alt=text("workPhotoAlt")+" "+item.name;img.loading="lazy";card.prepend(img);
           }
           day.append(card);
         }
