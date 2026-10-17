@@ -233,6 +233,18 @@ test("routines can be completed one step at a time", () => {
   assert.match(js, /\$\$\("\[data-complete-routine\]"\)\.forEach/);
 });
 
+test("custom routine creation enforces the 50-routine storage limit", () => {
+  const start = js.indexOf('$("#custom-routine-form").addEventListener("submit", async event => {');
+  const end = js.indexOf("\n});", start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const handler = js.slice(start, end);
+  assert.match(handler, /customRoutines\.length >= 50/);
+  assert.match(handler, /t\("customRoutineLimit"\)/);
+  assert.match(js, /customRoutineLimit:"Je kunt maximaal 50 eigen routines bewaren\."/);
+  assert.match(js, /customRoutineLimit:"You can save up to 50 custom routines\."/);
+});
+
 test("custom routines have bilingual form labels and local-only storage disclosure", () => {
   assert.match(html, /id="custom-routine-form"/);
   assert.match(html, /id="custom-routine-name"/);
