@@ -1,0 +1,41 @@
+{
+  "name": "project-n-01-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Windows desktop package for the Project N-01 daily-life companion",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist:msi": "electron-builder --win msi --x64"
+  },
+  "devDependencies": {
+    "electron": "44.9.0",
+    "electron-builder": "26.17.0"
+  },
+  "build": {
+    "appId": "com.draveinx.projectn01.desktop",
+    "productName": "Project N-01",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "web/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "msi",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "Project-N-01-0.1.0-x64.msi"
+    },
+    "msi": {
+      "perMachine": false,
+      "runAfterFinish": false
+    }
+  }
+}
