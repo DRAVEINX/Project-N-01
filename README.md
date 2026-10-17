@@ -15,7 +15,7 @@ Mivoryntra is an accessibility-first daily-life companion prototype for Android 
 - A bilingual launch/splash screen with a first-run introduction, skip controls and reduced-motion support.
 - Install metadata, an offline app shell and an offline fallback page.
 
-- The agenda now supports duration and overlap checks, up to eight weekly appointment occurrences, and opt-in browser reminders while the app is open. Staff rosters can copy the previous week while skipping duplicate name/date entries.
+- The agenda now supports duration and overlap checks, up to eight weekly appointment occurrences, and opt-in browser reminders while the app is open. Staff rosters can copy the previous week while skipping duplicate name/date entries. The agenda also includes text search and filters for upcoming/completed appointments, and saved mood check-ins can be deleted individually.
 
 ## Privacy and current limitations
 
