@@ -728,3 +728,14 @@ test("backgrounding the app stops active exercise and microphone features", asyn
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   assert.match(app, /document\.addEventListener\("visibilitychange", \(\) => \{[\s\S]*?document\.visibilityState (?:!==|===) "hidden"[\s\S]*?stopBreathing\(false\)[\s\S]*?voiceRecorder\.stop\(\)[\s\S]*?dictationRecognition\.stop\(\)[\s\S]*?lockVaultSession\(t\("vaultAutoLock"\)\)/);
 });
+
+
+test("drawing canvas supports keyboard movement and non-drawing repositioning", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /id="sketch-canvas"[^>]*tabindex="0"[^>]*role="img"/);
+  assert.match(app, /const deltas = \{ArrowUp:\[0,-8\],ArrowDown:\[0,8\],ArrowLeft:\[-8,0\],ArrowRight:\[8,0\]\}/);
+  assert.match(app, /if \(!event\.shiftKey\) drawSketchLine\(sketchPointer, next\)/);
+  assert.match(app, /Math\.max\(0, Math\.min\(sketchCanvas\.width/);
+  assert.match(app, /Math\.max\(0, Math\.min\(sketchCanvas\.height/);
+});
