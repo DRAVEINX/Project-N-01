@@ -60,3 +60,14 @@ test("service worker limits caching to same-origin GET requests", () => {
   assert.match(serviceWorker, /url\.origin !== self\.location\.origin/);
   assert.match(serviceWorker, /caches\.match\("\/index\.html"\)/);
 });
+
+test("preferences persist locally without persisting private notes", () => {
+  assert.match(js, /project-n-01-preferences-v1/);
+  assert.match(js, /localStorage\.setItem\(preferenceKey/);
+  assert.match(js, /largeText: \$("#large-text"\)\.checked/);
+  assert.match(js, /reducedMotion: \$("#less-motion"\)\.checked/);
+  assert.match(js, /quietView: \$("#quiet-view"\)\.checked/);
+  assert.match(html, /voorkeuren worden lokaal in deze browser bewaard/i);
+  assert.match(html, /notities worden niet opgeslagen/i);
+  assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
+});
