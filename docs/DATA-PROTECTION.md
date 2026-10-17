@@ -14,7 +14,7 @@
 | Category | Proposed handling |
 | --- | --- |
 | Accessibility preferences | Non-sensitive settings; persist locally and minimize collection |
-| Custom routines and progress | Encrypt before durable storage after the full key and recovery flow is reviewed |
+| Custom routine templates | Optional encrypted vault after passphrase unlock; old plaintext copy must be removed separately. Accessibility preferences remain unencrypted. |
 | Mood entries, journal text, drawings, voice recordings | Sensitive; do not persist until encryption, deletion, backup and consent flows are implemented |
 | Caregiver/guardian access | Explicit, revocable consent and separate authorization; never infer permission from device ownership |
 | Backups | Versioned encrypted envelope; never include passwords or raw derived keys |
@@ -43,7 +43,7 @@ This is an engineering plan, not a certification, legal assessment, or claim tha
 
 The routine screen now offers a separate encrypted JSON backup and restore flow. The user supplies a passphrase (minimum 12 characters); the passphrase field is cleared after the operation and is not written to the backup. The encrypted file is limited to 1 MiB on import and decrypted content is schema-checked before routines are added. Import merges routines and keeps the existing maximum of 50 templates.
 
-**Important limitation:** the encrypted backup file is encrypted, but when restored, routines are still saved in the prototype's ordinary unencrypted browser `localStorage`. This is not end-to-end encrypted app storage. The existing plaintext export remains available and is still explicitly labelled as unencrypted. Do not store sensitive information in this prototype.
+**Important limitation:** the separate encrypted-backup import flow still merges restored routines into whichever routine store is currently active. If the vault is unlocked, the merge is encrypted; without the vault, the merge is stored in plaintext `localStorage`. The ordinary plaintext export remains available and is labelled unencrypted. Do not store sensitive journal or voice data in this prototype.
 
 
 ## Payload-size guard
