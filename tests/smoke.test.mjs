@@ -108,3 +108,16 @@ test("routines can be completed one step at a time", () => {
   assert.match(js, /steps\.forEach\(input => \{ input\.checked = !complete; \}\)/);
   assert.match(js, /\$\$\("\[data-complete-routine\]"\)\.forEach/);
 });
+
+test("custom routines have bilingual form labels and local-only storage disclosure", () => {
+  assert.match(html, /id="custom-routine-form"/);
+  assert.match(html, /id="custom-routine-name"/);
+  assert.match(html, /id="custom-routine-steps"/);
+  assert.match(html, /id="custom-routine-list"/);
+  assert.match(html, /customRoutinePrivacy/);
+  assert.match(js, /project-n-01-custom-routines-v1/);
+  assert.match(js, /function renderCustomRoutines\(\)/);
+  assert.match(js, /text\.textContent = step/);
+  assert.match(js, /customRoutineStorageError/);
+  assert.match(js, /customRoutineTitle:"Create your own routine"/);
+});
