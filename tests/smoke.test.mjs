@@ -1079,6 +1079,11 @@ test("daily and weekly staff roster supports photos, editing and deleting throug
   assert.match(features, /agenda-duration/);
   assert.match(features, /generateWeeklyOccurrences/);
   assert.match(features, /work-copy-previous-week/);
+  assert.match(features, /agenda-filter-toolbar/);
+  assert.match(features, /agenda-search/);
+  assert.match(features, /agenda-filter/);
+  assert.match(features, /filterUpcoming/);
+  assert.match(features, /moodDelete/);
   assert.match(features, /selectedFile\.size>120\*1024/);
   assert.match(features, /data\.workSchedules=data\.workSchedules\.filter\(entry=>entry&&entry\.id!==item\.id\)/);
   assert.match(features, /renderAgenda\(\);renderMoods\(\);renderPeople\(\);renderWorkSchedule\(\)/);
