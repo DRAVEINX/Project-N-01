@@ -155,3 +155,19 @@ test("privacy panel explains unencrypted local data and offers confirmed deletio
   assert.match(js, /clearLocalData:"Clear local app data"/);
   assert.match(js, /localDataClearError/);
 });
+
+const secureStorage = await readFile(new URL("../src/secure-storage.js", import.meta.url), "utf8");
+test("experimental encryption module uses authenticated AES-GCM and a password KDF", () => {
+  assert.match(secureStorage, /PBKDF2/);
+  assert.match(secureStorage, /iterations: ITERATIONS/);
+  assert.match(secureStorage, /AES-GCM/);
+  assert.match(secureStorage, /tagLength: 128/);
+  assert.match(secureStorage, /getRandomValues\(new Uint8Array\(SALT_BYTES\)\)/);
+  assert.match(secureStorage, /getRandomValues\(new Uint8Array\(IV_BYTES\)\)/);
+  assert.doesNotMatch(secureStorage, /localStorage/);
+  assert.doesNotMatch(secureStorage, /console\.log/);
+});
+test("encryption helper is clearly marked experimental and not yet integrated", () => {
+  assert.match(secureStorage, /not wired into app data persistence yet/i);
+  assert.doesNotMatch(html, /secure-storage\.js/);
+});
