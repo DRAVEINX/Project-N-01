@@ -461,12 +461,12 @@
     if(!unlocked){
       ["agenda-form","mood-form","people-form"].forEach(formId=>{const form=$("#"+formId);if(form)form.reset();});
       ["agenda-status","mood-status","people-status"].forEach(statusId=>{const status=$("#"+statusId);if(status)status.textContent="";});
-      $(".drawing-gallery img").forEach(img=>{img.removeAttribute("src");});
+      $$(".drawing-gallery img").forEach(img=>{img.removeAttribute("src");});
       $$(".feature-list,.drawing-gallery").forEach(list=>list.replaceChildren());
     }
     ["agenda-form","mood-form","people-form"].forEach(formId=>{
       const form=$("#"+formId);
-      if(form) $("input,select,textarea,button",form).forEach(control=>{control.disabled=!unlocked;});
+      if(form) $$("input,select,textarea,button",form).forEach(control=>{control.disabled=!unlocked;});
     });
     setNoteGateVisible(!unlocked);
     if(unlocked && !lastUnlocked){
@@ -480,7 +480,7 @@
   }
   function applyLanguage(next){
     language=next==="en"?"en":"nl";
-    $("[data-feature-text]").forEach(el=>{const key=el.dataset.featureText;el.textContent=text(key);});
+    $$("[data-feature-text]").forEach(el=>{const key=el.dataset.featureText;el.textContent=text(key);});
     $$("[data-feature-placeholder]").forEach(el=>{const key=el.dataset.featurePlaceholder;if(copy[language][key])el.placeholder=copy[language][key];});
     if(app()&&app().isVaultUnlocked())renderAll();
     updateGateViews();
