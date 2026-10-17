@@ -238,3 +238,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .agenda-filter-toolbar input,.agenda-filter-toolbar select{width:100%;min-width:0;min-height:44px;border:1px solid var(--line);border-radius:12px;background:#101421;color:var(--text);padding:10px 12px}
 #agenda-results{margin:4px 0 0}
 @media(max-width:560px){.agenda-filter-toolbar{grid-template-columns:1fr}}
+
+.agenda-month-panel{margin:16px 0;padding:14px;border:1px solid var(--line);border-radius:16px;background:#ffffff03}
+.agenda-month-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.agenda-month-toolbar .feature-subheading{margin:0 auto 0 0}
+.agenda-month-toolbar .agenda-month-label{margin:0;min-width:120px;text-align:center;color:var(--muted);text-transform:capitalize}
+.agenda-month-weekdays,.agenda-month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.agenda-month-weekday{text-align:center;padding:6px 2px;color:var(--muted);font-size:.76rem;font-weight:700}
+.agenda-month-day{position:relative;display:flex;align-items:flex-start;min-width:0;min-height:48px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#ffffff04;color:var(--text);font:inherit;text-align:left}
+.agenda-month-day.has-appointments{border-color:#b9a7ff70;background:#b9a7ff0b}.agenda-month-day.is-selected{outline:2px solid #b9a7ff;background:#b9a7ff20}.agenda-month-day:disabled{opacity:.3}
+.agenda-month-count{position:absolute;right:6px;bottom:5px;color:var(--muted);font-size:.72rem}#agenda-month-status{margin-bottom:0}
+@media(max-width:560px){.agenda-month-panel{padding:10px}.agenda-month-toolbar{display:grid;grid-template-columns:1fr 1fr}.agenda-month-toolbar .feature-subheading,.agenda-month-toolbar .agenda-month-label{grid-column:1/-1;text-align:left}.agenda-month-toolbar button{width:100%;min-height:42px;padding:8px 6px;font-size:.78rem}.agenda-month-weekdays,.agenda-month-grid{gap:3px}.agenda-month-day{min-height:40px;padding:5px}.agenda-month-count{right:3px;bottom:2px;font-size:.65rem}}
