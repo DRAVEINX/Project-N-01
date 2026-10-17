@@ -18,6 +18,7 @@ const MIME = {
   ".ico": "image/x-icon"
 };
 let localServer;
+const LOCAL_PORT = 41739;
 
 function createLocalServer() {
   return new Promise((resolve, reject) => {
@@ -72,15 +73,9 @@ function createLocalServer() {
     });
 
     server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      if (!address || typeof address === "string") {
-        server.close();
-        reject(new Error("Could not start the local app server."));
-        return;
-      }
+    server.listen(LOCAL_PORT, "127.0.0.1", () => {
       localServer = server;
-      resolve("http://127.0.0.1:" + address.port);
+      resolve("http://127.0.0.1:" + LOCAL_PORT);
     });
   });
 }
