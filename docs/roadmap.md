@@ -39,7 +39,8 @@
 - [x] Add encrypted vault adapter with an in-memory key session, authenticated unlock, encrypted saves, lock and restore tests
 - [x] Add non-destructive legacy routine preview/copy helper with validation and tests; original plaintext remains untouched
 - [x] Add an explicit UI action to copy existing routines into the encrypted vault and download the encrypted envelope; the original plaintext remains in place
-- [ ] Integrate encrypted storage into normal routine/preferences persistence, plus unlock/lock timeout and recovery without losing existing data
+- [x] Connect custom-routine create/edit/delete/import persistence to the opt-in encrypted vault; passphrase is required again after reload
+- [ ] Move accessibility preferences to an appropriate protected storage design if needed, add inactivity auto-lock and recovery, and validate rollback/migration on real devices
 
 ## Phase 4 — Android phone and tablet
 - [ ] Separate phone and tablet layout validation
