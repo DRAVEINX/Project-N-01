@@ -37,7 +37,7 @@
         <div class="mobile-brand"><span class="brand-mark small" aria-hidden="true"><span></span><span></span><span></span></span><strong>Project N-01</strong></div>
         <div class="topbar-spacer"></div>
         <label class="language-control"><span class="sr-only" data-i18n="language">Taal</span>
-          <select id="language" aria-label="Language">
+          <select id="language" aria-label="Taal kiezen" data-i18n-aria-label="languageSelectLabel">
             <option value="nl">Nederlands</option><option value="en">English</option>
           </select>
         </label>
@@ -156,7 +156,7 @@
           <button class="phrase-card" data-phrase="slow"><span>🐢</span><strong data-i18n="phraseSlow">Kun je het rustig uitleggen?</strong><small data-i18n="tapPhrase">Tik om te tonen</small></button>
           <button class="phrase-card" data-phrase="no"><span>🛡</span><strong data-i18n="phraseNo">Dit voelt nu niet prettig.</strong><small data-i18n="tapPhrase">Tik om te tonen</small></button>
         </div>
-        <div class="phrase-output" id="phrase-output" hidden><button id="close-phrase" class="close-button" aria-label="Close">×</button><p class="eyebrow" data-i18n="youCanShow">JE KUNT DIT LATEN ZIEN</p><p id="phrase-output-text"></p><button id="speak-phrase" class="secondary-button"><span aria-hidden="true">◖</span> <span data-i18n="readAloud">Lees voor</span></button></div>
+        <div class="phrase-output" id="phrase-output" hidden><button id="close-phrase" class="close-button" aria-label="Sluit de getoonde zin" data-i18n-aria-label="closePhraseLabel">×</button><p class="eyebrow" data-i18n="youCanShow">JE KUNT DIT LATEN ZIEN</p><p id="phrase-output-text"></p><button id="speak-phrase" class="secondary-button"><span aria-hidden="true">◖</span> <span data-i18n="readAloud">Lees voor</span></button></div>
       </section>
 
       <section class="view" id="view-notes" aria-labelledby="notes-title">
@@ -195,7 +195,7 @@
           <label class="setting-row"><span><strong data-i18n="largeText">Grotere tekst</strong><small data-i18n="largeTextSub">Maak tekst makkelijker leesbaar</small></span><input id="large-text" type="checkbox"></label>
           <label class="setting-row"><span><strong data-i18n="lessMotion">Minder beweging</strong><small data-i18n="lessMotionSub">Beperk animaties en overgangen</small></span><input id="less-motion" type="checkbox"></label>
           <label class="setting-row"><span><strong data-i18n="quietView">Rustige weergave</strong><small data-i18n="quietViewSub">Verberg decoratieve elementen</small></span><input id="quiet-view" type="checkbox"></label>
-          <div class="setting-row"><span><strong data-i18n="languageSetting">Taal</strong><small data-i18n="languageSub">Nederlands of Engels</small></span><select id="language-settings" aria-label="Language setting"><option value="nl">Nederlands</option><option value="en">English</option></select></div>
+          <div class="setting-row"><span><strong data-i18n="languageSetting">Taal</strong><small data-i18n="languageSub">Nederlands of Engels</small></span><select id="language-settings" aria-label="Taalinstelling" data-i18n-aria-label="languageSettingsLabel"><option value="nl">Nederlands</option><option value="en">English</option></select></div>
         </div>
         <p class="settings-footnote" data-i18n="settingsFootnote">Je voorkeuren worden lokaal in deze browser bewaard. Notities worden niet opgeslagen.</p>
         <section class="panel privacy-panel" aria-labelledby="privacy-title">
