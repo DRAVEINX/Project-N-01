@@ -47,6 +47,8 @@ export class EncryptedVault {
   }
 
   async unlock(passphrase) {
+    // A failed unlock attempt must not leave a previously open vault accessible.
+    this.lock();
     const raw = this.storage.getItem(this.storageKey);
     if (raw === null) throw new Error("Vault does not exist.");
     let envelope;
