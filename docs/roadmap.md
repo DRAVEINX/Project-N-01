@@ -31,7 +31,10 @@
 - [x] Prototype privacy panel explains unencrypted browser storage and offers confirmed deletion of routines/preferences
 - [ ] Data model and local-first storage strategy
 - [ ] Backup/export and deletion design
-- [ ] Threat model and privacy review
+- [x] Draft data-protection threat model and encryption integration checklist (`docs/DATA-PROTECTION.md`); review still required
+- [x] Experimental Web Crypto AES-GCM/PBKDF2 JSON helper and runtime tests; not integrated with app data yet
+- [ ] Security expert review and threat-model sign-off
+- [ ] Integrate encrypted storage, unlock/lock and recovery without losing existing data
 
 ## Phase 4 — Android phone and tablet
 - [ ] Separate phone and tablet layout validation
