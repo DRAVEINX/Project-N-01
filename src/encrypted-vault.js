@@ -115,9 +115,15 @@ export class EncryptedVault {
     return JSON.parse(raw);
   }
 
-  async restoreEnvelope(passphrase, envelope) {
+  async restoreEnvelope(passphrase, envelope, validateRestoredData) {
     const session = await openEncryptedJsonSession(envelope, passphrase);
     const restored = cloneJson(session.value);
+    // Validate decrypted data before touching the current stored vault.
+    if (validateRestoredData !== undefined) {
+      if (typeof validateRestoredData !== "function" || validateRestoredData(restored) !== true) {
+        throw new Error("Restored vault data failed validation.");
+      }
+    }
     const raw = JSON.stringify(envelope);
     this.storage.setItem(this.storageKey, raw);
     this.persistedRaw = raw;
