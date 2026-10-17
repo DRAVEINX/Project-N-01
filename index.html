@@ -4,20 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101320">
-  <meta name="description" content="Een rustige, toegankelijke plek voor overzicht, routines en communicatie.">
+  <meta name="description" content="Mivoryntra — een rustige, toegankelijke plek voor routines, planning en communicatie.">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <title>Project N-01 — jouw dag, op jouw manier</title>
+  <title>Mivoryntra — jouw dag, op jouw manier</title>
   <link rel="stylesheet" href="src/styles.css">
   <script src="src/app.js" defer></script>
+  <script src="src/brand-intro.js" defer></script>
+  <script src="src/next-features.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main" data-i18n="skip">Ga naar de inhoud</a>
   <div class="app-shell">
     <aside class="sidebar" aria-label="Hoofdnavigatie" data-i18n-aria-label="mainNavigationLabel">
-      <a class="brand" href="#home" aria-label="Project N-01 startpagina">
+      <a class="brand" href="#home" aria-label="Mivoryntra startpagina">
         <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span><strong>Project N-01</strong><small data-i18n="brandline">Ruimte voor jouw dag</small></span>
+        <span><strong>Mivoryntra</strong><small data-i18n="brandline">Ruimte voor jouw dag</small></span>
       </a>
       <nav class="nav-list">
         <button class="nav-item active" data-view="home" aria-current="page"><span aria-hidden="true">◈</span><span data-i18n="navToday">Mijn dag</span></button>
@@ -34,7 +36,7 @@
 
     <main id="main" class="main-content" tabindex="-1">
       <header class="topbar">
-        <div class="mobile-brand"><span class="brand-mark small" aria-hidden="true"><span></span><span></span><span></span></span><strong>Project N-01</strong></div>
+        <div class="mobile-brand"><span class="brand-mark small" aria-hidden="true"><span></span><span></span><span></span></span><strong>Mivoryntra</strong></div>
         <div class="topbar-spacer"></div>
         <label class="language-control"><span class="sr-only" data-i18n="language">Taal</span>
           <select id="language" aria-label="Taal kiezen" data-i18n-aria-label="languageSelectLabel">
@@ -160,8 +162,8 @@
       </section>
 
       <section class="view" id="view-notes" aria-labelledby="notes-title">
-        <div class="section-heading"><div><p class="eyebrow" data-i18n="privateSpace">ALLEEN VOOR JOU</p><h2 id="notes-title" data-i18n="notesTitle">Mijn notities</h2><p class="section-subtitle" data-i18n="notesIntro">Een plek om iets van je af te schrijven. In deze prototypeversie wordt niets opgeslagen.</p></div></div>
-        <div class="panel notes-panel"><label for="note-text" data-i18n="notePrompt">Wat wil je onthouden of kwijt?</label><textarea id="note-text" rows="6" data-i18n-placeholder="notePlaceholder" placeholder="Je mag het kort houden. Een paar woorden zijn genoeg."></textarea>
+        <div class="section-heading"><div><p class="eyebrow" data-i18n="privateSpace">ALLEEN VOOR JOU</p><h2 id="notes-title" data-i18n="notesTitle">Mijn notities</h2><p class="section-subtitle" data-i18n="notesIntro">Een plek om iets van je af te schrijven. Notities worden alleen bewaard als je ze zelf versleuteld opslaat.</p></div></div>
+        <div class="panel notes-panel"><label for="note-text" data-i18n="notePrompt">Wat wil je onthouden of kwijt?</label><textarea id="note-text" rows="6" maxlength="5000" data-i18n-placeholder="notePlaceholder" placeholder="Je mag het kort houden. Een paar woorden zijn genoeg."></textarea>
           <div class="note-tools">
             <p id="note-character-count" class="inline-status" aria-live="polite">0 tekens</p>
             <button class="secondary-button" id="download-text-note" type="button" data-i18n="downloadTextNote">Download notitie als tekstbestand</button>
@@ -186,7 +188,7 @@
               <button class="secondary-button" id="stop-speech-to-text" type="button" data-i18n="stopDictation" disabled>Stop inspreken</button>
             </div>
             <p id="speech-to-text-status" class="inline-status" role="status" aria-live="polite"></p>
-          </section><section class="sketch-panel" aria-labelledby="sketch-title"><div class="sketch-heading"><div><h3 id="sketch-title" data-i18n="sketchTitle">Of maak een tekening</h3><p data-i18n="sketchIntro">Je kunt tekenen met je vinger, muis of toetsenbord. De tekening wordt niet opgeslagen.</p></div></div><canvas id="sketch-canvas" width="900" height="280" tabindex="0" role="img" aria-label="Tekenvlak. Gebruik de pijltjestoetsen om te tekenen en Shift plus een pijltjestoets om de pen te verplaatsen zonder te tekenen." data-i18n-aria-label="sketchCanvasLabel"></canvas><div class="sketch-actions"><label class="brush-control"><span data-i18n="brushSize">Pendikte</span><input id="brush-size" type="range" min="2" max="18" value="5" aria-label="Pendikte" data-i18n-aria-label="brushSize"></label><button class="secondary-button" id="clear-sketch" type="button" data-i18n="clearSketch">Wis tekening</button> <button class="secondary-button" id="export-sketch" type="button" data-i18n="exportSketch">Download tekening als PNG</button></div><p id="sketch-status" class="inline-status" role="status" aria-live="polite"></p></section><div class="notes-actions"><span class="privacy-note"><span class="privacy-dot"></span><span data-i18n="notSaved">Niet opgeslagen in deze demo</span></span><button class="primary-button" id="clear-note" data-i18n="clearNote">Leegmaken</button></div><p id="note-status" class="inline-status" role="status" aria-live="polite"></p></div>
+          </section><section class="sketch-panel" aria-labelledby="sketch-title"><div class="sketch-heading"><div><h3 id="sketch-title" data-i18n="sketchTitle">Of maak een tekening</h3><p data-i18n="sketchIntro">Je kunt tekenen met je vinger, muis of toetsenbord. De tekening wordt niet automatisch bewaard; je kunt die veilig opslaan in de kluis.</p></div></div><canvas id="sketch-canvas" width="900" height="280" tabindex="0" role="img" aria-label="Tekenvlak. Gebruik de pijltjestoetsen om te tekenen en Shift plus een pijltjestoets om de pen te verplaatsen zonder te tekenen." data-i18n-aria-label="sketchCanvasLabel"></canvas><div class="sketch-actions"><label class="brush-control"><span data-i18n="brushSize">Pendikte</span><input id="brush-size" type="range" min="2" max="18" value="5" aria-label="Pendikte" data-i18n-aria-label="brushSize"></label><button class="secondary-button" id="clear-sketch" type="button" data-i18n="clearSketch">Wis tekening</button> <button class="secondary-button" id="export-sketch" type="button" data-i18n="exportSketch">Download tekening als PNG</button></div><p id="sketch-status" class="inline-status" role="status" aria-live="polite"></p></section><div class="notes-actions"><span class="privacy-note"><span class="privacy-dot"></span><span data-i18n="notSaved">Notities worden alleen bewaard wanneer je ze zelf veilig opslaat.</span></span><button class="primary-button" id="clear-note" data-i18n="clearNote">Leegmaken</button></div><p id="note-status" class="inline-status" role="status" aria-live="polite"></p></div>
       </section>
 
       <section class="view" id="view-settings" aria-labelledby="settings-title">
@@ -206,7 +208,7 @@
         </section>
       </section>
 
-      <footer class="app-footer"><span>✦ Project N-01</span><span data-i18n="footerText">Een kleine stap is ook een stap.</span></footer>
+      <footer class="app-footer"><span>✦ Mivoryntra</span><span data-i18n="footerText">Een kleine stap is ook een stap.</span></footer>
     </main>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
