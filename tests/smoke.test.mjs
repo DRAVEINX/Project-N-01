@@ -76,9 +76,9 @@ test("drawing pad supports pointer and keyboard input without persistent storage
   assert.match(html, /id="sketch-canvas"/);
   assert.match(html, /data-i18n="sketchTitle"/);
   assert.match(html, /id="clear-sketch"/);
-  assert.match(app, /addEventListener\("pointerdown"/);
-  assert.match(app, /addEventListener\("pointermove"/);
-  assert.match(app, /addEventListener\("keydown"/);
-  assert.match(app, /clearRect\(0, 0, sketchCanvas\.width, sketchCanvas\.height\)/);
-  assert.doesNotMatch(app, /localStorage\.setItem\([^\n]*sketch/i);
+  assert.match(js, /addEventListener\("pointerdown"/);
+  assert.match(js, /addEventListener\("pointermove"/);
+  assert.match(js, /addEventListener\("keydown"/);
+  assert.match(js, /clearRect\(0, 0, sketchCanvas\.width, sketchCanvas\.height\)/);
+  assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*sketch/i);
 });
