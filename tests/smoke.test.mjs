@@ -147,7 +147,7 @@ const serviceWorker = await readFile(new URL("../service-worker.js", import.meta
 test("service worker cache version is bumped when shipping updated app assets", () => {
   assert.match(serviceWorker, /project-n-01-prototype-v15/);
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v14/);
-  assert.match(serviceWorker, /"\\/src\\/appointment-rules.js"/);
+  assert.ok(serviceWorker.includes('"/src/appointment-rules.js"'));
 });
 
 test("encrypted import tracks temporary vault unlock in local scope", () => {
@@ -1050,7 +1050,7 @@ test("daily and weekly staff roster supports photos, editing and deleting throug
   assert.match(features, /renderWorkSchedule\(\)/);
   assert.match(features, /workPhotoTooLarge/);
   assert.match(features, /selectedFile\.size>120\*1024/);
-  assert.match(features, /deleteItem\("workSchedules",item\.id\)/);
+  assert.match(features, /data\.workSchedules=data\.workSchedules\.filter\(entry=>entry&&entry\.id!==item\.id\)/);
   assert.match(features, /renderAgenda\(\);renderMoods\(\);renderPeople\(\);renderWorkSchedule\(\)/);
   assert.match(css, /\.work-week-grid/);
   assert.match(css, /\.work-assignment-photo/);
