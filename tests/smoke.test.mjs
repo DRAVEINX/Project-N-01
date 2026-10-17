@@ -859,3 +859,15 @@ test("view navigation moves keyboard focus to the destination heading", async ()
   assert.match(handler, /const heading = \$\(`#view-\$\{view\} h2`\);\s*if \(heading\) heading\.setAttribute\("tabindex", "-1"\);\s*if \(heading\) heading\.focus\(\{preventScroll:true\}\);/);
   assert.match(handler, /if \(isCurrent\) button\.setAttribute\("aria-current", "page"\);\s*else button\.removeAttribute\("aria-current"\);/);
 });
+
+test("daily progress safely ignores corrupt or outdated local data", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const start = app.indexOf("function readDailyProgress() {");
+  const end = app.indexOf("\n}", start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const reader = app.slice(start, end);
+  assert.match(reader, /const parsed = JSON\.parse\(raw\);\s*if \(!parsed \|\| parsed\.date !== localDateKey\(\)\) return null;\s*return parsed;/);
+  assert.match(reader, /catch \{\s*return null;\s*\}/);
+  assert.match(app, /function restoreDailyProgress\(\) \{\s*const progress = readDailyProgress\(\);\s*if \(!progress\) return;/);
+});
