@@ -251,10 +251,12 @@ test("encrypted backup controls are present and accessible in Dutch and English"
   assert.match(js, /project-n-01-routines-encrypted\.json/);
   assert.match(css, /\.encrypted-backup-panel/);
 });
-test("encrypted restore validates format before adding routines and clears passphrase input", () => {
-  assert.match(js, /parsed\.format !== "project-n-01-routines"/);
+test("encrypted restore validates routine payloads, accepts vault envelopes and clears passphrase input", () => {
+  assert.match(js, /parsed\.format === "project-n-01-routines" && parsed\.version === 1 && Array\.isArray\(parsed\.routines\)/);
+  assert.match(js, /else if \(parsed && Array\.isArray\(parsed\.routines\)\)/);
   assert.match(js, /const previous = customRoutines/);
   assert.match(js, /customRoutines = previous/);
+  assert.match(js, /await vault\.initialize\(passphrase, \{ routines: merged \}\)/);
   assert.match(js, /\$\("#backup-passphrase"\)\.value = ""/);
 });
 
