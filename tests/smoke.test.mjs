@@ -174,6 +174,7 @@ test("encryption helper is clearly marked experimental and not yet integrated", 
 
 import { webcrypto } from "node:crypto";
 import { encryptJson, decryptJson } from "../src/secure-storage.js";
+import { EncryptedVault } from "../src/encrypted-vault.js";
 if (!globalThis.crypto) Object.defineProperty(globalThis, "crypto", { value: webcrypto });
 
 test("authenticated encryption round-trips JSON without serializing the passphrase", async () => {
@@ -225,4 +226,65 @@ test("encrypted envelopes enforce ciphertext size limits before decrypting", asy
   const envelope = await encryptJson({ ok: true }, "een-veilige-testzin-123");
   envelope.ciphertext = "A".repeat(1_400_000);
   await assert.rejects(() => decryptJson(envelope, "een-veilige-testzin-123"), /1 MB limit/);
+});
+
+function createMemoryStorage() {
+  const values = new Map();
+  return {
+    getItem(key) { return values.has(key) ? values.get(key) : null; },
+    setItem(key, value) { values.set(key, String(value)); },
+    removeItem(key) { values.delete(key); }
+  };
+}
+
+test("encrypted vault stores only an envelope and requires unlock to read", async () => {
+  const storage = createMemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  const source = { routines: [{ name: "Start", steps: ["Water"] }] };
+  await vault.initialize("een-veilige-testzin-123", source);
+  const persisted = storage.getItem("test-vault");
+  assert.ok(persisted);
+  assert.equal(persisted.includes("Start"), false);
+  assert.equal(persisted.includes("een-veilige-testzin-123"), false);
+  assert.deepEqual(vault.read(), source);
+  vault.lock();
+  assert.equal(vault.isUnlocked, false);
+  assert.throws(() => vault.read(), /Unlock the vault/);
+  await assert.rejects(() => vault.unlock("verkeerde-testzin-123"), /OperationError|decrypt/i);
+  assert.equal(vault.isUnlocked, false);
+  assert.deepEqual(await vault.unlock("een-veilige-testzin-123"), source);
+});
+
+test("encrypted vault will not overwrite data when save passphrase is wrong", async () => {
+  const storage = createMemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize("een-veilige-testzin-123", { count: 1 });
+  const before = storage.getItem("test-vault");
+  await assert.rejects(() => vault.saveWithPassphrase("andere-veilige-testzin-123", { count: 2 }), /OperationError|decrypt/i);
+  assert.equal(storage.getItem("test-vault"), before);
+  assert.deepEqual(vault.read(), { count: 1 });
+  await vault.saveWithPassphrase("een-veilige-testzin-123", { count: 3 });
+  vault.lock();
+  assert.deepEqual(await vault.unlock("een-veilige-testzin-123"), { count: 3 });
+});
+
+test("encrypted vault refuses implicit initialization over an existing record", async () => {
+  const storage = createMemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize("een-veilige-testzin-123", { ok: true });
+  await assert.rejects(() => vault.initialize("een-veilige-testzin-123", { ok: false }), /already exists/);
+});
+
+test("vault restore authenticates before replacing stored data", async () => {
+  const firstStorage = createMemoryStorage();
+  const first = new EncryptedVault(firstStorage, "vault-a");
+  await first.initialize("een-veilige-testzin-123", { profile: "A" });
+  const exported = first.exportEnvelope();
+  const secondStorage = createMemoryStorage();
+  const second = new EncryptedVault(secondStorage, "vault-b");
+  await second.initialize("een-veilige-testzin-123", { profile: "B" });
+  const before = secondStorage.getItem("vault-b");
+  await assert.rejects(() => second.restoreEnvelope("verkeerde-testzin-123", exported));
+  assert.equal(secondStorage.getItem("vault-b"), before);
+  assert.deepEqual(await second.restoreEnvelope("een-veilige-testzin-123", exported), { profile: "A" });
 });
