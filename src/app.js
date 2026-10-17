@@ -79,7 +79,9 @@ let customRoutines = encryptedVaultExists ? [] : readCustomRoutines();
 
 function updateVaultControls() {
   const locked = encryptedVaultExists && !(activeVault && activeVault.isUnlocked);
-  $("input, textarea, button", $("#custom-routine-form")).forEach(control => { control.disabled = locked; });
+  const routineForm = $("#custom-routine-form");
+  const routineControls = routineForm.querySelectorAll("input, textarea, button");
+  Array.from(routineControls).forEach(control => { control.disabled = locked; });
   ["#clear-custom-routines", "#export-custom-routines", "#import-custom-routines", "#export-encrypted-routines", "#import-encrypted-routines"]
     .forEach(selector => { const control = $(selector); if (control) control.disabled = locked; });
   $("#lock-encrypted-vault").disabled = !activeVault || !activeVault.isUnlocked;
@@ -527,7 +529,8 @@ $("#import-custom-routines").addEventListener("change", async event => {
   }
 });
 
-$("[data-view]").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
+const viewButtons = document.querySelectorAll("[data-view]");
+Array.from(viewButtons).forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
 $("#language").addEventListener("change", event => { applyLanguage(event.target.value); updateNoteCharacterCount(); savePreferences(); });
 $("#language-settings").addEventListener("change", event => { applyLanguage(event.target.value); updateNoteCharacterCount(); savePreferences(); });
 $$("[data-task]").forEach(input => input.addEventListener("change", () => {
