@@ -389,7 +389,7 @@ test("encrypted migration UI is explicit, bilingual and preserves legacy routine
   assert.match(js, /if \(!\(await saveCustomRoutines\(\)\)\)/);
   assert.match(js, /vaultMigrationSuccess:"De volledige versleutelde kluis-back-up is gedownload/);
   assert.match(js, /vaultMigrationSuccess:"The full encrypted vault backup was downloaded/);
-  assert.match(js, /De oorspronkelijke routines blijven staan en zijn nog steeds onversleuteld/);
+  assert.match(js, /De oude onversleutelde routinekopie wordt niet automatisch verwijderd/);
 });
 
 const secureStorage = await readFile(new URL("../src/secure-storage.js", import.meta.url), "utf8");
