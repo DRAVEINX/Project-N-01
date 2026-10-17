@@ -95,8 +95,8 @@ test("notes explicitly warn that the prototype does not save them", () => {
   assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
 });
 test("service worker cache version is bumped when shipping updated app assets", () => {
-  assert.match(serviceWorker, /project-n-01-prototype-v8/);
-  assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v7/);
+  assert.match(serviceWorker, /project-n-01-prototype-v9/);
+  assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v8/);
 });
 
 test("encrypted import tracks temporary vault unlock in local scope", () => {
@@ -659,9 +659,17 @@ test("tablet routine cards use two columns while phone layouts stay single-colum
 
 test("offline app shell cache version is refreshed and includes core app assets", async () => {
   const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(serviceWorker, /project-n-01-prototype-v8/);
+  assert.match(serviceWorker, /project-n-01-prototype-v9/);
   for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/manifest.webmanifest", "/offline.html"]) {
     assert.ok(serviceWorker.includes(JSON.stringify(asset)), `offline shell missing ${asset}`);
   }
   assert.match(serviceWorker, /key !== CACHE_NAME/);
+});
+
+test("offline page marks Dutch and English text with the correct language", async () => {
+  const offlinePage = await readFile(new URL("../offline.html", import.meta.url), "utf8");
+  assert.match(offlinePage, /<h1><span lang="nl">Je bent even offline<\/span> \/ <span lang="en">You're offline<\/span><\/h1>/);
+  assert.match(offlinePage, /<p lang="nl">Deze pagina is niet beschikbaar/);
+  assert.match(offlinePage, /<p lang="en">This page isn't available/);
+  assert.match(offlinePage, /<span lang="nl">Terug naar de startpagina<\/span> \/ <span lang="en">Back to home<\/span>/);
 });
