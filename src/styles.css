@@ -222,3 +222,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
  .work-day-heading{font-size:.95rem}
  .work-assignment-photo{width:62px;height:62px}
 }
+
+/* Agenda duration, recurrence, and opt-in reminder controls */
+.agenda-options-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.agenda-reminder-tools{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:8px 0 14px}
+.agenda-reminder-tools .inline-status{margin:0;flex:1 1 260px}
+#work-copy-previous-week{margin:0 0 12px}
+@media(max-width:760px){.agenda-options-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.agenda-options-grid{grid-template-columns:1fr}.agenda-reminder-tools{align-items:stretch}.agenda-reminder-tools button{width:100%}}
