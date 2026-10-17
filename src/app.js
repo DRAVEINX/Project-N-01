@@ -57,12 +57,12 @@ function applyLanguage(next) {
   $("#language").setAttribute("aria-label", t("language"));
   renderCustomRoutines();
   updateVaultControls();
-  $("[data-complete-routine]").forEach(button => { const done = button.dataset.done === "true"; button.textContent = done ? t("routineMarkedDone") : t("routineMarkDone"); });
+  $$("[data-complete-routine]").forEach(button => { const done = button.dataset.done === "true"; button.textContent = done ? t("routineMarkedDone") : t("routineMarkDone"); });
   $("#today-date").textContent = new Intl.DateTimeFormat(language === "nl" ? "nl-NL" : "en-GB", {weekday:"short",day:"numeric",month:"short"}).format(new Date());
   updateDocumentTitle();
   $("#task-status").textContent = "";
   $("#routine-status").textContent = "";
-  $$("[data-routine-step]").forEach(input => updateRoutineProgress(input.dataset.routineStep));
+  $$$("[data-routine-step]").forEach(input => updateRoutineProgress(input.dataset.routineStep));
   $("#breath-word").textContent = t("ready");
   $("#breath-instruction").textContent = t("breathIntro");
 }
