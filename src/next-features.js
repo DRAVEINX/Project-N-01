@@ -357,7 +357,7 @@
         try{await deleteItem("trustedPeople",person.id);renderPeople();}
         catch{$("#people-status").textContent=text("peopleError");}
       })]);
-      if(typeof person.photo==="string"&&/^data:image\\/(png|jpeg|webp);base64,/.test(person.photo)&&person.photo.length<=180000){const photo=make("img","trusted-photo");photo.src=person.photo;photo.alt=person.name;photo.loading="lazy";card.prepend(photo);}
+      if(typeof person.photo==="string"&&/^data:image\/(png|jpeg|webp);base64,/.test(person.photo)&&person.photo.length<=180000){const photo=make("img","trusted-photo");photo.src=person.photo;photo.alt=person.name;photo.loading="lazy";card.prepend(photo);}
       list.append(card);
     });
   }
