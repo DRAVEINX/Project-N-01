@@ -37,7 +37,12 @@ export function validateFullVaultData(value) {
     !item || typeof item !== "object" || !text(item.id, 120, true) ||
     !text(item.title, 80, true) || !date(item.date) ||
     (item.time !== "" && item.time !== undefined && (typeof item.time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.time))) ||
-    !optionalText(item.details, 600)
+    !optionalText(item.details, 600) ||
+     (item.durationMinutes !== undefined && ![15,30,45,60,90,120].includes(item.durationMinutes)) ||
+     (item.reminderMinutes !== undefined && ![0,5,15,30].includes(item.reminderMinutes)) ||
+     !optionalText(item.seriesId, 120) ||
+     (item.seriesIndex !== undefined && (!Number.isInteger(item.seriesIndex) || item.seriesIndex < 1 || item.seriesIndex > 8)) ||
+     (item.seriesCount !== undefined && (!Number.isInteger(item.seriesCount) || item.seriesCount < 2 || item.seriesCount > 8))
   )) return false;
   if ((value.moodEntries || []).some(item =>
     !item || typeof item !== "object" || !text(item.id, 120, true) ||
