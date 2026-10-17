@@ -233,6 +233,18 @@ test("routines can be completed one step at a time", () => {
   assert.match(js, /\$\$\("\[data-complete-routine\]"\)\.forEach/);
 });
 
+test("language controls and phrase close button have translated accessible labels", () => {
+  assert.match(html, /id="language"[^>]*data-i18n-aria-label="languageSelectLabel"/);
+  assert.match(html, /id="language-settings"[^>]*data-i18n-aria-label="languageSettingsLabel"/);
+  assert.match(html, /id="close-phrase"[^>]*data-i18n-aria-label="closePhraseLabel"/);
+  assert.match(js, /languageSelectLabel:"Taal kiezen"/);
+  assert.match(js, /languageSelectLabel:"Choose language"/);
+  assert.match(js, /languageSettingsLabel:"Taalinstelling"/);
+  assert.match(js, /languageSettingsLabel:"Language setting"/);
+  assert.match(js, /closePhraseLabel:"Sluit de getoonde zin"/);
+  assert.match(js, /closePhraseLabel:"Close displayed phrase"/);
+});
+
 test("custom routine creation enforces the 50-routine storage limit", () => {
   const start = js.indexOf('$("#custom-routine-form").addEventListener("submit", async event => {');
   const end = js.indexOf("\n});", start);
