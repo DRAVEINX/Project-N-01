@@ -85,6 +85,12 @@ test("note character count refreshes immediately when the language changes", () 
   assert.match(js, /\$\("#language-settings"\)\.addEventListener\("change", event => \{ applyLanguage\(event\.target\.value\); updateNoteCharacterCount\(\); savePreferences\(\); \}\)/);
 });
 
+test("clipboard failure selects the note for manual copying and has its own empty message", () => {
+  assert.match(js, /noteCopyEmpty:"Write or dictate something before copying the note\."/);
+  assert.match(js, /noteCopyFallback:"Automatic copying failed\. Your note is selected; copy it manually\."/);
+  assert.match(js, /\$\("#note-text"\)\.focus\(\);\s*\$\("#note-text"\)\.select\(\);/);
+});
+
 test("notes explicitly warn that the prototype does not save them", () => {
   assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
 });
