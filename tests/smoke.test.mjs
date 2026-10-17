@@ -15,7 +15,7 @@ test("daily task and built-in routine progress persists locally for the current 
   assert.match(js, /saveDailyProgress\(\);/);
   assert.match(js, /encryptedVaultStorageKey, dailyProgressKey/);
   assert.match(js, /Today’s progress and accessibility preferences are stored unencrypted/);
-  assert.match(js, /De voortgang van vandaag en toegankelijkheidsvoorkeuren worden onversleuteld/);
+  assert.match(js, /De voortgang van vandaag en toegankelijkheidsvoorkeuren staan onversleuteld/);
 });
 
 test("PWA manifest is valid and points to the cached app icon", async () => {
@@ -165,7 +165,7 @@ test("routine checkbox and completion listeners use the shared query helper", ()
 
 test("document title follows the active view and updates when language changes", () => {
   assert.match(js, /function updateDocumentTitle\(\)/);
-  assert.match(js, /document\.title = pageName \? `\$\{pageName\} · Mivoryntra` : "Project N-01"/);
+  assert.match(js, /document\.title = pageName \? `\$\{pageName\} · Mivoryntra` : "Mivoryntra"/);
   assert.match(js, /updateDocumentTitle\(\);/);
 });
 
@@ -406,7 +406,7 @@ test("encrypted routine storage has an explicit unlock/lock UI and keeps keys in
   assert.match(html, /id="migrate-routines-to-vault"/);
   assert.match(html, /id="lock-encrypted-vault"/);
   assert.match(html, /id="delete-plaintext-routines"/);
-  assert.match(js, /await activeVault\.save\(\{ routines: customRoutines \}\)/);
+  assert.match(js, /await activeVault\.save\(\{ \.\.\.activeVault\.read\(\), routines: customRoutines \}\)/);
   assert.match(js, /activeVault\.lock\(\)/);
   assert.match(secureStorage, /openEncryptedJsonSession/);
   assert.match(secureStorage, /fresh random IV for every save/);
