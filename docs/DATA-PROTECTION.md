@@ -56,3 +56,8 @@ The experimental Web Crypto helper now rejects values that cannot be serialized 
 `src/encrypted-vault.js` adds a standalone storage adapter that stores one AES-GCM envelope under a dedicated storage key, requires an explicit unlock, clears its in-memory plaintext on lock, and verifies the supplied passphrase against the existing envelope before replacing data. Restore authenticates the incoming envelope before writing it. Automated tests cover persistence shape, wrong passphrases, save and restore behavior.
 
 This adapter is **not integrated into the app's current routine/preferences flow**. It does not migrate or delete existing plaintext data, does not provide inactivity auto-lock or recovery, and has not received an independent security review. The current app still stores routines and preferences unencrypted in `localStorage`; do not store sensitive information in the prototype.
+
+
+## Non-destructive routine migration helper
+
+`src/routine-migration.js` can preview and normalize the existing plaintext custom-routine record, then copy valid routines into a new encrypted vault and verify the decrypted result. It deliberately preserves the original plaintext record and refuses to overwrite an existing vault or proceed when the legacy record is malformed. The helper is not wired into the UI; the existing app continues to use plaintext `localStorage`. A separate, clearly confirmed cleanup flow and an end-to-end migration review are still required before integration.
