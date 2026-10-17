@@ -248,27 +248,33 @@ function normaliseImportedRoutines(value) {
 }
 $("#clear-local-app-data").addEventListener("click", () => {
   if (!window.confirm(t("clearLocalDataConfirm"))) return;
-  try {
-    if (vaultAutoLockTimer !== null) window.clearTimeout(vaultAutoLockTimer);
-    vaultAutoLockTimer = null;
-    if (activeVault) activeVault.lock();
-    activeVault = null;
-    encryptedVaultExists = false;
-    localStorage.removeItem(customRoutineStorageKey);
-    localStorage.removeItem(preferenceKey);
-    localStorage.removeItem(encryptedVaultStorageKey);
-    customRoutines = [];
-    $("#large-text").checked = false;
-    $("#less-motion").checked = false;
-    $("#quiet-view").checked = false;
-    document.body.classList.remove("large-text", "reduced-motion", "quiet-view");
-    applyLanguage("nl");
-    renderCustomRoutines();
-    updateVaultControls();
-    $("#local-data-status").textContent = t("localDataCleared");
-  } catch {
-    $("#local-data-status").textContent = t("localDataClearError");
+  if (vaultAutoLockTimer !== null) window.clearTimeout(vaultAutoLockTimer);
+  vaultAutoLockTimer = null;
+  if (activeVault) activeVault.lock();
+  activeVault = null;
+  customRoutines = [];
+  $("#large-text").checked = false;
+  $("#less-motion").checked = false;
+  $("#quiet-view").checked = false;
+  document.body.classList.remove("large-text", "reduced-motion", "quiet-view");
+  applyLanguage("nl");
+  let allRemoved = true;
+  for (const key of [customRoutineStorageKey, preferenceKey, encryptedVaultStorageKey]) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      allRemoved = false;
+    }
   }
+  try {
+    encryptedVaultExists = localStorage.getItem(encryptedVaultStorageKey) !== null;
+  } catch {
+    allRemoved = false;
+    encryptedVaultExists = true;
+  }
+  renderCustomRoutines();
+  updateVaultControls();
+  $("#local-data-status").textContent = t(allRemoved ? "localDataCleared" : "localDataClearError");
 });
 $("#clear-custom-routines").addEventListener("click", async () => {
   if (!customRoutines.length) {
