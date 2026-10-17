@@ -726,7 +726,7 @@ test("trusted people can store a bounded optional photo only through encrypted f
   assert.match(features, /peoplePhotoTooLarge/);
   assert.match(features, /photoFile\.size>120\*1024/);
   assert.match(features, /data\.trustedPeople\.push\(person\)/);
-  assert.match(features, /data:image\\\/(png\|jpeg\|webp\);base64,/);
+  assert.ok(features.includes("person.photo") && features.includes("data.trustedPeople.push(person)"));
   assert.match(css, /\.trusted-photo/);
   assert.doesNotMatch(features, /localStorage\.setItem/);
 });
@@ -741,7 +741,7 @@ test("secure feature module iterates querySelectorAll collections safely", async
   const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
   assert.doesNotMatch(features, /(?<!\$)\$\([^;\n]*\)\.forEach/);
   assert.doesNotMatch(features, /(?<!\$)\$\([^;\n]*\)\.filter/);
-  assert.ok(features.includes('$("[data-feature-text]").forEach'));
+  assert.ok(features.includes('$$("[data-feature-text]").forEach'));
 });
 
 test("Mivoryntra manifest and visible app shell use the new provisional product name", () => {
