@@ -7,7 +7,7 @@
 - [x] Calm/breathing interaction
 - [x] Communication phrase cards and browser text-to-speech support
 - [x] Text size, quiet view and reduced-motion controls
-- [x] Bilingual drawing pad in the notes view, with pointer and keyboard input; drawings are temporary and not stored
+- [x] Bilingual drawing pad in the notes view, with pointer and keyboard input; drawings remain temporary unless the user explicitly saves them in the encrypted vault or exports a PNG
 - [x] Export drawings as PNG on explicit user action, with Dutch/English status messages; drawings remain in memory until exported and are not stored by the app
 - [x] Add opt-in voice recording with in-page playback and explicit audio download; recordings remain in memory and are not persisted or uploaded by the app
 - [x] Add optional Dutch/English browser speech-to-text that appends final recognized text to the notes field, with unsupported/error states and a warning that recognition may be processed by a browser/provider service
@@ -28,6 +28,8 @@
 - [x] Add an encrypted-vault gate for explicit journal entry saves and saved drawings.
 - [x] Add an encrypted local week planner, mood check-ins and trusted-person contacts.
 - [x] Preserve the additional encrypted fields when existing custom routines are edited.
+- [x] Add a separate full-vault restore action, with confirmation, 2 MiB file limit, schema/collection validation before overwrite, and localized status messages.
+- [x] Add regression tests for valid full-vault data and rejection of invalid mood values, dates, photo formats, collection limits and oversized payloads.
 - [ ] Confirm CI for this branch and exercise every add/edit/delete/lock/unlock flow.
 - [ ] Manually review phone/tablet layout, screen readers, reduced motion and offline start.
 - [ ] Complete official trademark, app-store and domain checks before making the name public.
