@@ -516,11 +516,11 @@ function updateRoutineProgress(routine) {
     button.classList.toggle("secondary-button", !complete);
   }
 }
-$$$("[data-routine-step]").forEach(input => input.addEventListener("change", () => {
+$("[data-routine-step]").forEach(input => input.addEventListener("change", () => {
   updateRoutineProgress(input.dataset.routineStep);
   $("#routine-status").textContent = input.checked ? t("routineStepDone") : "";
 }));
-$$$("[data-complete-routine]").forEach(button => button.addEventListener("click", () => {
+$("[data-complete-routine]").forEach(button => button.addEventListener("click", () => {
   const routine = button.dataset.completeRoutine;
   const steps = $$("[data-routine-step]").filter(input => input.dataset.routineStep === routine);
   const complete = steps.length > 0 && steps.every(input => input.checked);
