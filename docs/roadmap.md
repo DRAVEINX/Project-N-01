@@ -9,6 +9,7 @@
 - [x] Text size, quiet view and reduced-motion controls
 - [x] Bilingual drawing pad in the notes view, with pointer and keyboard input; drawings are temporary and not stored
 - [x] Export drawings as PNG on explicit user action, with Dutch/English status messages; drawings remain in memory until exported and are not stored by the app
+- [x] Add opt-in voice recording with in-page playback and explicit audio download; recordings remain in memory and are not persisted or uploaded by the app
 - [x] Routine completion buttons expose their state to assistive technology and update in the selected language
 - [x] Routines support step-by-step checklists with live progress and one-tap complete/reset
 - [x] Users can create and delete their own routines with up to 10 steps; browser-only storage is disclosed as unencrypted
