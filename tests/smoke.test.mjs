@@ -99,6 +99,12 @@ test("service worker cache version is bumped when shipping updated app assets", 
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v5/);
 });
 
+test("routine checkbox and completion listeners use the shared query helper", () => {
+  assert.doesNotMatch(js, /\$\$\$\(/);
+  assert.match(js, /\$\$\("\[data-routine-step\]"\)\.forEach/);
+  assert.match(js, /\$\$\("\[data-complete-routine\]"\)\.forEach/);
+});
+
 test("document title follows the active view and updates when language changes", () => {
   assert.match(js, /function updateDocumentTitle\(\)/);
   assert.match(js, /document\.title = pageName \? `\$\{pageName\} · Project N-01` : "Project N-01"/);
