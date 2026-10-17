@@ -212,7 +212,10 @@
       const values={title:name.value.trim().slice(0,80),date:date.value,time:time.value,details:details.value.trim().slice(0,600)};
       if (!values.title || !values.date) return;
       try {
+        const { findDuplicateAppointment } = await import("./appointment-rules.js");
         await updateSecure(data=>{
+          const conflict=findDuplicateAppointment(values,data.agendaItems,targetId,30);
+          if(conflict) throw new Error("duplicate-appointment");
           if(targetId){
             const found=data.agendaItems.find(item=>item && item.id===targetId);
             if(!found) throw new Error("appointment-not-found");
@@ -226,7 +229,9 @@
         editingAppointmentId=null; form.reset(); date.value=localDate(); date.min=localDate();
         submit.textContent=text("agendaAdd"); cancel.hidden=true;
         status.textContent=text(targetId?"agendaUpdated":"agendaSaved"); renderAgenda();
-      } catch { status.textContent=text("agendaError"); }
+      } catch (error) {
+        status.textContent=error && error.message==="duplicate-appointment" ? text("agendaDuplicate") : text("agendaError");
+      }
     });
     return fragment;
   });
