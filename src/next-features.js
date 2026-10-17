@@ -15,6 +15,10 @@
       peopleEyebrow:"MENSEN OM JE HEEN", peopleTitle:"Vertrouwde mensen", peopleIntro:"Bewaar contactgegevens van mensen bij wie je terechtkunt. Deze gegevens blijven in jouw versleutelde kluis.",
       peopleName:"Naam", peoplePhoto:"Foto (optioneel, maximaal 120 KB)", peoplePhotoTooLarge:"Kies een PNG-, JPG- of WebP-foto van maximaal 120 KB.", peopleRole:"Wie is deze persoon voor jou?", peopleContact:"Telefoon, e-mail of andere contactgegevens", peopleDetails:"Extra informatie (optioneel)", peopleAdd:"Contact opslaan",
       peopleEmpty:"Je hebt nog geen vertrouwde mensen toegevoegd.", peopleDelete:"Contact verwijderen", peopleEdit:"Contact bewerken", peopleCancelEdit:"Bewerken annuleren", peopleUpdate:"Wijzigingen opslaan", peopleUpdated:"Contact is bijgewerkt.", peopleEditStarted:"Je kunt het contact nu aanpassen.", peopleSaved:"Contact is veilig opgeslagen.", peopleError:"Opslaan lukte niet. Ontgrendel de kluis en controleer of er voldoende ruimte is.",
+      workEyebrow:"DAG- EN WEEKPLANNING", workTitle:"Wie werkt er vandaag?", workIntro:"Bewaar per dag wie er werkt. Kies een datum, voeg een naam en foto toe en pas de planning op elk moment aan.",
+      workDate:"Voor welke datum?", workName:"Naam medewerker of begeleider", workRole:"Functie of rol (optioneel)", workPhoto:"Foto (optioneel, maximaal 120 KB)", workPhotoAlt:"Foto van", workPhotoTooLarge:"Kies een PNG-, JPG- of WebP-foto van maximaal 120 KB.", workNotes:"Opmerking (optioneel)", workSave:"Dienst opslaan",
+      workWeekHeading:"Weekplanning", workPreviousWeek:"Vorige week", workNextWeek:"Volgende week", workEmpty:"Voor deze dag is nog niemand ingepland.", workWeekEmpty:"Er zijn deze week nog geen medewerkers ingepland.",
+      workEdit:"Planning bewerken", workDelete:"Planning verwijderen", workCancelEdit:"Bewerken annuleren", workUpdate:"Wijzigingen opslaan", workSaved:"De planning is opgeslagen.", workUpdated:"De planning is bijgewerkt.", workEditStarted:"Je kunt deze planning nu aanpassen.", workDuplicate:"Deze persoon staat op deze datum al ingepland. Bewerk de bestaande planning om dubbele vermeldingen te voorkomen.", workError:"Opslaan lukte niet. Controleer of de kluis ontgrendeld is en voldoende ruimte heeft.",
       secureGateTitle:"Je persoonlijke gegevens zijn vergrendeld", secureGateText:"Dagboek, stemming, afspraken, contacten en tekeningen worden alleen opgeslagen in je versleutelde kluis op dit apparaat. Ontgrendel de kluis via Routines om verder te gaan.",
       openVault:"Naar de kluisinstellingen", privateLocalOnly:"Alleen op dit apparaat · versleutelde opslag · geen cloud-synchronisatie",
       journalSave:"Notitie veilig opslaan", journalSaveStatus:"Je notitie is veilig opgeslagen in de kluis.", journalEmpty:"Schrijf eerst iets voordat je het opslaat.",
@@ -38,6 +42,10 @@
       peopleEyebrow:"YOUR PEOPLE", peopleTitle:"Trusted people", peopleIntro:"Keep contact details for people you can turn to. These details stay in your encrypted vault.",
       peopleName:"Name", peoplePhoto:"Photo (optional, maximum 120 KB)", peoplePhotoTooLarge:"Choose a PNG, JPG or WebP photo of 120 KB or less.", peopleRole:"How do you know this person?", peopleContact:"Phone, email or other contact details", peopleDetails:"Extra details (optional)", peopleAdd:"Save contact",
       peopleEmpty:"You have not added any trusted people yet.", peopleDelete:"Delete contact", peopleEdit:"Edit contact", peopleCancelEdit:"Cancel editing", peopleUpdate:"Save changes", peopleUpdated:"Contact updated.", peopleEditStarted:"You can edit this contact now.", peopleSaved:"Contact saved securely.", peopleError:"Could not save. Unlock the vault and check that there is enough free space.",
+      workEyebrow:"DAY AND WEEK PLANNING", workTitle:"Who is working today?", workIntro:"Keep a schedule of who is working each day. Choose a date, add a name and photo, and update the plan at any time.",
+      workDate:"Date", workName:"Staff member or support worker name", workRole:"Role (optional)", workPhoto:"Photo (optional, maximum 120 KB)", workPhotoAlt:"Photo of", workPhotoTooLarge:"Choose a PNG, JPG or WebP photo of 120 KB or less.", workNotes:"Notes (optional)", workSave:"Save shift",
+      workWeekHeading:"Weekly roster", workPreviousWeek:"Previous week", workNextWeek:"Next week", workEmpty:"No one is scheduled for this day yet.", workWeekEmpty:"No staff are scheduled for this week yet.",
+      workEdit:"Edit shift", workDelete:"Delete shift", workCancelEdit:"Cancel editing", workUpdate:"Save changes", workSaved:"The schedule was saved.", workUpdated:"The schedule was updated.", workEditStarted:"You can edit this schedule now.", workDuplicate:"This person is already scheduled for this date. Edit the existing entry to avoid a duplicate.", workError:"Could not save. Check that the vault is unlocked and has enough free space.",
       secureGateTitle:"Your personal information is locked", secureGateText:"Journal, mood, appointments, contacts and drawings are saved only in your encrypted vault on this device. Unlock the vault under Routines to continue.",
       openVault:"Open vault settings", privateLocalOnly:"This device only · encrypted storage · no cloud sync",
       journalSave:"Save note securely", journalSaveStatus:"Your note was saved securely in the vault.", journalEmpty:"Write something before saving it.",
@@ -337,6 +345,104 @@
     return fragment;
   });
 
+  const workRoster = addView("work", "▦", "navWork", "workTitle", "workEyebrow", "workIntro", () => {
+    const fragment=make("div");
+    const form=make("form","panel feature-form");
+    form.id="work-schedule-form";
+
+    const dateLabelEl=make("label","",text("workDate"));dateLabelEl.htmlFor="work-date";dateLabelEl.dataset.featureText="workDate";
+    const date=make("input");date.type="date";date.id="work-date";date.name="date";date.required=true;date.value=localDate();
+
+    const nameLabel=make("label","",text("workName"));nameLabel.htmlFor="work-name";nameLabel.dataset.featureText="workName";
+    const name=make("input");name.id="work-name";name.name="name";name.required=true;name.maxLength=80;name.autocomplete="off";
+
+    const roleLabel=make("label","",text("workRole"));roleLabel.htmlFor="work-role";roleLabel.dataset.featureText="workRole";
+    const role=make("input");role.id="work-role";role.name="role";role.maxLength=80;role.autocomplete="organization-title";
+
+    const photoLabel=make("label","",text("workPhoto"));photoLabel.htmlFor="work-photo";photoLabel.dataset.featureText="workPhoto";
+    const photoInput=make("input");photoInput.type="file";photoInput.id="work-photo";photoInput.name="photo";photoInput.accept="image/png,image/jpeg,image/webp";
+
+    const notesLabel=make("label","",text("workNotes"));notesLabel.htmlFor="work-notes";notesLabel.dataset.featureText="workNotes";
+    const notes=make("textarea");notes.id="work-notes";notes.name="notes";notes.rows=2;notes.maxLength=400;
+
+    const submit=make("button","primary-button",text("workSave"));submit.type="submit";submit.id="work-submit";submit.dataset.featureText="workSave";
+    const cancel=make("button","secondary-button",text("workCancelEdit"));cancel.type="button";cancel.id="work-cancel-edit";cancel.hidden=true;cancel.dataset.featureText="workCancelEdit";
+    const status=make("p","inline-status");status.id="work-status";status.setAttribute("role","status");status.setAttribute("aria-live","polite");
+    form.append(dateLabelEl,date,nameLabel,name,roleLabel,role,photoLabel,photoInput,notesLabel,notes,submit,cancel,status);
+
+    cancel.addEventListener("click",()=>{
+      editingWorkScheduleId=null;editingWorkSchedulePhoto="";form.reset();date.value=localDate();
+      submit.textContent=text("workSave");cancel.hidden=true;status.textContent="";
+    });
+
+    const gate=secureGate();gate.hidden=true;gate.dataset.secureGate="";
+    const contents=make("div","secure-feature-contents");contents.dataset.secureContents="";
+    const weekHeading=make("h3","feature-subheading",text("workWeekHeading"));weekHeading.dataset.featureText="workWeekHeading";
+    const toolbar=make("div","work-week-toolbar");
+    const prev=button(text("workPreviousWeek"),"secondary-button",()=>{
+      workWeekStart=addDays(workWeekStart||mondayOf(new Date()),-7);renderWorkSchedule();
+    });
+    prev.id="work-previous-week";prev.dataset.featureText="workPreviousWeek";
+    const range=make("p","work-week-range");range.id="work-week-range";range.setAttribute("aria-live","polite");
+    const next=button(text("workNextWeek"),"secondary-button",()=>{
+      workWeekStart=addDays(workWeekStart||mondayOf(new Date()),7);renderWorkSchedule();
+    });
+    next.id="work-next-week";next.dataset.featureText="workNextWeek";
+    toolbar.append(prev,range,next);
+    const week=make("div","work-week-grid");week.id="work-week-grid";
+    contents.append(weekHeading,toolbar,week);
+    fragment.append(form,gate,contents);
+
+    form.addEventListener("submit",async event=>{
+      event.preventDefault();
+      if(!app().isVaultUnlocked()){status.textContent=text("secureGateTitle");gate.hidden=false;return;}
+      const targetId=editingWorkScheduleId;
+      let photo=targetId?editingWorkSchedulePhoto:"";
+      const selectedFile=photoInput.files&&photoInput.files[0];
+      if(selectedFile){
+        if(!["image/png","image/jpeg","image/webp"].includes(selectedFile.type)||selectedFile.size>120*1024){
+          status.textContent=text("workPhotoTooLarge");return;
+        }
+        try{
+          photo=await new Promise((resolve,reject)=>{
+            const reader=new FileReader();
+            reader.addEventListener("load",()=>resolve(typeof reader.result==="string"?reader.result:""));
+            reader.addEventListener("error",reject);
+            reader.readAsDataURL(selectedFile);
+          });
+        }catch{status.textContent=text("workPhotoTooLarge");return;}
+        if(!/^data:image\/(png|jpeg|webp);base64,/.test(photo)||photo.length>180000){
+          status.textContent=text("workPhotoTooLarge");return;
+        }
+      }
+      const values={date:date.value,name:name.value.trim().slice(0,80),role:role.value.trim().slice(0,80),photo,notes:notes.value.trim().slice(0,400)};
+      if(!values.date||!values.name)return;
+      try{
+        const {findDuplicateWorkAssignment}=await import("./appointment-rules.js");
+        await updateSecure(data=>{
+          if(findDuplicateWorkAssignment(values,data.workSchedules,targetId))throw new Error("duplicate-work");
+          if(targetId){
+            const index=data.workSchedules.findIndex(item=>item&&item.id===targetId);
+            if(index<0)throw new Error("work-not-found");
+            data.workSchedules[index]={...data.workSchedules[index],...values,updatedAt:new Date().toISOString()};
+          }else{
+            if(data.workSchedules.length>=500)throw new Error("work-limit");
+            data.workSchedules.push({id:id("work"),...values,createdAt:new Date().toISOString()});
+          }
+          return data;
+        });
+        editingWorkScheduleId=null;editingWorkSchedulePhoto="";form.reset();date.value=localDate();
+        submit.textContent=text("workSave");cancel.hidden=true;
+        workWeekStart=mondayOf(new Date(values.date+"T12:00:00"));
+        status.textContent=text(targetId?"workUpdated":"workSaved");
+        renderWorkSchedule();
+      }catch(error){
+        status.textContent=error&&error.message==="duplicate-work"?text("workDuplicate"):text("workError");
+      }
+    });
+    return fragment;
+  });
+
   function deleteItem(arrayKey, itemId) {
     const confirms = text("secureDeleteConfirm");
     if (!window.confirm(confirms)) return Promise.resolve(false);
@@ -544,17 +650,19 @@
       $$("[data-secure-gate]",editor).forEach(gate=>{gate.hidden=unlocked;});
     });
     if(!unlocked){
-      editingAppointmentId=null; editingPersonId=null; editingPersonPhoto="";
+      editingAppointmentId=null; editingPersonId=null; editingPersonPhoto=""; editingWorkScheduleId=null; editingWorkSchedulePhoto="";
       const agendaSubmit=$("#agenda-submit"),agendaCancel=$("#agenda-cancel-edit");
       if(agendaSubmit)agendaSubmit.textContent=text("agendaAdd");if(agendaCancel)agendaCancel.hidden=true;
       const peopleSubmit=$("#person-submit"),peopleCancel=$("#person-cancel-edit");
       if(peopleSubmit)peopleSubmit.textContent=text("peopleAdd");if(peopleCancel)peopleCancel.hidden=true;
-      ["agenda-form","mood-form","people-form"].forEach(formId=>{const form=$("#"+formId);if(form)form.reset();});
+      const workSubmit=$("#work-submit"),workCancel=$("#work-cancel-edit");
+      if(workSubmit)workSubmit.textContent=text("workSave");if(workCancel)workCancel.hidden=true;
+      ["agenda-form","mood-form","people-form","work-schedule-form"].forEach(formId=>{const form=$("#"+formId);if(form)form.reset();});
       ["agenda-status","mood-status","people-status"].forEach(statusId=>{const status=$("#"+statusId);if(status)status.textContent="";});
       $$(".drawing-gallery img").forEach(img=>{img.removeAttribute("src");});
       $$(".feature-list,.drawing-gallery").forEach(list=>list.replaceChildren());
     }
-    ["agenda-form","mood-form","people-form"].forEach(formId=>{
+    ["agenda-form","mood-form","people-form","work-schedule-form"].forEach(formId=>{
       const form=$("#"+formId);
       if(form) $$("input,select,textarea,button",form).forEach(control=>{control.disabled=!unlocked;});
     });
@@ -564,9 +672,76 @@
     }
     lastUnlocked=unlocked;
   }
+  function beginWorkScheduleEdit(item){
+    editingWorkScheduleId=item.id;
+    editingWorkSchedulePhoto=typeof item.photo==="string"?item.photo:"";
+    const form=$("#work-schedule-form");if(form)form.reset();
+    $("#work-date").value=item.date||localDate();
+    $("#work-name").value=item.name||"";
+    $("#work-role").value=item.role||"";
+    $("#work-notes").value=item.notes||"";
+    const submit=$("#work-submit"),cancel=$("#work-cancel-edit"),status=$("#work-status");
+    if(submit)submit.textContent=text("workUpdate");
+    if(cancel)cancel.hidden=false;
+    if(status)status.textContent=text("workEditStarted");
+    workWeekStart=mondayOf(new Date((item.date||localDate())+"T12:00:00"));
+    renderWorkSchedule();
+    app().setView("work");
+    $("#work-name").focus();
+  }
+
+  function renderWorkSchedule(){
+    const week=$("#work-week-grid"),range=$("#work-week-range");
+    if(!week||!range)return;
+    week.replaceChildren();
+    if(!app()||!app().isVaultUnlocked())return;
+    if(!workWeekStart)workWeekStart=mondayOf(new Date());
+    const first=workWeekStart;
+    const last=addDays(first,6);
+    range.textContent=dateLabel(localDate(first))+" – "+dateLabel(localDate(last));
+    let records=[];
+    try{records=secureData().workSchedules;}catch{return;}
+    const today=localDate();
+    for(let offset=0;offset<7;offset++){
+      const dayDate=addDays(first,offset);
+      const key=localDate(dayDate);
+      const day=make("section","work-day");
+      if(key===today)day.classList.add("is-today");
+      const heading=make("h4","work-day-heading",new Intl.DateTimeFormat(language==="nl"?"nl-NL":"en-GB",{weekday:"long",day:"numeric",month:"short"}).format(dayDate));
+      day.append(heading);
+      const dayItems=records.filter(item=>item&&item.date===key).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),language==="nl"?"nl":"en"));
+      if(!dayItems.length){
+        day.append(make("p","work-day-empty",text("workEmpty")));
+      }else{
+        for(const item of dayItems){
+          const actions=[
+            button(text("workEdit"),"secondary-button",()=>beginWorkScheduleEdit(item)),
+            button(text("workDelete"),"secondary-button",async()=>{
+              try{
+                await deleteItem("workSchedules",item.id);
+                if(editingWorkScheduleId===item.id){
+                  editingWorkScheduleId=null;editingWorkSchedulePhoto="";
+                  const form=$("#work-schedule-form");if(form)form.reset();
+                  $("#work-date").value=localDate();$("#work-submit").textContent=text("workSave");$("#work-cancel-edit").hidden=true;
+                }
+                renderWorkSchedule();
+              }catch{$("#work-status").textContent=text("workError");}
+            })
+          ];
+          const card=createItemCard(item.name,item.role||"",item.notes||"",actions);
+          if(typeof item.photo==="string"&&/^data:image\/(png|jpeg|webp);base64,/.test(item.photo)&&item.photo.length<=180000){
+            const img=make("img","work-assignment-photo");img.src=item.photo;img.alt=text("workPhotoAlt")+" "+item.name;img.loading="lazy";card.prepend(img);
+          }
+          day.append(card);
+        }
+      }
+      week.append(day);
+    }
+  }
+
   function renderAll(){
     if(!app()||!app().isVaultUnlocked())return;
-    renderAgenda();renderMoods();renderPeople();renderJournal();renderDrawings();
+    renderAgenda();renderMoods();renderPeople();renderWorkSchedule();renderJournal();renderDrawings();
   }
   function applyLanguage(next){
     language=next==="en"?"en":"nl";
@@ -588,6 +763,7 @@
     injectJournalControls();
     addSettingsLink();
     const today=localDate();
+    workWeekStart=mondayOf(new Date());
     const agendaDate=$("#agenda-date");if(agendaDate){agendaDate.value=today;agendaDate.min=today;}
     window.addEventListener("project-vault-state",()=>updateGateViews());
     applyLanguage(app()?app().getLanguage():"nl");
