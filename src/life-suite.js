@@ -334,11 +334,12 @@
     const workers = visibleItems("workers","roster");
     const future = visibleItems("appointments","calendar").filter(a => a.date >= today).sort((a,b) => (a.date+a.start).localeCompare(b.date+b.start)).slice(0,4);
     const mood = visibleItems("moods","mood").filter(m => m.date === today).slice(-1)[0];
+    const todayPlans = visibleItems("weeklyPlans","planning").filter(p=>Number(p.weekday)===new Date().getDay()).sort((a,b)=>(a.time||"").localeCompare(b.time||""));
     return '<div class="ls-dashboard-grid">' +
       panel(t("today"),'<div class="ls-stat-grid"><div class="ls-stat"><strong>' + appts.length + '</strong><span>' + esc(t("agenda")) + '</span></div><div class="ls-stat"><strong>' + shifts.length + '</strong><span>' + esc(t("roster")) + '</span></div><div class="ls-stat"><strong>' + (mood ? esc(mood.emoji) : "—") + '</strong><span>' + esc(t("mood")) + '</span></div></div><div class="ls-actions">' + button(t("openAgenda"),"go-agenda","primary-button") + button(t("openRoster"),"go-roster","secondary-button") + button(t("openMood"),"go-mood","secondary-button") + '</div>') +
       panel(t("upcoming"),(future.length ? future.map(appointmentCard).join("") : '<p class="ls-empty">' + esc(t("noAppointments")) + '</p>') + button(t("openAgenda"),"go-agenda","secondary-button")) +
       panel(t("todayWorkers"),(shifts.length ? shifts.map(s => {const w=workers.find(x=>x.id===s.workerId); return '<div class="ls-worker-row">' + imageThumb(w && w.photo,w && w.name) + '<div><strong>' + esc(w ? w.name : "—") + '</strong><small>' + esc(s.start + "–" + s.end + " · " + (w ? w.role : "")) + '</small></div></div>';}).join("") : '<p class="ls-empty">' + esc(t("noShifts")) + '</p>') + button(t("openRoster"),"go-roster","secondary-button")) +
-      panel(t("dayPlanner"),'<p>' + esc(t("localOnly")) + '</p>' + button(t("openGuides"),"go-guides","secondary-button")) + '</div>';
+      panel(t("dayPlanner"),(todayPlans.length?todayPlans.map(p=>'<div class="ls-plan-summary"><span><strong>'+esc(p.time||"")+' · '+esc(p.title)+'</strong><small>'+(Array.isArray(p.completedDates)&&p.completedDates.includes(today)?esc(t("done")):"") +'</small></span>'+button(t("edit"),"edit-plan","secondary-button",'data-id="'+esc(p.id)+'"')+'</div>').join(""):'<p class="ls-empty">'+esc(t("noPlans"))+'</p>')+'<div class="ls-actions">'+button(t("weekplan"),"go-weekplan","primary-button")+button(t("openGuides"),"go-guides","secondary-button")+'</div>') + '</div>';
   }
   function workerCard(w) {
     const shifts = visibleItems("shifts","roster").filter(s=>s.workerId===w.id && s.date>=selectedDate && s.date<=shiftDate(selectedDate,6)).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
