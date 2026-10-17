@@ -99,6 +99,12 @@ test("service worker cache version is bumped when shipping updated app assets", 
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v5/);
 });
 
+test("reduced motion follows the operating system until the user chooses a preference", () => {
+  assert.match(js, /window\.matchMedia\("\\(prefers-reduced-motion: reduce\\)"\)/);
+  assert.match(js, /typeof preferences\.reducedMotion === "boolean" \? preferences\.reducedMotion : systemPrefersReducedMotion/);
+  assert.match(js, /\$\("#less-motion"\)\.checked = reducedMotion/);
+});
+
 test("navigation exposes the current page and localizes its accessible label", () => {
   assert.match(html, /data-i18n-aria-label="mainNavigationLabel"/);
   assert.match(html, /data-view="home" aria-current="page"/);
