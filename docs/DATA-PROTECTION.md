@@ -74,3 +74,10 @@ Profiles, consent and invite codes are currently **local workflow scaffolding**,
 The new reminder monitor evaluates items while the page is visible and unlocked. It does not guarantee alarms after the app closes or is suspended. Trusted-contact actions only open the phone or messaging app following confirmation; they do not send a message automatically or dispatch emergency services. Encrypted export/import is manual transfer, not cloud sync.
 
 Before production, test the envelope format and schema against malformed imports, exercise wrong-passphrase/tampered-ciphertext/storage-full cases, audit profile consent filtering, and obtain independent cryptographic, privacy and accessibility review.
+
+
+## Separate recovery-code backup
+
+The Daily Life Suite now provides a **separate encrypted recovery backup**. It creates a randomly generated recovery code, derives an AES-256-GCM key from that code and a fresh random salt, and downloads a recovery JSON file containing only the encrypted envelope. The code is shown in the open session and is not stored in the normal app data. Save the downloaded file and the code separately, such as in two different safe locations. Import the file using the displayed code in the normal encrypted-backup restore field. If either item is lost, that recovery copy cannot be opened.
+
+This is a manual file-based recovery aid, not password reset, cloud backup, account recovery, or synchronization. It does not recover the original browser's encrypted vault unless the user restores the exported file. The app cannot retrieve a forgotten passphrase or missing recovery code.
