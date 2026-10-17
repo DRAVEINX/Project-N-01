@@ -58,22 +58,12 @@ export class EncryptedVault {
     return cloneJson(safeData);
   }
 
-  async save(value) {
-    if (!this.unlocked) throw new Error("Unlock the vault before saving.");
-    const safeValue = cloneJson(value);
-    const envelope = await encryptJson(safeValue, this._passphraseRequiredForSave());
-    this.storage.setItem(this.storageKey, JSON.stringify(envelope));
-    this.unlockedData = safeValue;
-    return cloneJson(safeValue);
-  }
-
-  _passphraseRequiredForSave() {
-    // A key must never be cached in this object; save requires a fresh passphrase.
-    throw new Error("Saving requires saveWithPassphrase(passphrase, value).");
-  }
-
   async saveWithPassphrase(passphrase, value) {
     if (!this.unlocked) throw new Error("Unlock the vault before saving.");
+    const currentRaw = this.storage.getItem(this.storageKey);
+    if (currentRaw === null) throw new Error("Vault does not exist.");
+    // Verify the supplied passphrase against the current record before replacing it.
+    await decryptJson(JSON.parse(currentRaw), passphrase);
     const safeValue = cloneJson(value);
     const envelope = await encryptJson(safeValue, passphrase);
     this.storage.setItem(this.storageKey, JSON.stringify(envelope));
