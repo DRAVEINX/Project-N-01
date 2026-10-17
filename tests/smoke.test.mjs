@@ -107,7 +107,7 @@ test("encrypted import tracks temporary vault unlock in local scope", () => {
   const handler = js.slice(handlerStart, handlerEnd);
   assert.match(handler, /let unlockedForThisImport = false;/);
   assert.match(handler, /unlockedForThisImport = true;/);
-  assert.match(handler, /if \\(unlockedForThisImport && activeVault\\)/);
+  assert.ok(handler.includes("if (unlockedForThisImport && activeVault)"));
 });
 
 test("vault startup tolerates unavailable browser storage", () => {
