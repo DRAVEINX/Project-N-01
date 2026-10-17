@@ -613,7 +613,7 @@
     const preferencesForm=$("#ls-preferences-form");
     if(preferencesForm) preferencesForm.addEventListener("change",async()=>{state.preferences.largeText=preferencesForm.elements.largeText.checked;state.preferences.highContrast=preferencesForm.elements.highContrast.checked;state.preferences.reducedMotion=preferencesForm.elements.reducedMotion.checked;applyPreferences();if(await saveState(false))setStatus(t("saved"));});
     const profileForm=$("#ls-profile-form");
-    if(profileForm) profileForm.addEventListener("submit",async event=>{event.preventDefault();const v=formData(profileForm);if(!v.name.trim()){setStatus(t("invalid"),true);return;}state.profiles.push({id:uid("profile"),name:v.name.trim(),role:v.role||"caregiver",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});recordAudit("profile-created",v.name);if(await saveState(false))renderApp();});
+    if(profileForm) profileForm.addEventListener("submit",async event=>{event.preventDefault();if(currentProfile()?.role!=="self"){setStatus(t("noPermission"),true);return;}const v=formData(profileForm);if(!v.name.trim()){setStatus(t("invalid"),true);return;}state.profiles.push({id:uid("profile"),name:v.name.trim(),role:v.role||"caregiver",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});recordAudit("profile-created",v.name);if(await saveState(false))renderApp();});
     const consentForm=$("#ls-consent-form");
     if(consentForm) consentForm.addEventListener("submit",async event=>{
       event.preventDefault();const v=formData(consentForm);if(!v.viewerId||!v.ownerId){setStatus(t("invalid"),true);return;}
@@ -638,7 +638,7 @@
     });
     const importForm=$("#ls-import-form");
     if(importForm) importForm.addEventListener("submit",async event=>{
-      event.preventDefault();const v=formData(importForm);const file=importForm.elements.file.files[0];if(!file||file.size>8*1024*1024){setStatus(t("badPass"),true);return;}
+      event.preventDefault();if(currentProfile()?.role!=="self"){setStatus(t("noPermission"),true);return;}const v=formData(importForm);const file=importForm.elements.file.files[0];if(!file||file.size>8*1024*1024){setStatus(t("badPass"),true);return;}
       try{
         const envelope=JSON.parse(await file.text());const decoded=await decryptEnvelope(envelope,v.passphrase);
         if(v.mode==="replace" && !window.confirm(t("deleteConfirm")))return;
@@ -698,10 +698,14 @@
     if(action==="delete-worker"){const target=state.workers.find(x=>x.id===id);if(!target||!requireModify("roster",target))return;if(!window.confirm(t("deleteItem")))return;state.workers=state.workers.filter(x=>x.id!==id);state.shifts=state.shifts.filter(x=>x.workerId!==id);recordAudit("worker-deleted",id);if(await saveState(false))renderApp();return;}
     if(action==="edit-shift"){const s=state.shifts.find(x=>x.id===id);if(!s||!requireModify("roster",s))return;const f=$("#ls-shift-form");if(f){f.elements.workerId.value=s.workerId;f.elements.date.value=s.date;f.elements.start.value=s.start;f.elements.end.value=s.end;f.dataset.editId=s.id;f.querySelector("button[type=submit]").textContent=t("edit");f.scrollIntoView({behavior:"auto",block:"center"});}return;}
     if(action==="delete-shift"||action==="delete-reminder"||action==="delete-guide"||action==="delete-journal"||action==="delete-drawing"||action==="delete-contact"||action==="revoke-consent"||action==="delete-profile"){
-      if(action==="delete-profile"){const hasData=["appointments","workers","shifts","moods","journal","drawings","guides","contacts","reminders"].some(key=>(state[key]||[]).some(item=>item.profileId===id));if(hasData){setStatus(t("profileDataExists"),true);return;}}
-      if(!window.confirm(t("deleteItem")))return;
       const map={"delete-shift":"shifts","delete-reminder":"reminders","delete-guide":"guides","delete-journal":"journal","delete-drawing":"drawings","delete-contact":"contacts","revoke-consent":"consents","delete-profile":"profiles"};
-      const key=map[action];state[key]=state[key].filter(x=>x.id!==id);
+      const key=map[action];const target=(state[key]||[]).find(x=>x.id===id);
+      const scopeByAction={"delete-shift":"roster","delete-reminder":"calendar","delete-guide":"guides","delete-journal":"journal","delete-drawing":"journal","delete-contact":"help"};
+      if(scopeByAction[action]&&(!target||!requireModify(scopeByAction[action],target)))return;
+      if(action==="revoke-consent"&&(!target||target.ownerId!==state.currentProfileId||currentProfile()?.role!=="self")){setStatus(t("noPermission"),true);return;}
+      if(action==="delete-profile"){if(currentProfile()?.role!=="self"||id==="self"){setStatus(t("noPermission"),true);return;}const hasData=["appointments","workers","shifts","moods","journal","drawings","guides","contacts","reminders"].some(key=>(state[key]||[]).some(item=>item.profileId===id));if(hasData){setStatus(t("profileDataExists"),true);return;}}
+      if(!window.confirm(t("deleteItem")))return;
+      state[key]=state[key].filter(x=>x.id!==id);
       if(action==="delete-journal")state.moods=state.moods.filter(m=>m.journalId!==id);
       if(action==="delete-profile"){state.consents=state.consents.filter(c=>c.viewerId!==id&&c.ownerId!==id);state.currentProfileId=state.profiles[0]?.id||"self";}
       recordAudit(action,id);if(await saveState(false))renderApp();return;
@@ -717,10 +721,10 @@
     if(action==="call-contact"){const c=state.contacts.find(x=>x.id===id)||visibleItems("contacts","help")[0];if(!c||!c.phone){setStatus(t("noPhone"),true);return;}if(window.confirm(t("callConfirm")))window.location.href="tel:"+c.phone.replace(/[^\d+]/g,"");return;}
     if(action==="sms-contact"){const c=state.contacts.find(x=>x.id===id)||visibleItems("contacts","help")[0];if(!c||!c.phone){setStatus(t("noPhone"),true);return;}if(window.confirm(t("smsConfirm")))window.location.href="sms:"+c.phone.replace(/[^\d+]/g,"");return;}
     if(action==="notification-permission"){if(!("Notification" in window)){setStatus(t("noNotification"),true);return;}const permission=await Notification.requestPermission();setStatus(permission==="granted"?t("permissionGranted"):t("permissionNeeded"),permission!=="granted");return;}
-    if(action==="snooze-reminder"){const r=state.reminders.find(x=>x.id===id);if(r){r.when=new Date(Date.now()+10*60*1000).toISOString();r.notifiedAt="";r.updatedAt=new Date().toISOString();if(await saveState(false))renderApp();}return;}
-    if(action==="export-backup"){try{const envelope=await encryptState(state,sessionKey,b64ToBytes(saltB64));downloadBlob(new Blob([JSON.stringify(envelope,null,2)],{type:"application/json"}),"project-n-01-encrypted-life-backup.json");recordAudit("backup-exported","");await saveState(false);setStatus(t("exportDone"));}catch{setStatus(t("exportUnavailable"),true);}return;}
-    if(action==="delete-all-data"){if(!window.confirm(t("deleteConfirm")))return;stopAutoLock();localStorage.removeItem(STORAGE_KEY);state=null;sessionKey=null;saltB64=null;renderLocked(true,t("deleted"));return;}
-    if(action==="create-invite"){const random=crypto.getRandomValues(new Uint8Array(10));pendingInviteCode=Array.from(random).map(b=>("0"+b.toString(16)).slice(-2)).join("").toUpperCase();state.invites.push({id:uid("invite"),ownerId:state.currentProfileId,code:pendingInviteCode,role:"caregiver",status:"pending",createdAt:new Date().toISOString()});await saveState(false);renderApp();return;}
+    if(action==="snooze-reminder"){const r=state.reminders.find(x=>x.id===id);if(r&&!requireModify("calendar",r))return;if(r){r.when=new Date(Date.now()+10*60*1000).toISOString();r.notifiedAt="";r.updatedAt=new Date().toISOString();if(await saveState(false))renderApp();}return;}
+    if(action==="export-backup"){if(currentProfile()?.role!=="self"){setStatus(t("noPermission"),true);return;}try{const envelope=await encryptState(state,sessionKey,b64ToBytes(saltB64));downloadBlob(new Blob([JSON.stringify(envelope,null,2)],{type:"application/json"}),"project-n-01-encrypted-life-backup.json");recordAudit("backup-exported","");await saveState(false);setStatus(t("exportDone"));}catch{setStatus(t("exportUnavailable"),true);}return;}
+    if(action==="delete-all-data"){if(currentProfile()?.role!=="self"){setStatus(t("noPermission"),true);return;}if(!window.confirm(t("deleteConfirm")))return;stopAutoLock();localStorage.removeItem(STORAGE_KEY);state=null;sessionKey=null;saltB64=null;renderLocked(true,t("deleted"));return;}
+    if(action==="create-invite"){if(currentProfile()?.role!=="self"){setStatus(t("noPermission"),true);return;}const random=crypto.getRandomValues(new Uint8Array(10));pendingInviteCode=Array.from(random).map(b=>("0"+b.toString(16)).slice(-2)).join("").toUpperCase();state.invites.push({id:uid("invite"),ownerId:state.currentProfileId,code:pendingInviteCode,role:"caregiver",status:"pending",createdAt:new Date().toISOString()});await saveState(false);renderApp();return;}
     if(action==="copy-invite"){try{await navigator.clipboard.writeText(pendingInviteCode);setStatus(t("saved"));}catch{setStatus(pendingInviteCode);}return;}
   }
   function startReminderMonitor() {
