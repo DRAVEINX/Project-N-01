@@ -265,14 +265,15 @@ $("#migrate-routines-to-vault").addEventListener("click", async () => {
   let vault;
   let created = false;
   try {
-    const [{ EncryptedVault }, { migrateLegacyRoutines }] = await Promise.all([
+    const [{ EncryptedVault }, { migrateLegacyRoutines, readLegacyRoutines }] = await Promise.all([
       import("./encrypted-vault.js"),
       import("./routine-migration.js")
     ]);
     vault = new EncryptedVault(localStorage);
     if (localStorage.getItem("project-n-01-encrypted-vault-v1") === null) {
-      const result = await migrateLegacyRoutines({ storage:localStorage, vault, passphrase });
-      if (result.routineCount < 1) throw new Error("empty");
+      const preview = readLegacyRoutines(localStorage);
+      if (!preview.found || preview.routines.length < 1) throw new Error("empty");
+      await migrateLegacyRoutines({ storage:localStorage, vault, passphrase });
       created = true;
     }
     const envelope = vault.exportEnvelope();
