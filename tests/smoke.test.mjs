@@ -741,7 +741,7 @@ test("secure feature module iterates querySelectorAll collections safely", async
   const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
   assert.doesNotMatch(features, /(?<!\$)\$\([^;\n]*\)\.forEach/);
   assert.doesNotMatch(features, /(?<!\$)\$\([^;\n]*\)\.filter/);
-  assert.ok(features.includes('$$("#[data-feature-text]").forEach'));
+  assert.ok(features.includes('$("[data-feature-text]").forEach'));
 });
 
 test("Mivoryntra manifest and visible app shell use the new provisional product name", () => {
