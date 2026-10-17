@@ -198,3 +198,27 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .trusted-photo{display:block;width:76px;height:76px;object-fit:cover;border-radius:20px;border:1px solid var(--line);margin-bottom:12px;background:#101421}
 #person-photo{padding:9px}
 @media(max-width:760px){.trusted-photo{width:68px;height:68px;border-radius:17px}}
+
+
+.work-week-toolbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;margin:10px 0 14px}
+.work-week-range{margin:0;color:var(--muted);font-size:.86rem;text-align:center}
+.work-week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;align-items:start}
+.work-day{min-width:0;padding:11px;border:1px solid var(--line);border-radius:15px;background:#ffffff04}
+.work-day.is-today{border-color:#b9a7ff78;background:#b9a7ff0b}
+.work-day-heading{margin:0 0 10px;text-transform:capitalize;font-size:.86rem;overflow-wrap:anywhere}
+.work-day-empty{margin:0;color:var(--muted);font-size:.78rem;line-height:1.45}
+.work-day .feature-item{padding:11px;margin-top:9px}
+.work-day .feature-item:first-of-type{margin-top:0}
+.work-day .feature-item-actions .secondary-button{padding:8px 10px;font-size:.76rem}
+.work-assignment-photo{display:block;width:54px;height:54px;object-fit:cover;border-radius:15px;border:1px solid var(--line);margin-bottom:10px;background:#101421}
+#work-photo{padding:9px}
+@media(max-width:1000px){.work-week-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){
+ .work-week-toolbar{grid-template-columns:1fr 1fr}
+ .work-week-range{grid-column:1/-1;grid-row:1}
+ .work-week-toolbar button{width:100%}
+ .work-week-grid{grid-template-columns:1fr}
+ .work-day{padding:14px}
+ .work-day-heading{font-size:.95rem}
+ .work-assignment-photo{width:62px;height:62px}
+}
