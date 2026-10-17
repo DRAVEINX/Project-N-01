@@ -99,6 +99,13 @@ test("service worker cache version is bumped when shipping updated app assets", 
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v5/);
 });
 
+test("vault startup tolerates unavailable browser storage", () => {
+  assert.match(js, /function safeLocalStorageGetItem\(key\)\s*\{\s*try\s*\{\s*return localStorage\.getItem\(key\);\s*\}\s*catch\s*\{\s*return null;\s*\}\s*\}/);
+  assert.match(js, /encryptedVaultExists = safeLocalStorageGetItem\(encryptedVaultStorageKey\) !== null/);
+  assert.match(js, /safeLocalStorageGetItem\(customRoutineStorageKey\) === null/);
+  assert.doesNotMatch(js, /let encryptedVaultExists = localStorage\.getItem/);
+});
+
 test("all multi-element event loops use querySelectorAll helper", () => {
   assert.doesNotMatch(js, /(?<!\$)\$\([^\n]*?\)\.forEach/);
   assert.match(js, /\$\$\("\.view"\)\.forEach/);
