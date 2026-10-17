@@ -103,6 +103,8 @@ test("routine checkbox and completion listeners use the shared query helper", ()
   assert.doesNotMatch(js, /\$\$\$\(/);
   assert.match(js, /\$\$\("\[data-routine-step\]"\)\.forEach/);
   assert.match(js, /\$\$\("\[data-complete-routine\]"\)\.forEach/);
+  assert.doesNotMatch(js, /\$\("\[data-routine-step\]"\)\.forEach/);
+  assert.doesNotMatch(js, /\$\("\[data-complete-routine\]"\)\.forEach/);
 });
 
 test("document title follows the active view and updates when language changes", () => {
