@@ -1,4 +1,4 @@
-# Project N-01 roadmap
+# Mivoryntra roadmap (working name)
 
 ## Phase 1 — Prototype foundation
 - [x] Responsive bilingual interface skeleton
@@ -20,6 +20,17 @@
 - [x] Basic CI smoke tests
 - [ ] Verify GitHub Actions result and fix any failures (not confirmed from this session)
 - [ ] Manual keyboard, screen-reader and mobile/tablet viewport review
+
+## Current feature branch — Mivoryntra intro and private tools
+
+- [x] Add a bilingual, skippable first-run intro and short returning-launch splash.
+- [x] Add the working Mivoryntra name to the prototype shell and install metadata; name clearance is still pending.
+- [x] Add an encrypted-vault gate for explicit journal entry saves and saved drawings.
+- [x] Add an encrypted local week planner, mood check-ins and trusted-person contacts.
+- [x] Preserve the additional encrypted fields when existing custom routines are edited.
+- [ ] Confirm CI for this branch and exercise every add/edit/delete/lock/unlock flow.
+- [ ] Manually review phone/tablet layout, screen readers, reduced motion and offline start.
+- [ ] Complete official trademark, app-store and domain checks before making the name public.
 
 ## Phase 2 — Make the prototype more robust
 - [x] Web app manifest and install metadata
