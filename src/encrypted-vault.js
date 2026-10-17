@@ -1,12 +1,9 @@
 /**
  * Experimental encrypted local-storage vault.
- *
- * The vault stores a single authenticated-encryption envelope at one storage key.
- * It never persists the passphrase or decrypted value. Callers must explicitly
- * migrate legacy plaintext data; this module intentionally does not guess which
- * records are safe to delete or overwrite.
+ * The derived CryptoKey is retained only inside an in-memory session while unlocked.
+ * Locking drops that session and its plaintext cache; neither passphrase nor key is stored.
  */
-import { encryptJson, decryptJson } from "./secure-storage.js";
+import { encryptJson, decryptJson, openEncryptedJsonSession } from "./secure-storage.js";
 
 function cloneJson(value) {
   const serialized = JSON.stringify(value);
@@ -26,12 +23,11 @@ export class EncryptedVault {
     this.storage = storage;
     this.storageKey = storageKey;
     this.unlockedData = null;
+    this.session = null;
     this.unlocked = false;
   }
 
-  get isUnlocked() {
-    return this.unlocked;
-  }
+  get isUnlocked() { return this.unlocked; }
 
   async initialize(passphrase, initialData = {}) {
     if (this.storage.getItem(this.storageKey) !== null) {
@@ -39,36 +35,46 @@ export class EncryptedVault {
     }
     const safeInitialData = cloneJson(initialData);
     const envelope = await encryptJson(safeInitialData, passphrase);
-    // Persist successfully before retaining plaintext in memory.
+    const session = await openEncryptedJsonSession(envelope, passphrase);
     this.storage.setItem(this.storageKey, JSON.stringify(envelope));
+    this.session = session;
     this.unlockedData = safeInitialData;
     this.unlocked = true;
     return cloneJson(safeInitialData);
   }
 
   async unlock(passphrase) {
-    // A failed unlock attempt must not leave a previously open vault accessible.
     this.lock();
     const raw = this.storage.getItem(this.storageKey);
     if (raw === null) throw new Error("Vault does not exist.");
     let envelope;
     try { envelope = JSON.parse(raw); } catch { throw new Error("Stored vault is invalid."); }
-    const decrypted = await decryptJson(envelope, passphrase);
-    const safeData = cloneJson(decrypted);
+    const session = await openEncryptedJsonSession(envelope, passphrase);
+    const safeData = cloneJson(session.value);
+    this.session = session;
     this.unlockedData = safeData;
     this.unlocked = true;
     return cloneJson(safeData);
+  }
+
+  async save(value) {
+    if (!this.unlocked || !this.session) throw new Error("Unlock the vault before saving.");
+    const safeValue = cloneJson(value);
+    const envelope = await this.session.encrypt(safeValue);
+    this.storage.setItem(this.storageKey, JSON.stringify(envelope));
+    this.unlockedData = safeValue;
+    return cloneJson(safeValue);
   }
 
   async saveWithPassphrase(passphrase, value) {
     if (!this.unlocked) throw new Error("Unlock the vault before saving.");
     const currentRaw = this.storage.getItem(this.storageKey);
     if (currentRaw === null) throw new Error("Vault does not exist.");
-    // Verify the supplied passphrase against the current record before replacing it.
-    await decryptJson(JSON.parse(currentRaw), passphrase);
+    const verifiedSession = await openEncryptedJsonSession(JSON.parse(currentRaw), passphrase);
     const safeValue = cloneJson(value);
-    const envelope = await encryptJson(safeValue, passphrase);
+    const envelope = await verifiedSession.encrypt(safeValue);
     this.storage.setItem(this.storageKey, JSON.stringify(envelope));
+    this.session = verifiedSession;
     this.unlockedData = safeValue;
     return cloneJson(safeValue);
   }
@@ -80,6 +86,7 @@ export class EncryptedVault {
 
   lock() {
     this.unlockedData = null;
+    this.session = null;
     this.unlocked = false;
   }
 
@@ -90,9 +97,10 @@ export class EncryptedVault {
   }
 
   async restoreEnvelope(passphrase, envelope) {
-    const restored = cloneJson(await decryptJson(envelope, passphrase));
-    // Do not change current storage or memory until authentication and validation pass.
+    const session = await openEncryptedJsonSession(envelope, passphrase);
+    const restored = cloneJson(session.value);
     this.storage.setItem(this.storageKey, JSON.stringify(envelope));
+    this.session = session;
     this.unlockedData = restored;
     this.unlocked = true;
     return cloneJson(restored);
