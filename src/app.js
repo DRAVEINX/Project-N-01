@@ -27,7 +27,9 @@ function updateDocumentTitle() {
   document.title = pageName ? `${pageName} · Project N-01` : "Project N-01";
 }
 function setView(view) {
-  $$(".view").forEach(section => section.classList.toggle("active", section.id === `view-${view}`));
+  // Stop the breathing timer when leaving its view so it cannot run invisibly in the background.
+  if (view !== "calm" && breathInterval !== null) stopBreathing(false);
+  $(".view").forEach(section => section.classList.toggle("active", section.id === `view-${view}`));
   $$(".nav-item[data-view]").forEach(button => {
     const isCurrent = button.dataset.view === view;
     button.classList.toggle("active", isCurrent);
