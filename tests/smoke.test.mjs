@@ -4,6 +4,17 @@ import { readFile } from "node:fs/promises";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+test("PWA manifest is valid and points to the cached app icon", async () => {
+  const manifestText = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
+  const manifest = JSON.parse(manifestText);
+  assert.equal(manifest.start_url, "/");
+  assert.equal(manifest.scope, "/");
+  assert.equal(manifest.display, "standalone");
+  assert.ok(Array.isArray(manifest.icons) && manifest.icons.length > 0);
+  assert.ok(manifest.icons.some(icon => icon.src === "/assets/app-icon.svg" && icon.type === "image/svg+xml"));
+});
+
 test("document has language, viewport, title and main landmark", () => {
   assert.match(html, /<html lang="nl">/);
   assert.match(html, /name="viewport"/);
