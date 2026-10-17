@@ -492,12 +492,28 @@
     const journalForm=$("#ls-journal-form");
     if(journalForm) journalForm.addEventListener("submit",async event=>{
       event.preventDefault();const v=formData(journalForm);const picked=$('input[name="mood"]:checked');
-      if(!v.text.trim()&&!draftJournalAudio&&!picked){setStatus(t("invalid"),true);return;}
-      const today=localDate(new Date());const emoji=picked?({"1":"😞","2":"🙁","3":"😐","4":"🙂","5":"😄"})[picked.value]:"😐";
+      if(!v.text.trim()&&!draftJournalAudio&&!picked&&!editingJournalId){setStatus(t("invalid"),true);return;}
+      const today=localDate(new Date());
+      const old=editingJournalId?state.journal.find(e=>e.id===editingJournalId):null;
       let entry=null;
-      if(v.text.trim()||draftJournalAudio){entry={id:uid("journal"),profileId:state.currentProfileId,title:(v.title||"").trim()||(lang==="nl"?"Dagboekmoment":"Journal entry"),text:(v.text||"").trim(),audio:draftJournalAudio,date:today,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};state.journal.push(entry);}
-      state.moods.push({id:uid("mood"),profileId:state.currentProfileId,date:today,emoji:emoji,note:entry?entry.text.slice(0,300):"",createdAt:new Date().toISOString()});recordAudit(entry?"journal-entry-created":"mood-saved",entry?entry.id:emoji);
-      if(await saveState(false)){draftJournalAudio="";renderApp();}
+      if(old){
+        old.title=(v.title||"").trim()||(lang==="nl"?"Dagboekmoment":"Journal entry");
+        old.text=(v.text||"").trim();if(draftJournalAudio)old.audio=draftJournalAudio;
+        old.updatedAt=new Date().toISOString();entry=old;
+      }else if(v.text.trim()||draftJournalAudio){
+        entry={id:uid("journal"),profileId:state.currentProfileId,title:(v.title||"").trim()||(lang==="nl"?"Dagboekmoment":"Journal entry"),text:(v.text||"").trim(),audio:draftJournalAudio,date:today,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+        state.journal.push(entry);
+      }
+      const existingMood=entry?state.moods.find(m=>m.journalId===entry.id):null;
+      if(picked){
+        const emoji=({"1":"😞","2":"🙁","3":"😐","4":"🙂","5":"😄"})[picked.value];
+        if(existingMood){existingMood.emoji=emoji;existingMood.note=entry?entry.text.slice(0,300):"";existingMood.updatedAt=new Date().toISOString();}
+        else state.moods.push({id:uid("mood"),profileId:state.currentProfileId,journalId:entry?entry.id:"",date:entry?entry.date:today,emoji:emoji,note:entry?entry.text.slice(0,300):"",createdAt:new Date().toISOString()});
+      }else if(entry&&!existingMood&&!old){
+        state.moods.push({id:uid("mood"),profileId:state.currentProfileId,journalId:entry.id,date:entry.date,emoji:"😐",note:entry.text.slice(0,300),createdAt:new Date().toISOString()});
+      }
+      recordAudit(old?"journal-entry-updated":entry?"journal-entry-created":"mood-saved",entry?entry.id:"mood");
+      if(await saveState(false)){draftJournalAudio="";editingJournalId="";renderApp();}
     });
     const guideForm=$("#ls-guide-form");
     if(guideForm) guideForm.addEventListener("submit",async event=>{
