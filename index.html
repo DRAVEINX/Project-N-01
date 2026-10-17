@@ -108,6 +108,19 @@
             <input class="sr-only" type="file" id="import-custom-routines" accept="application/json,.json">
           </div>
           <p class="privacy-hint" data-i18n="routineBackupPrivacy">Exportbestanden zijn niet versleuteld. Bewaar ze op een veilige plek en deel ze niet met anderen.</p>
+          <section class="encrypted-backup-panel" aria-labelledby="encrypted-backup-title">
+            <h3 id="encrypted-backup-title" data-i18n="encryptedBackupTitle">Versleutelde back-up</h3>
+            <p data-i18n="encryptedBackupIntro">Maak een versleuteld back-upbestand van je eigen routines. Gebruik een wachtzin van minstens 12 tekens en bewaar die apart. Zonder wachtzin kan de back-up niet worden hersteld.</p>
+            <label for="backup-passphrase" data-i18n="backupPassphraseLabel">Back-upwachtzin (minstens 12 tekens)</label>
+            <input id="backup-passphrase" type="password" autocomplete="new-password" minlength="12" maxlength="1024" aria-describedby="backup-passphrase-help">
+            <p id="backup-passphrase-help" class="privacy-hint" data-i18n="backupPassphraseHelp">De wachtzin wordt niet opgeslagen. Gebruik niet je accountwachtwoord.</p>
+            <div class="routine-backup-tools">
+              <button type="button" class="secondary-button" id="export-encrypted-routines" data-i18n="exportEncryptedRoutines">Versleutelde back-up maken</button>
+              <label class="secondary-button file-pick-label" for="import-encrypted-routines" data-i18n="importEncryptedRoutines">Versleutelde back-up herstellen</label>
+              <input class="sr-only" type="file" id="import-encrypted-routines" accept="application/json,.json">
+            </div>
+          </section>
+
           <div class="routine-backup-tools">
             <button type="button" class="secondary-button" id="clear-custom-routines" data-i18n="clearRoutines">Alle eigen routines wissen</button>
           </div>
