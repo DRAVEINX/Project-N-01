@@ -40,7 +40,8 @@
 - [x] Add non-destructive legacy routine preview/copy helper with validation and tests; original plaintext remains untouched
 - [x] Add explicit UI setup/unlock, lock, encrypted routine persistence and encrypted vault download
 - [x] Connect custom-routine create/edit/delete/import persistence to the opt-in encrypted vault; passphrase is required again after reload
-- [ ] Move accessibility preferences to an appropriate protected storage design if needed, add inactivity auto-lock and recovery, and validate rollback/migration on real devices
+- [x] Add five-minute inactivity auto-lock and lock on hidden/pagehide events for the encrypted routine vault
+- [ ] Move accessibility preferences to an appropriate protected storage design if needed, design recovery, and validate rollback/migration on real devices
 
 ## Phase 4 — Android phone and tablet
 - [ ] Separate phone and tablet layout validation
