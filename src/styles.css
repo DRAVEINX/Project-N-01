@@ -45,3 +45,5 @@
 .vault-migration-panel h4,.vault-migration-panel p{margin:0}
 
 [hidden]{display:none!important}
+
+.note-tools{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.65rem;margin-top:.65rem}.note-tools .inline-status{margin:.15rem 0}
