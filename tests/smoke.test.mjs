@@ -848,3 +848,14 @@ test("leaving the app aborts speech recognition and releases its reference", asy
   assert.match(handler, /if \(dictationRecognition\) \{\s*try \{ dictationRecognition\.abort\(\); \} catch \{\}\s*dictationRecognition = null;/);
   assert.match(handler, /\{once:true\}/);
 });
+
+test("view navigation moves keyboard focus to the destination heading", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const start = app.indexOf("function setView(view) {");
+  const end = app.indexOf("\n}", start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const handler = app.slice(start, end);
+  assert.match(handler, /const heading = \$\(`#view-\$\{view\} h2`\);\s*if \(heading\) heading\.setAttribute\("tabindex", "-1"\);\s*if \(heading\) heading\.focus\(\{preventScroll:true\}\);/);
+  assert.match(handler, /if \(isCurrent\) button\.setAttribute\("aria-current", "page"\);\s*else button\.removeAttribute\("aria-current"\);/);
+});
