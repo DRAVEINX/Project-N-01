@@ -10,6 +10,7 @@
 - [x] Bilingual drawing pad in the notes view, with pointer and keyboard input; drawings are temporary and not stored
 - [x] Routine completion buttons expose their state to assistive technology and update in the selected language
 - [x] Routines support step-by-step checklists with live progress and one-tap complete/reset
+- [x] Users can create and delete their own routines with up to 10 steps; browser-only storage is disclosed as unencrypted
 - [x] Basic CI smoke tests
 - [ ] Verify GitHub Actions result and fix any failures (not confirmed from this session)
 - [ ] Manual keyboard, screen-reader and mobile/tablet viewport review
