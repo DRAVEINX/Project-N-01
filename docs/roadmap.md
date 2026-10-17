@@ -33,6 +33,7 @@
 - [ ] Backup/export and deletion design
 - [x] Draft data-protection threat model and encryption integration checklist (`docs/DATA-PROTECTION.md`); review still required
 - [x] Experimental Web Crypto AES-GCM/PBKDF2 JSON helper and runtime tests; not integrated with app data yet
+- [x] Encrypted routine backup export/restore with passphrase prompt, input validation and a 1 MiB import limit; restored routines still use unencrypted browser storage
 - [ ] Security expert review and threat-model sign-off
 - [ ] Integrate encrypted storage, unlock/lock and recovery without losing existing data
 
