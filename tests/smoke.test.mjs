@@ -43,3 +43,20 @@ test("notes explicitly warn that the prototype does not save them", () => {
 test("prototype does not depend on external runtime scripts or styles", () => {
   assert.doesNotMatch(html, /https?:\/\//);
 });
+
+const manifest = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
+const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
+test("install metadata and offline assets are present", () => {
+  const parsed = JSON.parse(manifest);
+  assert.equal(parsed.name.startsWith("Project N-01"), true);
+  assert.equal(parsed.display, "standalone");
+  assert.ok(parsed.icons.some(icon => icon.src === "/assets/app-icon.svg"));
+  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/offline.html"]) {
+    assert.ok(serviceWorker.includes(`"${asset}"`), `offline shell missing ${asset}`);
+  }
+});
+test("service worker limits caching to same-origin GET requests", () => {
+  assert.match(serviceWorker, /request\.method !== "GET"/);
+  assert.match(serviceWorker, /url\.origin !== self\.location\.origin/);
+  assert.match(serviceWorker, /caches\.match\("\/index\.html"\)/);
+});
