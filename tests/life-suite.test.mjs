@@ -92,6 +92,9 @@ test("reminder handling deduplicates notifications and communicates foreground-o
 
 test("encrypted backup merge/replace and destructive deletion are available", () => {
   assert.match(js, /export-backup/);
+  assert.match(js, /export-recovery-backup/);
+  assert.match(js, /copy-recovery-code/);
+  assert.match(js, /project-n-01-recovery-backup\.json/);
   assert.match(js, /importBackup/);
   assert.match(js, /mergeStates/);
   assert.match(js, /delete-all-data/);
