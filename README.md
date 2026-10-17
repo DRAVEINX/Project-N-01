@@ -10,7 +10,7 @@ Mivoryntra is an accessibility-first daily-life companion prototype for Android 
 - Calm/breathing activities and communication phrase cards with browser text-to-speech.
 - A drawing pad with pointer and keyboard controls, plus explicit PNG export.
 - Optional browser speech-to-text and temporary voice recording. Recording can be played back or downloaded by explicit action; audio is not uploaded or saved by this application.
-- An optional encrypted local vault for custom routines and new personal features.
+- An optional encrypted local vault for custom routines and explicitly saved personal features, with a separate routines-only backup and full-vault backup/restore flow.
 - Explicitly saved journal entries and drawings, a weekly appointment planner, mood check-ins, and a trusted-people list. These features write personal content only after a user action and only when the encrypted vault is unlocked.
 - A bilingual launch/splash screen with a first-run introduction, skip controls and reduced-motion support.
 - Install metadata, an offline app shell and an offline fallback page.
@@ -19,7 +19,7 @@ Mivoryntra is an accessibility-first daily-life companion prototype for Android 
 
 This is still a **prototype**, not a production-ready or independently security-reviewed personal-data product.
 
-Personal journal entries, saved drawings, mood check-ins, appointments and trusted contacts are stored only through the opt-in local encrypted vault. The vault uses Web Crypto (PBKDF2-SHA-256 and AES-GCM); the passphrase and derived key are not saved by the application. There is no account system, backend or cloud sync. If the vault is locked, these personal features stay hidden until it is unlocked again. Saves are limited to 900,000 bytes before encryption, leaving headroom beneath the vault helper's 1 MB limit so the app can reject oversized changes without replacing the prior saved data. Keep the passphrase safe and maintain an encrypted backup; there is no passphrase-recovery service.
+Personal journal entries, saved drawings, mood check-ins, appointments and trusted contacts are stored only through the opt-in local encrypted vault. The vault uses Web Crypto (PBKDF2-SHA-256 and AES-GCM); the passphrase and derived key are not saved by the application. There is no account system, backend or cloud sync. If the vault is locked, these personal features stay hidden until it is unlocked again. Saves are limited to 900,000 bytes before encryption, leaving headroom beneath the vault helper's 1 MB limit so the app can reject oversized changes without replacing the prior saved data. The settings flow can download an encrypted backup of the entire vault and restore it only after an explicit confirmation and structural validation. Keep the passphrase safe and maintain a backup; there is no passphrase-recovery service.
 
 Daily checklist progress and accessibility preferences are still stored unencrypted in browser local storage. Existing custom routines may also have a legacy unencrypted copy until the user separately verifies and removes it. Speech-to-text may be processed by the browser or its provider. Do not rely on the prototype for emergency communications or store highly sensitive information until the security review, device testing and recovery design are complete.
 
@@ -36,7 +36,7 @@ Then open http://localhost:4173.
 
 ## Next release milestones
 
-1. Confirm the CI workflow and test the new secure storage flows end to end.
+1. Confirm the CI workflow and test the new secure storage, full-vault backup and restore flows end to end.
 2. Manually test keyboard navigation, screen readers, reduced-motion settings and offline behaviour.
 3. Complete formal name checks with BOIP/EUIPO/TMview, app stores and domain registrars.
 4. Complete privacy/security review, recovery and migration design.
