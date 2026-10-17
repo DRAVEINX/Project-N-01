@@ -260,6 +260,13 @@ test("encrypted backup controls are present and accessible in Dutch and English"
   assert.match(js, /project-n-01-routines-encrypted\.json/);
   assert.match(css, /\.encrypted-backup-panel/);
 });
+test("failed encrypted restore relocks a vault opened only for that import", () => {
+  assert.match(js, /let unlockedForThisImport = false/);
+  assert.match(js, /unlockedForThisImport = true/);
+  assert.match(js, /if \(unlockedForThisImport && activeVault\)/);
+  assert.match(js, /activeVault\.lock\(\);\s*activeVault = null;\s*customRoutines = \[\]/);
+});
+
 test("encrypted restore unlocks an existing locked vault before merging routines", () => {
   assert.match(js, /encryptedVaultExists && \(!activeVault \|\| !activeVault\.isUnlocked\)/);
   assert.match(js, /const existing = await vault\.unlock\(passphrase\)/);
