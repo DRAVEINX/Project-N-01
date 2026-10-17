@@ -716,3 +716,9 @@ test("leaving the calm view stops the breathing timer", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   assert.match(app, /function setView\(view\)\s*\{[\s\S]*?if \(view !== "calm" && breathInterval !== null\) stopBreathing\(false\);/);
 });
+
+
+test("leaving the notes view stops microphone recording and speech recognition", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  assert.match(app, /if \(view !== "notes"\) \{[\s\S]*?if \(voiceRecorder && voiceRecorder\.state !== "inactive"\) voiceRecorder\.stop\(\);[\s\S]*?if \(dictationRecognition\) \{[\s\S]*?dictationRecognition\.stop\(\)/);
+});
