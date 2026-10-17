@@ -80,7 +80,7 @@ export function findAppointmentConflict(candidate, appointments, excludeId = nul
 
 /** Build weekly dates with local calendar arithmetic, avoiding UTC day shifts. */
 export function generateWeeklyOccurrences(startDate, count) {
-  if (typeof startDate !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(startDate)) return [];
+  if (typeof startDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return [];
   const [year, month, day] = startDate.split("-").map(Number);
   const first = new Date(year, month - 1, day, 12, 0, 0, 0);
   if (first.getFullYear() !== year || first.getMonth() !== month - 1 || first.getDate() !== day) return [];
@@ -98,7 +98,7 @@ export function generateWeeklyOccurrences(startDate, count) {
  * targetWeekStart must be a YYYY-MM-DD Monday.
  */
 export function getWorkWeekCopies(assignments, targetWeekStart) {
-  if (!Array.isArray(assignments) || typeof targetWeekStart !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(targetWeekStart)) return [];
+  if (!Array.isArray(assignments) || typeof targetWeekStart !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(targetWeekStart)) return [];
   const [year, month, day] = targetWeekStart.split("-").map(Number);
   const target = new Date(year, month - 1, day, 12, 0, 0, 0);
   if (target.getFullYear() !== year || target.getMonth() !== month - 1 || target.getDate() !== day) return [];
