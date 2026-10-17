@@ -21,7 +21,7 @@ test("life suite is wired into the existing app without replacing its core views
 
 test("calendar validates times, blocks exact duplicates and asks before overlaps", () => {
   assert.match(js, /function overlap\(a,b\)/);
-  assert.match(js, /function appointmentConflict\(candidate\)/);
+  assert.match(js, /function appointmentConflict\(candidate/);
   assert.match(js, /exactDuplicate/);
   assert.match(js, /window\.confirm\(t\("overlap"\)/);
   assert.match(js, /calendarMode === "month"/);
