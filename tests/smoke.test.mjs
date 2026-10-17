@@ -99,6 +99,13 @@ test("service worker cache version is bumped when shipping updated app assets", 
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v5/);
 });
 
+test("all multi-element event loops use querySelectorAll helper", () => {
+  assert.doesNotMatch(js, /\$\(["'][^\n]*?["']\)\.forEach/);
+  assert.match(js, /\$\$\("\.view"\)\.forEach/);
+  assert.match(js, /\$\$\("\.nav-item\[data-view\]"\)\.forEach/);
+  assert.match(js, /\$\$\("\[data-view\]"\)\.forEach/);
+});
+
 test("routine checkbox and completion listeners use the shared query helper", () => {
   assert.doesNotMatch(js, /\$\$\$\(/);
   assert.match(js, /\$\$\("\[data-routine-step\]"\)\.forEach/);
