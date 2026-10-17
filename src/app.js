@@ -481,8 +481,8 @@ $("#import-custom-routines").addEventListener("change", async event => {
 });
 
 $("[data-view]").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
-$("#language").addEventListener("change", event => { applyLanguage(event.target.value); savePreferences(); });
-$("#language-settings").addEventListener("change", event => { applyLanguage(event.target.value); savePreferences(); });
+$("#language").addEventListener("change", event => { applyLanguage(event.target.value); updateNoteCharacterCount(); savePreferences(); });
+$("#language-settings").addEventListener("change", event => { applyLanguage(event.target.value); updateNoteCharacterCount(); savePreferences(); });
 $$("[data-task]").forEach(input => input.addEventListener("change", () => {
   updateTaskCount();
   const checked = $$("[data-task]").filter(item => item.checked).length;
