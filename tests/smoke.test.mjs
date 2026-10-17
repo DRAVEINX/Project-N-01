@@ -1118,6 +1118,8 @@ test("Windows desktop shell uses isolated browser defaults and includes an insta
   assert.match(main, /isInsideRoot\(root, target\)/);
   assert.match(main, /protocol\.registerSchemesAsPrivileged/);
   assert.match(main, /setWindowOpenHandler/);
+  assert.match(main, /setPermissionRequestHandler/);
+  assert.match(main, /permission === "media"/);
   assert.match(desktopPackage, /"productName": "Mivoryntra"/);
   assert.match(desktopPackage, /"target": "nsis"/);
   assert.match(prepare, /scripts|service-worker\.js/);
