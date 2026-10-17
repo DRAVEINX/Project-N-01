@@ -338,7 +338,7 @@ test("privacy panel explains unencrypted local data and offers confirmed deletio
   assert.match(html, /data-i18n="privacyDetails"/);
   assert.match(js, /window\.confirm\(t\("clearLocalDataConfirm"\)\)/);
   assert.match(js, /localStorage\.removeItem\(customRoutineStorageKey\)/);
-  assert.match(js, /for \(const key of \[customRoutineStorageKey, preferenceKey, encryptedVaultStorageKey\]\)/);
+  assert.match(js, /for \(const key of \[customRoutineStorageKey, preferenceKey, encryptedVaultStorageKey, dailyProgressKey\]\)/);
   assert.match(js, /clearLocalData:"Wis lokale appgegevens"/);
   assert.match(js, /clearLocalData:"Clear local app data"/);
   assert.match(js, /localDataClearError/);
