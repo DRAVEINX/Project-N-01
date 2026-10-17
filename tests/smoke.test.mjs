@@ -197,3 +197,22 @@ test("encryption rejects short passphrases and unsupported envelopes", async () 
   await assert.rejects(() => encryptJson({ ok: true }, "kort"));
   await assert.rejects(() => decryptJson({ format: "unknown" }, "een-veilige-testzin-123"), /Unsupported encrypted data format/);
 });
+
+test("encrypted backup controls are present and accessible in Dutch and English", () => {
+  assert.match(html, /id="backup-passphrase" type="password"/);
+  assert.match(html, /id="export-encrypted-routines"/);
+  assert.match(html, /id="import-encrypted-routines"/);
+  assert.match(html, /aria-describedby="backup-passphrase-help"/);
+  assert.match(js, /exportEncryptedRoutines:"Versleutelde back-up maken"/);
+  assert.match(js, /exportEncryptedRoutines:"Create encrypted backup"/);
+  assert.match(js, /await import\("\.\/secure-storage\.js"\)/);
+  assert.match(js, /file\.size > 1024 \* 1024/);
+  assert.match(js, /project-n-01-routines-encrypted\.json/);
+  assert.match(css, /\.encrypted-backup-panel/);
+});
+test("encrypted restore validates format before adding routines and clears passphrase input", () => {
+  assert.match(js, /parsed\.format !== "project-n-01-routines"/);
+  assert.match(js, /const previous = customRoutines/);
+  assert.match(js, /customRoutines = previous/);
+  assert.match(js, /\$\("#backup-passphrase"\)\.value = ""/);
+});
