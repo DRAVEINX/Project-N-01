@@ -14,8 +14,9 @@ Mivoryntra is an accessibility-first daily-life companion prototype for Android 
 - Explicitly saved journal entries and drawings; a weekly appointment planner with add/edit/complete/delete actions and a 30-minute same-day duplicate warning; mood check-ins; and trusted contacts. A separate “Who is working today?” roster lets you schedule names and photos by date, browse previous/next weeks, and edit or remove each entry. Staff photos are stored once and reused across days in the encrypted vault.
 - A bilingual launch/splash screen with a first-run introduction, skip controls and reduced-motion support.
 - Install metadata, an offline app shell and an offline fallback page.
+- An Electron desktop shell and Windows installer workflow are included; generated installer files are unsigned test candidates until code signing and installation testing are completed.
 
-- The agenda now supports duration and overlap checks, up to eight weekly appointment occurrences, and opt-in browser reminders while the app is open. Staff rosters can copy the previous week while skipping duplicate name/date entries. The agenda also includes text search and filters for upcoming/completed appointments, and saved mood check-ins can be deleted individually. Staff shifts can include optional start/end times with validation that the end is after the start.
+- The agenda supports duration and overlap checks, up to eight weekly occurrences, a month calendar with day selection, text search, upcoming/completed filters and opt-in browser reminders while the app is open. Staff rosters can copy the previous week, reject duplicate name/date entries, and store optional start/end times; saved mood check-ins can be deleted individually.
 
 ## Privacy and current limitations
 
@@ -42,8 +43,8 @@ Then open http://localhost:4173.
 2. Manually test keyboard navigation, screen readers, reduced-motion settings and offline behaviour.
 3. Complete formal name checks with BOIP/EUIPO/TMview, app stores and domain registrars.
 4. Complete privacy/security review, recovery and migration design.
-5. Validate Android phone/tablet layouts and TalkBack, then implement and test native packaging and signed releases.
-6. Validate Windows desktop layout, installer, update and uninstall flows.
+5. Verify Android APK/AAB artifacts, install and test on real phones/tablets, validate TalkBack/offline behavior, then configure signing for distribution.
+6. Verify the Windows installer candidate on a real Windows device (startup, close, resize, update and uninstall) and configure code signing before distribution.
 
 A green workflow is necessary but not sufficient: features still need real-device, accessibility and privacy checks before a release can be called complete.
 
