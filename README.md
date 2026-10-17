@@ -14,7 +14,7 @@ An independent, accessibility-first daily-life companion for Android phones, And
 The repository contains a responsive web prototype and a new Daily Life Suite module accessible from “Mijn leven / My life”. The suite provides calendar day/week/month views, appointment create/edit/delete with same-start duplicate blocking and overlap confirmation, support-worker names/photos and dated shifts, mood check-ins, saved journal entries, saved drawings, step-by-step guides with a photo and audio attachment, trusted contact actions, local profiles and consent records, reminder controls, search, encrypted backup/restore and data deletion. The suite stores its own records inside a passphrase-protected AES-256-GCM encrypted local envelope and locks after five minutes of inactivity or when the page is hidden. Existing routine storage and daily checklist data remain separate: daily checklist progress and accessibility preferences in the original app are still unencrypted. The old notes view remains temporary; the new suite has its own encrypted journal and drawing store. This is still a browser/Capacitor web-content prototype, not a production-ready product or a verified native Windows/iOS release. Browser reminders only run while the suite is open and unlocked. Secure cross-device identity, real remote invitations, background scheduled notifications, Android-native key storage and independent security/accessibility review remain open work; local profiles/consent records are not a substitute for authenticated separate accounts.
 
 ## Run locally
-Requires Node.js 20 or newer.
+Requires Node.js 22 or newer.
 
 ```bash
 npm test
@@ -47,3 +47,11 @@ This repository is separate from MoodPress, KlaarKompas, and CreatorNexus. Do no
 
 
 **Routine migration:** `src/routine-migration.js` validates and copies existing routines into the vault without deleting the plaintext source. The UI supports vault setup/unlock, lock, encrypted downloads and a separate confirmation-gated plaintext cleanup action. Five-minute inactivity auto-lock and lock-on-hidden/pagehide are implemented; passphrase recovery and real-device verification remain open.
+
+
+## Platform build workflows
+- Android test APK and release candidates: [Android build](.github/workflows/android.yml).
+- Windows MSI: [Windows workflow](.github/workflows/windows.yml). The generated MSI is an unsigned test installer unless a signing certificate is configured separately.
+- iOS: [iOS archive workflow](.github/workflows/ios.yml). It produces an unsigned Xcode archive, not a signed IPA and not an App Store release.
+
+These workflows still need to complete successfully for the current source revision, and generated packages must be installed and tested on real devices. A successful build is not the same as a production-ready, signed release.
