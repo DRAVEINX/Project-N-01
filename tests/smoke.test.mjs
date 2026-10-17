@@ -144,3 +144,14 @@ test("custom routines can be cleared with a confirmation and bilingual accessibl
   assert.equal((html.match(/id="export-custom-routines"/g) || []).length, 1);
   assert.equal((html.match(/id="import-custom-routines"/g) || []).length, 1);
 });
+
+test("privacy panel explains unencrypted local data and offers confirmed deletion", () => {
+  assert.match(html, /id="clear-local-app-data"/);
+  assert.match(html, /data-i18n="privacyDetails"/);
+  assert.match(js, /window\.confirm\(t\("clearLocalDataConfirm"\)\)/);
+  assert.match(js, /localStorage\.removeItem\(customRoutineStorageKey\)/);
+  assert.match(js, /localStorage\.removeItem\(preferenceKey\)/);
+  assert.match(js, /clearLocalData:"Wis lokale appgegevens"/);
+  assert.match(js, /clearLocalData:"Clear local app data"/);
+  assert.match(js, /localDataClearError/);
+});
