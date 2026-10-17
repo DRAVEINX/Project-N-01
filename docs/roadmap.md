@@ -36,6 +36,7 @@
 - [x] Encrypted routine backup export/restore with passphrase prompt, input validation and a 1 MiB import limit; restored routines still use unencrypted browser storage
 - [x] Encryption helper rejects non-JSON values and oversized payloads with regression tests
 - [ ] Security expert review and threat-model sign-off
+- [x] Add standalone experimental encrypted vault adapter with passphrase verification and restore tests; not connected to app data
 - [ ] Integrate encrypted storage, unlock/lock and recovery without losing existing data
 
 ## Phase 4 — Android phone and tablet
