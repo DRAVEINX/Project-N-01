@@ -24,7 +24,7 @@ function updateDocumentTitle() {
   const activeView = $(".view.active");
   const heading = activeView?.querySelector("h2");
   const pageName = heading?.textContent?.trim();
-  document.title = pageName ? `${pageName} · Project N-01` : "Project N-01";
+  document.title = pageName ? `${pageName} · Mivoryntra` : "Mivoryntra";
 }
 function setView(view) {
   // Stop the breathing timer when leaving its view so it cannot run invisibly in the background.
@@ -51,6 +51,30 @@ function setView(view) {
   updateDocumentTitle();
   window.scrollTo({top:0,behavior:document.body.classList.contains("reduced-motion") ? "auto" : "smooth"});
 }
+window.ProjectNApp = {
+  setView,
+  t,
+  getLanguage: () => language,
+  isVaultUnlocked: () => Boolean(activeVault && activeVault.isUnlocked),
+  readVaultData() {
+    if (!activeVault || !activeVault.isUnlocked) throw new Error("vault-locked");
+    return activeVault.read();
+  },
+  async updateVaultData(mutator) {
+    if (!activeVault || !activeVault.isUnlocked) throw new Error("vault-locked");
+    const current = activeVault.read();
+    const next = typeof mutator === "function" ? mutator(current) : mutator;
+    await activeVault.save(next);
+    scheduleVaultAutoLock();
+    dispatchVaultState();
+    return activeVault.read();
+  },
+  focusVaultSetup() {
+    setView("routines");
+    window.setTimeout(() => $("#backup-passphrase")?.focus(), 0);
+  }
+};
+
 const dailyProgressKey = "project-n-01-daily-progress-v1";
 const builtInRoutineIds = ["morning", "afternoon", "evening"];
 function localDateKey(date = new Date()) {
@@ -119,6 +143,8 @@ function applyLanguage(next) {
   updateVaultControls();
   $$("[data-complete-routine]").forEach(button => { const done = button.dataset.done === "true"; button.textContent = done ? t("routineMarkedDone") : t("routineMarkDone"); });
   $("#today-date").textContent = new Intl.DateTimeFormat(language === "nl" ? "nl-NL" : "en-GB", {weekday:"short",day:"numeric",month:"short"}).format(new Date());
+  window.ProjectNFeatures?.applyLanguage(language);
+  window.MivoryntraIntro?.applyLanguage(language);
   updateDocumentTitle();
   $("#task-status").textContent = "";
   $("#routine-status").textContent = "";
@@ -151,6 +177,9 @@ function updateVaultControls() {
 }
 let vaultAutoLockTimer = null;
 const VAULT_AUTO_LOCK_MS = 5 * 60 * 1000;
+function dispatchVaultState() {
+  window.dispatchEvent(new CustomEvent("project-vault-state", { detail: { unlocked: Boolean(activeVault && activeVault.isUnlocked) } }));
+}
 function lockVaultSession(message = t("vaultLockedStatus")) {
   if (vaultAutoLockTimer !== null) window.clearTimeout(vaultAutoLockTimer);
   vaultAutoLockTimer = null;
@@ -159,6 +188,7 @@ function lockVaultSession(message = t("vaultLockedStatus")) {
   if (encryptedVaultExists) customRoutines = [];
   updateVaultControls();
   renderCustomRoutines();
+  dispatchVaultState();
   $("#vault-migration-status").textContent = message;
 }
 function scheduleVaultAutoLock() {
@@ -213,7 +243,7 @@ async function saveCustomRoutines() {
   try {
     if (encryptedVaultExists) {
       if (!activeVault || !activeVault.isUnlocked) throw new Error("vault-locked");
-      await activeVault.save({ routines: customRoutines });
+      await activeVault.save({ ...activeVault.read(), routines: customRoutines });
     } else {
       localStorage.setItem(customRoutineStorageKey, JSON.stringify(customRoutines));
     }
@@ -323,6 +353,7 @@ $("#clear-local-app-data").addEventListener("click", () => {
   vaultAutoLockTimer = null;
   if (activeVault) activeVault.lock();
   activeVault = null;
+  dispatchVaultState();
   customRoutines = [];
   $("#large-text").checked = false;
   $("#less-motion").checked = false;
@@ -433,6 +464,7 @@ $("#import-encrypted-routines").addEventListener("change", async event => {
       const existing = await vault.unlock(passphrase);
       if (!existing || !Array.isArray(existing.routines)) throw new Error("invalid-vault-data");
       activeVault = vault;
+    dispatchVaultState();
       unlockedForThisImport = true;
       customRoutines = normaliseImportedRoutines(existing.routines);
     }
@@ -454,6 +486,7 @@ $("#import-encrypted-routines").addEventListener("change", async event => {
       const vault = new EncryptedVault(localStorage);
       await vault.initialize(passphrase, { routines: merged });
       activeVault = vault;
+    dispatchVaultState();
       encryptedVaultExists = true;
       customRoutines = merged;
     }
@@ -512,6 +545,7 @@ $("#migrate-routines-to-vault").addEventListener("click", async () => {
       }
     }
     activeVault = vault;
+    dispatchVaultState();
     encryptedVaultExists = true;
     const data = activeVault.read();
     customRoutines = Array.isArray(data.routines) ? data.routines : [];
