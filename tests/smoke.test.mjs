@@ -94,6 +94,11 @@ test("clipboard failure selects the note for manual copying and has its own empt
 test("notes explicitly warn that the prototype does not save them", () => {
   assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
 });
+test("service worker cache version is bumped when shipping updated app assets", () => {
+  assert.match(serviceWorker, /project-n-01-prototype-v6/);
+  assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v5/);
+});
+
 test("prototype does not depend on external runtime scripts or styles", () => {
   assert.doesNotMatch(html, /https?:\/\//);
 });
