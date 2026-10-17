@@ -38,8 +38,8 @@ function applyLanguage(next) {
   language = next === "en" ? "en" : "nl";
   document.documentElement.lang = language;
   $$("[data-i18n]").forEach(el => { const key = el.dataset.i18n; if (translations[language][key]) el.textContent = translations[language][key]; });
-  $("[data-i18n-placeholder]").forEach(el => { const key = el.dataset.i18nPlaceholder; if (translations[language][key]) el.placeholder = translations[language][key]; });
-  $("[data-i18n-aria-label]").forEach(el => { const key = el.dataset.i18nAriaLabel; if (translations[language][key]) el.setAttribute("aria-label", translations[language][key]); });
+  $$("[data-i18n-placeholder]").forEach(el => { const key = el.dataset.i18nPlaceholder; if (translations[language][key]) el.placeholder = translations[language][key]; });
+  $$("[data-i18n-aria-label]").forEach(el => { const key = el.dataset.i18nAriaLabel; if (translations[language][key]) el.setAttribute("aria-label", translations[language][key]); });
   $("#language").value = language;
   $("#language-settings").value = language;
   $("#language").setAttribute("aria-label", t("language"));
