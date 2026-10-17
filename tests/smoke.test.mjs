@@ -680,3 +680,9 @@ test("local preview server rejects paths outside the project directory", async (
   assert.match(server, /path !== root && !path\.startsWith\(root \+ sep\)/);
   assert.match(server, /res\.writeHead\(403\)/);
 });
+
+test("local preview server serves web manifest and SVG with explicit MIME types", async () => {
+  const server = await readFile(new URL("../scripts/serve.mjs", import.meta.url), "utf8");
+  assert.match(server, /"\.webmanifest":"application\/manifest\+json; charset=utf-8"/);
+  assert.match(server, /"\.svg":"image\/svg\+xml"/);
+});
