@@ -30,9 +30,10 @@
 - [x] Preserve the additional encrypted fields when existing custom routines are edited.
 - [x] Add a separate full-vault restore action, with confirmation, 2 MiB file limit, schema/collection validation before overwrite, and localized status messages.
 - [x] Add regression tests for valid full-vault data and rejection of invalid mood values, dates, photo formats, collection limits and oversized payloads.
-- [x] Confirm the latest GitHub Actions CI run: smoke tests, JavaScript syntax, expected files and web-package artifact all passed.
-- [ ] Manually exercise every add/edit/delete/lock/unlock and full-vault backup/restore flow, then review on Android phone/tablet with screen readers, reduced motion and offline start.
-- [ ] Manually review phone/tablet layout, screen readers, reduced motion and offline start.
+- [x] Add edit/cancel flows for appointments and trusted contacts; preserve appointment identity and keep a contact photo unless the user chooses a replacement.
+- [x] Add regression tests that check editing updates the existing encrypted record rather than creating duplicates.
+- [ ] Confirm the latest GitHub Actions CI run for the newest source commit.
+- [ ] Manually exercise add/edit/cancel/delete/lock/unlock and full-vault backup/restore on Android phone/tablet, including screen readers, reduced motion and offline start.
 - [ ] Complete official trademark, app-store and domain checks before making the name public.
 
 ## Phase 2 — Make the prototype more robust
