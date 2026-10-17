@@ -1054,8 +1054,8 @@ test("full vault restore validation accepts supported private data and rejects i
 test("agenda blocks possible duplicates and shows a bilingual warning", async () => {
   const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
   assert.match(features, /findDuplicateAppointment\(values,data\.agendaItems,targetId,30\)/);
-  assert.match(features, /agendaDuplicate:"Mogelijke dubbele afspraak/);
-  assert.match(features, /agendaDuplicate:"Possible duplicate/);
+  assert.match(features, /agendaDuplicate:"Deze afspraak botst mogelijk/);
+  assert.match(features, /agendaDuplicate:"This appointment overlaps/);
   assert.match(features, /duplicate-appointment/);
 });
 
