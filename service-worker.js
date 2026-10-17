@@ -1,4 +1,4 @@
-const CACHE_NAME = "project-n-01-prototype-v6";
+const CACHE_NAME = "project-n-01-prototype-v7";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -30,7 +30,8 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   const request = event.request;
-  if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
+  const url = new URL(request.url);
+  if (request.method !== "GET" || url.origin !== self.location.origin) return;
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
