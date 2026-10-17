@@ -581,15 +581,17 @@ $("#migrate-routines-to-vault").addEventListener("click", async () => {
   $("#confirm-vault-passphrase").value = "";
   let vault;
   let activated = false;
+  const activeWasUnlocked = Boolean(activeVault && activeVault.isUnlocked);
   try {
     const [{ EncryptedVault }, { migrateLegacyRoutines, readLegacyRoutines }] = await Promise.all([
       import("./encrypted-vault.js"),
       import("./routine-migration.js")
     ]);
     vault = new EncryptedVault(localStorage);
-    if (localStorage.getItem(encryptedVaultStorageKey) !== null) {
+    const vaultAlreadyExists = localStorage.getItem(encryptedVaultStorageKey) !== null;
+    if (vaultAlreadyExists) {
       const data = await vault.unlock(passphrase);
-      if (!data || !Array.isArray(data.routines)) throw new Error("invalid-vault-data");
+      if (!data || (data.routines !== undefined && !Array.isArray(data.routines))) throw new Error("invalid-vault-data");
     } else {
       if (passphrase !== confirmPassphrase) {
         status.textContent = t("vaultPassphraseMismatch");
@@ -602,16 +604,20 @@ $("#migrate-routines-to-vault").addEventListener("click", async () => {
         await vault.initialize(passphrase, { routines: customRoutines });
       }
     }
-    activeVault = vault;
-    dispatchVaultState();
-    encryptedVaultExists = true;
-    const data = activeVault.read();
-    customRoutines = Array.isArray(data.routines) ? data.routines : [];
-    activated = true;
-    updateVaultControls();
-    renderCustomRoutines();
-    scheduleVaultAutoLock();
-    const envelope = activeVault.exportEnvelope();
+    const data = vault.read();
+    // Reuse the current unlocked session. A temporary verification/export session must not replace it or leave its key in memory.
+    if (!vaultAlreadyExists || !activeWasUnlocked) {
+      if (activeVault) activeVault.lock();
+      activeVault = vault;
+      dispatchVaultState();
+      encryptedVaultExists = true;
+      customRoutines = Array.isArray(data.routines) ? data.routines : [];
+      updateVaultControls();
+      renderCustomRoutines();
+      scheduleVaultAutoLock();
+      activated = true;
+    }
+    const envelope = vault.exportEnvelope();
     const blob = new Blob([JSON.stringify(envelope, null, 2)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
