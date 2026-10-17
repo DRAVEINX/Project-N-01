@@ -2,11 +2,35 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { validateFullVaultData } from "../src/vault-restore-validation.js";
-import { findDuplicateAppointment, findDuplicateWorkAssignment } from "../src/appointment-rules.js";
+import { findDuplicateAppointment, findDuplicateWorkAssignment, findAppointmentConflict, generateWeeklyOccurrences, getWorkWeekCopies } from "../src/appointment-rules.js";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
+
+test("appointment duration and transition-buffer checks catch long overlaps", () => {
+  const existing = [{ id: "long", title: "Appointment", date: "2026-10-19", time: "10:00", durationMinutes: 90 }];
+  assert.equal(findAppointmentConflict({ date: "2026-10-19", time: "11:00", durationMinutes: 30 }, existing)?.id, "long");
+  assert.equal(findAppointmentConflict({ date: "2026-10-19", time: "12:00", durationMinutes: 30 }, existing), null);
+  assert.equal(findAppointmentConflict({ date: "2026-10-19", time: "10:00", durationMinutes: 15 }, [{ ...existing[0], done: true }]), null);
+});
+
+test("weekly appointment recurrence preserves local calendar dates and respects limits", () => {
+  assert.deepEqual(generateWeeklyOccurrences("2026-10-19", 4), ["2026-10-19", "2026-10-26", "2026-11-02", "2026-11-09"]);
+  assert.equal(generateWeeklyOccurrences("2026-02-30", 3).length, 0);
+  assert.equal(generateWeeklyOccurrences("2026-10-19", 99).length, 8);
+});
+
+test("copying the previous week's staff roster reuses staff profiles and skips duplicate names", () => {
+  const rows = [
+    { id: "mon", date: "2026-10-12", name: "Alex", staffId: "staff-1", notes: "Early" },
+    { id: "tue", date: "2026-10-13", name: "Sam", staffId: "staff-2" },
+    { id: "already", date: "2026-10-20", name: "SAM", staffId: "staff-2" }
+  ];
+  const copies = getWorkWeekCopies(rows, "2026-10-19");
+  assert.equal(copies.length, 1);
+  assert.deepEqual(copies[0], { id: "mon", date: "2026-10-19", name: "Alex", staffId: "staff-1", notes: "Early" });
+});
 
 test("appointment collision rules block same-day appointments within 30 minutes", () => {
   const existing = [{ id: "a1", title: "Meeting", date: "2026-10-22", time: "10:00" }];
@@ -1049,6 +1073,12 @@ test("daily and weekly staff roster supports photos, editing and deleting throug
   assert.match(features, /function beginWorkScheduleEdit\(item\)/);
   assert.match(features, /renderWorkSchedule\(\)/);
   assert.match(features, /workPhotoTooLarge/);
+  assert.match(features, /agenda-enable-reminders/);
+  assert.match(features, /Notification\.requestPermission\(\)/);
+  assert.match(features, /checkAppointmentReminders/);
+  assert.match(features, /agenda-duration/);
+  assert.match(features, /generateWeeklyOccurrences/);
+  assert.match(features, /work-copy-previous-week/);
   assert.match(features, /selectedFile\.size>120\*1024/);
   assert.match(features, /data\.workSchedules=data\.workSchedules\.filter\(entry=>entry&&entry\.id!==item\.id\)/);
   assert.match(features, /renderAgenda\(\);renderMoods\(\);renderPeople\(\);renderWorkSchedule\(\)/);
