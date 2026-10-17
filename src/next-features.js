@@ -9,11 +9,11 @@
       agendaEmpty:"Er staan nog geen afspraken in je planner.", agendaDone:"Afgerond", agendaUndo:"Opnieuw openzetten", agendaDelete:"Afspraak verwijderen",
       weekHeading:"De komende 7 dagen", agendaSaved:"De afspraak is veilig opgeslagen.", agendaError:"Opslaan lukte niet. Controleer of je kluis ontgrendeld is en er genoeg ruimte is.",
       moodEyebrow:"EVEN INCHECKEN", moodTitle:"Hoe voel je je vandaag?", moodIntro:"Kies het gevoel dat het beste past. Je hoeft het niet uit te leggen.",
-      moodLabel:"Mijn stemming", moodNote:"Wil je er iets bij vertellen? (optioneel)", moodSave:"Stemming opslaan",
+      moodLabel:"Mijn stemming", chooseMood:"Kies een stemming…", moodNote:"Wil je er iets bij vertellen? (optioneel)", moodSave:"Stemming opslaan",
       mood1:"Heel moeilijk", mood2:"Moeilijk", mood3:"Gaat wel", mood4:"Goed", mood5:"Heel goed",
       moodSaved:"Je stemming is veilig opgeslagen.", moodEmpty:"Er zijn nog geen stemmingen opgeslagen.", moodHistory:"Recente check-ins", moodError:"Opslaan lukte niet. Ontgrendel de kluis en probeer opnieuw.",
       peopleEyebrow:"MENSEN OM JE HEEN", peopleTitle:"Vertrouwde mensen", peopleIntro:"Bewaar contactgegevens van mensen bij wie je terechtkunt. Deze gegevens blijven in jouw versleutelde kluis.",
-      peopleName:"Naam", peopleRole:"Wie is deze persoon voor jou?", peopleContact:"Telefoon, e-mail of andere contactgegevens", peopleDetails:"Extra informatie (optioneel)", peopleAdd:"Contact opslaan",
+      peopleName:"Naam", peoplePhoto:"Foto (optioneel, maximaal 120 KB)", peoplePhotoTooLarge:"Kies een PNG-, JPG- of WebP-foto van maximaal 120 KB.", peopleRole:"Wie is deze persoon voor jou?", peopleContact:"Telefoon, e-mail of andere contactgegevens", peopleDetails:"Extra informatie (optioneel)", peopleAdd:"Contact opslaan",
       peopleEmpty:"Je hebt nog geen vertrouwde mensen toegevoegd.", peopleDelete:"Contact verwijderen", peopleSaved:"Contact is veilig opgeslagen.", peopleError:"Opslaan lukte niet. Ontgrendel de kluis en probeer opnieuw.",
       secureGateTitle:"Je persoonlijke gegevens zijn vergrendeld", secureGateText:"Dagboek, stemming, afspraken, contacten en tekeningen worden alleen opgeslagen in je versleutelde kluis op dit apparaat. Ontgrendel de kluis via Routines om verder te gaan.",
       openVault:"Naar de kluisinstellingen", privateLocalOnly:"Alleen op dit apparaat · versleutelde opslag · geen cloud-synchronisatie",
@@ -32,11 +32,11 @@
       agendaEmpty:"There are no appointments in your planner yet.", agendaDone:"Completed", agendaUndo:"Mark as open", agendaDelete:"Delete appointment",
       weekHeading:"The next 7 days", agendaSaved:"Appointment saved securely.", agendaError:"Could not save. Check that your vault is unlocked and has enough space.",
       moodEyebrow:"CHECKING IN", moodTitle:"How are you feeling today?", moodIntro:"Choose the feeling that fits best. You do not have to explain it.",
-      moodLabel:"My mood", moodNote:"Would you like to add a note? (optional)", moodSave:"Save mood",
+      moodLabel:"My mood", chooseMood:"Choose a mood…", moodNote:"Would you like to add a note? (optional)", moodSave:"Save mood",
       mood1:"Very difficult", mood2:"Difficult", mood3:"Okay", mood4:"Good", mood5:"Very good",
       moodSaved:"Your mood was saved securely.", moodEmpty:"No moods have been saved yet.", moodHistory:"Recent check-ins", moodError:"Could not save. Unlock the vault and try again.",
       peopleEyebrow:"YOUR PEOPLE", peopleTitle:"Trusted people", peopleIntro:"Keep contact details for people you can turn to. These details stay in your encrypted vault.",
-      peopleName:"Name", peopleRole:"How do you know this person?", peopleContact:"Phone, email or other contact details", peopleDetails:"Extra details (optional)", peopleAdd:"Save contact",
+      peopleName:"Name", peoplePhoto:"Photo (optional, maximum 120 KB)", peoplePhotoTooLarge:"Choose a PNG, JPG or WebP photo of 120 KB or less.", peopleRole:"How do you know this person?", peopleContact:"Phone, email or other contact details", peopleDetails:"Extra details (optional)", peopleAdd:"Save contact",
       peopleEmpty:"You have not added any trusted people yet.", peopleDelete:"Delete contact", peopleSaved:"Contact saved securely.", peopleError:"Could not save. Unlock the vault and try again.",
       secureGateTitle:"Your personal information is locked", secureGateText:"Journal, mood, appointments, contacts and drawings are saved only in your encrypted vault on this device. Unlock the vault under Routines to continue.",
       openVault:"Open vault settings", privateLocalOnly:"This device only · encrypted storage · no cloud sync",
@@ -202,6 +202,7 @@
     form.id="mood-form";
     const label=make("label","",text("moodLabel")); label.htmlFor="mood-value"; label.dataset.featureText="moodLabel";
     const select=make("select"); select.id="mood-value"; select.name="mood"; select.required=true;
+    const placeholder=make("option","",text("chooseMood")); placeholder.value=""; placeholder.disabled=true; placeholder.selected=true; placeholder.dataset.featureText="chooseMood"; select.append(placeholder);
     for(let n=1;n<=5;n++){ const option=make("option","",text("mood"+n)); option.value=String(n); option.dataset.featureText="mood"+n; select.append(option); }
     const noteLabel=make("label","",text("moodNote")); noteLabel.htmlFor="mood-note"; noteLabel.dataset.featureText="moodNote";
     const note=make("textarea"); note.id="mood-note"; note.name="note"; note.rows=3; note.maxLength=300;
@@ -241,6 +242,7 @@
       {id:"person-name",key:"peopleName,name",type:"text",max:80,required:true},
       {id:"person-role",key:"peopleRole",type:"text",max:80,required:true},
       {id:"person-contact",key:"peopleContact",type:"text",max:120,required:false},
+      {id:"person-photo",key:"peoplePhoto",type:"file",max:0,required:false},
       {id:"person-details",key:"peopleDetails",type:"textarea",max:500,required:false}
     ];
     for(const field of fields){
@@ -249,6 +251,7 @@
       const input=field.type==="textarea"?make("textarea"):make("input");
       input.id=field.id;input.name=field.id;input.required=field.required;input.maxLength=field.max;
       if(field.type!=="textarea")input.type=field.type;else input.rows=3;
+      if(field.type==="file")input.accept="image/png,image/jpeg,image/webp";
       form.append(label,input);
     }
     const submit=make("button","primary-button",text("peopleAdd")); submit.type="submit"; submit.dataset.featureText="peopleAdd";
@@ -261,7 +264,14 @@
     form.addEventListener("submit",async event=>{
       event.preventDefault();
       if(!app().isVaultUnlocked()){status.textContent=text("secureGateTitle");gate.hidden=false;return;}
-      const person={id:id("person"),name:$("#person-name").value.trim().slice(0,80),role:$("#person-role").value.trim().slice(0,80),contact:$("#person-contact").value.trim().slice(0,120),details:$("#person-details").value.trim().slice(0,500),createdAt:new Date().toISOString()};
+      const photoFile=$("#person-photo").files && $("#person-photo").files[0];
+      let photo="";
+      if(photoFile){
+        if(!["image/png","image/jpeg","image/webp"].includes(photoFile.type)||photoFile.size>120*1024){status.textContent=text("peoplePhotoTooLarge");return;}
+        photo=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.addEventListener("load",()=>resolve(typeof reader.result==="string"?reader.result:""));reader.addEventListener("error",reject);reader.readAsDataURL(photoFile);});
+        if(!photo.startsWith("data:image/")||photo.length>180000){status.textContent=text("peoplePhotoTooLarge");return;}
+      }
+      const person={id:id("person"),name:$("#person-name").value.trim().slice(0,80),role:$("#person-role").value.trim().slice(0,80),contact:$("#person-contact").value.trim().slice(0,120),details:$("#person-details").value.trim().slice(0,500),photo,createdAt:new Date().toISOString()};
       if(!person.name || !person.role)return;
       try{
         await updateSecure(data=>{if(data.trustedPeople.length>=50)throw new Error("limit");data.trustedPeople.push(person);return data;});
@@ -343,6 +353,7 @@
         try{await deleteItem("trustedPeople",person.id);renderPeople();}
         catch{$("#people-status").textContent=text("peopleError");}
       })]);
+      if(typeof person.photo==="string"&&/^data:image\\/(png|jpeg|webp);base64,/.test(person.photo)&&person.photo.length<=180000){const photo=make("img","trusted-photo");photo.src=person.photo;photo.alt=person.name;photo.loading="lazy";card.prepend(photo);}
       list.append(card);
     });
   }
