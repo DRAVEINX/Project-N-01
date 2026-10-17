@@ -306,14 +306,34 @@ $("#import-encrypted-routines").addEventListener("change", async event => {
     if (passphrase.length < 12) throw new Error("passphrase");
     const { decryptJson } = await import("./secure-storage.js");
     const parsed = await decryptJson(JSON.parse(await file.text()), passphrase);
-    if (!parsed || parsed.format !== "project-n-01-routines" || parsed.version !== 1) throw new Error("invalid");
-    const imported = normaliseImportedRoutines(parsed.routines);
+    let candidates;
+    if (parsed && parsed.format === "project-n-01-routines" && parsed.version === 1 && Array.isArray(parsed.routines)) {
+      candidates = parsed.routines;
+    } else if (parsed && Array.isArray(parsed.routines)) {
+      // Also accept the encrypted-vault envelope exported by the vault activation flow.
+      candidates = parsed.routines;
+    } else {
+      throw new Error("invalid");
+    }
+    const imported = normaliseImportedRoutines(candidates);
     if (!imported.length) throw new Error("invalid");
     const previous = customRoutines;
-    customRoutines = [...customRoutines, ...imported].slice(0,50);
-    if (!(await saveCustomRoutines())) {
-      customRoutines = previous;
-      throw new Error("storage");
+    const merged = [...customRoutines, ...imported].slice(0,50);
+    if (encryptedVaultExists) {
+      customRoutines = merged;
+      if (!(await saveCustomRoutines())) {
+        customRoutines = previous;
+        throw new Error("storage");
+      }
+    } else {
+      const { EncryptedVault } = await import("./encrypted-vault.js");
+      const vault = new EncryptedVault(localStorage);
+      await vault.initialize(passphrase, { routines: merged });
+      activeVault = vault;
+      encryptedVaultExists = true;
+      customRoutines = merged;
+      updateVaultControls();
+      scheduleVaultAutoLock();
     }
     renderCustomRoutines();
     $("#custom-routine-status").textContent = t("encryptedBackupSuccess");
