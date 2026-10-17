@@ -44,7 +44,8 @@ function applyLanguage(next) {
   $("#language-settings").value = language;
   $("#language").setAttribute("aria-label", t("language"));
   renderCustomRoutines();
-  $$("[data-complete-routine]").forEach(button => { const done = button.dataset.done === "true"; button.textContent = done ? t("routineMarkedDone") : t("routineMarkDone"); });
+  updateVaultControls();
+  $("[data-complete-routine]").forEach(button => { const done = button.dataset.done === "true"; button.textContent = done ? t("routineMarkedDone") : t("routineMarkDone"); });
   $("#today-date").textContent = new Intl.DateTimeFormat(language === "nl" ? "nl-NL" : "en-GB", {weekday:"short",day:"numeric",month:"short"}).format(new Date());
   $("#task-status").textContent = "";
   $("#routine-status").textContent = "";
