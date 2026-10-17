@@ -675,7 +675,7 @@
       ["agenda-form","mood-form","people-form","work-schedule-form"].forEach(formId=>{const form=$("#"+formId);if(form)form.reset();});
       ["agenda-status","mood-status","people-status","work-status"].forEach(statusId=>{const status=$("#"+statusId);if(status)status.textContent="";});
       $$(".drawing-gallery img").forEach(img=>{img.removeAttribute("src");});
-      $(".feature-list,.drawing-gallery,.work-week-grid").forEach(list=>list.replaceChildren());
+      $$(".feature-list,.drawing-gallery,.work-week-grid").forEach(list=>list.replaceChildren());
     }
     ["agenda-form","mood-form","people-form","work-schedule-form"].forEach(formId=>{
       const form=$("#"+formId);
