@@ -1045,6 +1045,8 @@ test("full vault restore validation accepts supported private data and rejects i
   assert.equal(validateFullVaultData({ ...valid, trustedPeople: [{ ...valid.trustedPeople[0], photo: "data:image/svg+xml;base64,PHN2Zz4=" }] }), false);
   assert.equal(validateFullVaultData({ ...valid, agendaItems: Array.from({ length: 101 }, (_, i) => ({ ...valid.agendaItems[0], id: "a" + i })) }), false);
   assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], date: "2026-02-30" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], startTime: "16:00", endTime: "09:00" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], startTime: "09:00", endTime: "10:00" }] }), true);
   assert.equal(validateFullVaultData({ ...valid, workStaff: [{ ...valid.workStaff[0], photo: "data:image/svg+xml;base64,PHN2Zz4=" }] }), false);
   assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], staffId: "missing-profile" }] }), false);
   assert.equal(validateFullVaultData({ ...valid, workSchedules: Array.from({ length: 501 }, (_, i) => ({ ...valid.workSchedules[0], id: "w" + i })) }), false);
@@ -1069,6 +1071,10 @@ test("daily and weekly staff roster supports photos, editing and deleting throug
   assert.match(features, /id="work-previous-week"/);
   assert.match(features, /id="work-next-week"/);
   assert.match(features, /id="work-schedule-form"/);
+  assert.match(features, /work-start-time/);
+  assert.match(features, /work-end-time/);
+  assert.match(features, /workTimeError/);
+  assert.match(features, /shiftMeta/);
   assert.match(features, /findDuplicateWorkAssignment\(values,data\.workSchedules,targetId\)/);
   assert.match(features, /function beginWorkScheduleEdit\(item\)/);
   assert.match(features, /renderWorkSchedule\(\)/);
@@ -1079,6 +1085,11 @@ test("daily and weekly staff roster supports photos, editing and deleting throug
   assert.match(features, /agenda-duration/);
   assert.match(features, /generateWeeklyOccurrences/);
   assert.match(features, /work-copy-previous-week/);
+  assert.match(features, /agenda-filter-toolbar/);
+  assert.match(features, /agenda-search/);
+  assert.match(features, /agenda-filter/);
+  assert.match(features, /filterUpcoming/);
+  assert.match(features, /moodDelete/);
   assert.match(features, /agenda-filter-toolbar/);
   assert.match(features, /agenda-search/);
   assert.match(features, /agenda-filter/);
