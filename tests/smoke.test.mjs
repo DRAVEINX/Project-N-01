@@ -814,3 +814,15 @@ test("leaving the app stops microphone tracks and revokes temporary voice audio"
   assert.match(handler, /clearVoiceObjectUrl\(\)/);
   assert.match(app, /function clearVoiceObjectUrl\(\) \{\s*if \(voiceObjectUrl\) URL\.revokeObjectURL\(voiceObjectUrl\);\s*voiceObjectUrl = null;/);
 });
+
+test("speech recognition errors show feedback and restore dictation controls when ended", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const start = app.indexOf('dictationStart.addEventListener("click", () => {');
+  const end = app.indexOf('\n});', start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const handler = app.slice(start, end);
+  assert.match(handler, /dictationRecognition\.addEventListener\("error", event => \{[\s\S]*?dictationPermissionError[\s\S]*?dictationError/);
+  assert.match(handler, /dictationRecognition\.addEventListener\("end", \(\) => \{\s*setDictationButtons\(false\)/);
+  assert.match(app, /function setDictationButtons\(listening\) \{\s*dictationStart\.disabled = listening \|\| !SpeechRecognitionAPI;\s*dictationStop\.disabled = !listening;/);
+});
