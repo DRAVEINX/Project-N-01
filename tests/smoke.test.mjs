@@ -764,7 +764,7 @@ test("backgrounding the app clears temporary toast notifications safely", async 
 
 test("reduced-motion preference also disables smooth scrolling", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
-  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
   assert.match(app, /document\.body\.classList\.toggle\("reduced-motion", \$\("#less-motion"\)\.checked\)/);
   assert.match(css, /\.reduced-motion\s+\*\s*\{[^}]*scroll-behavior:\s*auto\s*!important/s);
   assert.match(css, /\.reduced-motion\s+\*\s*\{[^}]*animation-duration:\s*0\.01ms\s*!important/s);
