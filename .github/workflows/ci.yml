@@ -40,3 +40,16 @@ jobs:
           test -f scripts/serve.mjs
           test -f tests/smoke.test.mjs
           test -f README.md
+
+      - name: Package installable web prototype
+        run: |
+          zip -q -r project-n-01-web-prototype.zip \
+            index.html offline.html manifest.webmanifest service-worker.js src assets
+          test -s project-n-01-web-prototype.zip
+      - name: Upload web prototype package
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-n-01-web-prototype
+          path: project-n-01-web-prototype.zip
+          if-no-files-found: error
+          retention-days: 30
