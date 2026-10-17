@@ -585,7 +585,7 @@ $("#download-text-note").addEventListener("click", () => {
   } catch {
     $("#note-status").textContent = t("noteTextEmpty");
   } finally {
-    if (url) URL.revokeObjectURL(url);
+    if (url) window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 });
 $("#clear-note").addEventListener("click", () => {
