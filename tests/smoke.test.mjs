@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { validateFullVaultData } from "../src/vault-restore-validation.js";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
@@ -126,7 +127,7 @@ test("notes are only persisted after an explicit encrypted save action", async (
 const manifest = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 test("service worker cache version is bumped when shipping updated app assets", () => {
-  assert.match(serviceWorker, /project-n-01-prototype-v11/);
+  assert.match(serviceWorker, /project-n-01-prototype-v13/);
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v9/);
 });
 
@@ -192,7 +193,7 @@ test("install metadata and offline assets are present", () => {
   assert.equal(parsed.name.startsWith("Mivoryntra"), true);
   assert.equal(parsed.display, "standalone");
   assert.ok(parsed.icons.some(icon => icon.src === "/assets/app-icon.svg"));
-  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/brand-intro.js", "/src/next-features.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/offline.html"]) {
+  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/brand-intro.js", "/src/next-features.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/vault-restore-validation.js", "/src/routine-migration.js", "/offline.html"]) {
     assert.ok(serviceWorker.includes(`"${asset}"`), `offline shell missing ${asset}`);
   }
 });
@@ -705,8 +706,8 @@ test("tablet routine cards use two columns while phone layouts stay single-colum
 
 test("offline app shell cache version is refreshed and includes core app assets", async () => {
   const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(serviceWorker, /project-n-01-prototype-v11/);
-  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/brand-intro.js", "/src/next-features.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/manifest.webmanifest", "/assets/app-icon.svg", "/offline.html"]) {
+  assert.match(serviceWorker, /project-n-01-prototype-v13/);
+  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/brand-intro.js", "/src/next-features.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/vault-restore-validation.js", "/src/routine-migration.js", "/manifest.webmanifest", "/assets/app-icon.svg", "/offline.html"]) {
     assert.ok(serviceWorker.includes(JSON.stringify(asset)), `offline shell missing ${asset}`);
   }
   assert.match(serviceWorker, /key !== CACHE_NAME/);
@@ -961,4 +962,35 @@ test("daily progress restoration accepts only explicit completed booleans", asyn
   assert.match(restore, /input\.checked = progress\.tasks\[index\] === true/);
   assert.match(restore, /if \(!Array\.isArray\(saved\)\) continue/);
   assert.match(restore, /input\.checked = saved\[index\] === true/);
+});
+
+test("full vault restore validation accepts supported private data and rejects invalid limits or formats", () => {
+  const valid = {
+    routines: [{ id: "r1", name: "Ochtend", steps: ["Water drinken"] }],
+    journalEntries: [{ id: "n1", text: "Een korte notitie", createdAt: "2026-10-17T09:00:00.000Z" }],
+    savedDrawings: [{ id: "d1", dataUrl: "data:image/png;base64,AA==", createdAt: "2026-10-17T09:00:00.000Z" }],
+    agendaItems: [{ id: "a1", title: "Afspraak", date: "2026-10-18", time: "09:30", details: "", done: false }],
+    moodEntries: [{ id: "m1", date: "2026-10-17", mood: 4, note: "" }],
+    trustedPeople: [{ id: "p1", name: "Vertrouwd persoon", role: "Begeleider", contact: "", details: "", photo: "" }]
+  };
+  assert.equal(validateFullVaultData(valid), true);
+  assert.equal(validateFullVaultData(null), false);
+  assert.equal(validateFullVaultData({ ...valid, moodEntries: [{ ...valid.moodEntries[0], mood: 6 }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, agendaItems: [{ ...valid.agendaItems[0], date: "2026-02-30" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, trustedPeople: [{ ...valid.trustedPeople[0], photo: "data:image/svg+xml;base64,PHN2Zz4=" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, agendaItems: Array.from({ length: 101 }, (_, i) => ({ ...valid.agendaItems[0], id: "a" + i })) }), false);
+  assert.equal(validateFullVaultData({ ...valid, extra: "x".repeat(1_000_001) }), false);
+});
+
+test("full vault restore has its own confirmation and validates before replacing stored data", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const adapter = await readFile(new URL("../src/encrypted-vault.js", import.meta.url), "utf8");
+  assert.match(html, /id="restore-full-vault-file"/);
+  assert.match(html, /data-i18n="restoreFullVaultWarning"/);
+  assert.match(app, /window\.confirm\(t\("restoreFullVaultConfirm"\)\)/);
+  assert.match(app, /file\.size > 2 \* 1024 \* 1024/);
+  assert.match(app, /restoreEnvelope\(passphrase, envelope, validateFullVaultData\)/);
+  assert.match(adapter, /validateRestoredData\(restored\) !== true/);
+  assert.match(adapter, /Validate decrypted data before touching the current stored vault/);
 });
