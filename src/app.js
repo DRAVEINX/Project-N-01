@@ -66,7 +66,7 @@ function updateVaultControls() {
   ["#clear-custom-routines", "#export-custom-routines", "#import-custom-routines", "#export-encrypted-routines", "#import-encrypted-routines"]
     .forEach(selector => { const control = $(selector); if (control) control.disabled = locked; });
   $("#lock-encrypted-vault").disabled = !activeVault || !activeVault.isUnlocked;
-  $("#delete-plaintext-routines").hidden = locked || localStorage.getItem(customRoutineStorageKey) === null;
+  $("#delete-plaintext-routines").hidden = !activeVault || !activeVault.isUnlocked || localStorage.getItem(customRoutineStorageKey) === null;
   const routinePrivacy = document.querySelector('[data-i18n="customRoutinePrivacy"]');
   if (routinePrivacy) routinePrivacy.textContent = encryptedVaultExists ? (locked ? (localStorage.getItem(customRoutineStorageKey) === null ? t("vaultLockedPrivacy") : t("customRoutinePrivacy")) : t("vaultRoutinePrivacy")) : t("customRoutinePrivacy");
 }
