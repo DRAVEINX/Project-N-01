@@ -31,7 +31,7 @@ test("calendar validates times, blocks exact duplicates and asks before overlaps
 
 test("roster includes support-worker photos and editable dated shifts", () => {
   assert.match(js, /function rosterView\(\)/);
-  assert.match(js, /readImage\(workerForm\.elements\.photo\.files\[0\]/);
+  assert.match(js, /const selectedPhoto=workerForm\.elements\.photo\.files\[0\]/);
   assert.match(js, /function workerCard/);
   assert.match(js, /edit-shift/);
   assert.match(js, /data-guide-step/);
@@ -44,7 +44,7 @@ test("mood, journal, drawings, guide photos and audio are kept inside encrypted 
   assert.match(js, /state\.journal\.push/);
   assert.match(js, /state\.moods\.push/);
   assert.match(js, /state\.drawings\.push/);
-  assert.match(js, /readImage\(images\[0\],350000\)/);
+  assert.match(js, /images\.map\(f=>readImage\(f,350000\)\)/);
   assert.match(js, /readFileData\(audioFile,1024\*1024\)/);
 });
 
