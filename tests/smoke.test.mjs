@@ -121,3 +121,15 @@ test("custom routines have bilingual form labels and local-only storage disclosu
   assert.match(js, /customRoutineStorageError/);
   assert.match(js, /customRoutineTitle:"Create your own routine"/);
 });
+
+test("custom routine export and import controls validate files and disclose privacy limits", () => {
+  assert.match(html, /id="export-custom-routines"/);
+  assert.match(html, /id="import-custom-routines"/);
+  assert.match(html, /accept="application\/json,.json"/);
+  assert.match(html, /routineBackupPrivacy/);
+  assert.match(js, /function normaliseImportedRoutines\(value\)/);
+  assert.match(js, /file\.size > 1024 \* 1024/);
+  assert.match(js, /URL\.createObjectURL\(blob\)/);
+  assert.match(js, /JSON\.parse\(await file\.text\(\)\)/);
+  assert.match(js, /\.slice\(0, 50\)/);
+});
