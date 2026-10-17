@@ -1,0 +1,78 @@
+/**
+ * Structural and resource validation for a full encrypted vault restore.
+ * This runs on decrypted data before the vault adapter writes the new envelope.
+ */
+export function validateFullVaultData(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || !Array.isArray(value.routines) || value.routines.length > 50) return false;
+  let serialized;
+  try { serialized = JSON.stringify(value); } catch { return false; }
+  if (typeof serialized !== "string" || new TextEncoder().encode(serialized).byteLength > 1_000_000) return false;
+
+  const limits = { routines:50, journalEntries:100, savedDrawings:8, agendaItems:100, moodEntries:365, trustedPeople:50, workStaff:100, workSchedules:500 };
+  for (const [key, limit] of Object.entries(limits)) {
+    if (value[key] !== undefined && (!Array.isArray(value[key]) || value[key].length > limit)) return false;
+  }
+  const text = (item, max, required = false) => typeof item === "string" && item.length <= max && (!required || Boolean(item.trim()));
+  const optionalText = (item, max) => item === undefined || (typeof item === "string" && item.length <= max);
+  const date = item => {
+    if (typeof item !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(item)) return false;
+    const [year, month, day] = item.split("-").map(Number);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
+  };
+  if ((value.routines || []).some(item =>
+    !item || typeof item !== "object" || !text(item.id, 120, true) || !text(item.name, 60, true) ||
+    !Array.isArray(item.steps) || item.steps.length < 1 || item.steps.length > 10 ||
+    item.steps.some(step => !text(step, 120, true))
+  )) return false;
+  if ((value.journalEntries || []).some(item =>
+    !item || typeof item !== "object" || !text(item.text, 5000, true) || !text(item.id, 120, true)
+  )) return false;
+  if ((value.savedDrawings || []).some(item =>
+    !item || typeof item !== "object" || !text(item.id, 120, true) ||
+    typeof item.dataUrl !== "string" || item.dataUrl.length > 200000 ||
+    !item.dataUrl.startsWith("data:image/png;base64,")
+  )) return false;
+  if ((value.agendaItems || []).some(item =>
+    !item || typeof item !== "object" || !text(item.id, 120, true) ||
+    !text(item.title, 80, true) || !date(item.date) ||
+    (item.time !== "" && item.time !== undefined && (typeof item.time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.time))) ||
+    !optionalText(item.details, 600) ||
+     (item.durationMinutes !== undefined && ![15,30,45,60,90,120].includes(item.durationMinutes)) ||
+     (item.reminderMinutes !== undefined && ![0,5,15,30].includes(item.reminderMinutes)) ||
+     !optionalText(item.seriesId, 120) ||
+     (item.seriesIndex !== undefined && (!Number.isInteger(item.seriesIndex) || item.seriesIndex < 1 || item.seriesIndex > 8)) ||
+     (item.seriesCount !== undefined && (!Number.isInteger(item.seriesCount) || item.seriesCount < 2 || item.seriesCount > 8))
+  )) return false;
+  if ((value.moodEntries || []).some(item =>
+    !item || typeof item !== "object" || !text(item.id, 120, true) ||
+    !date(item.date) || !Number.isInteger(item.mood) || item.mood < 1 || item.mood > 5 ||
+    !optionalText(item.note, 300)
+  )) return false;
+  if ((value.trustedPeople || []).some(item =>
+    !item || typeof item !== "object" || !text(item.id, 120, true) ||
+    !text(item.name, 80, true) || !text(item.role, 80, true) ||
+    !optionalText(item.contact, 120) || !optionalText(item.details, 500) ||
+    !optionalText(item.photo, 180000) ||
+    (item.photo && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(item.photo))
+  )) return false;
+  if ((value.workStaff || []).some(item =>
+    !item || typeof item !== "object" || !text(item.id, 120, true) ||
+    !text(item.name, 80, true) || !optionalText(item.role, 80) ||
+    !optionalText(item.photo, 180000) ||
+    (item.photo && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(item.photo))
+  )) return false;
+  const staffIds = new Set((value.workStaff || []).map(item => item && item.id));
+  if ((value.workSchedules || []).some(item =>
+    !item || typeof item !== "object" || !text(item.id, 120, true) ||
+    !text(item.name, 80, true) || !date(item.date) ||
+    !text(item.staffId, 120, true) || !staffIds.has(item.staffId) ||
+    !optionalText(item.role, 80) || !optionalText(item.notes, 400) ||
+    !optionalText(item.startTime, 5) || !optionalText(item.endTime, 5) ||
+    (item.startTime !== undefined && item.startTime !== "" && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.startTime)) ||
+    (item.endTime !== undefined && item.endTime !== "" && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.endTime)) ||
+    (Boolean(item.startTime) !== Boolean(item.endTime)) ||
+    (item.startTime && item.endTime && item.endTime <= item.startTime)
+  )) return false;
+  return true;
+}

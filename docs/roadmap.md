@@ -1,4 +1,4 @@
-# Project N-01 roadmap
+# Mivoryntra roadmap (working name)
 
 ## Phase 1 — Prototype foundation
 - [x] Responsive bilingual interface skeleton
@@ -7,7 +7,7 @@
 - [x] Calm/breathing interaction
 - [x] Communication phrase cards and browser text-to-speech support
 - [x] Text size, quiet view and reduced-motion controls
-- [x] Bilingual drawing pad in the notes view, with pointer and keyboard input; drawings are temporary and not stored
+- [x] Bilingual drawing pad in the notes view, with pointer and keyboard input; drawings remain temporary unless the user explicitly saves them in the encrypted vault or exports a PNG
 - [x] Export drawings as PNG on explicit user action, with Dutch/English status messages; drawings remain in memory until exported and are not stored by the app
 - [x] Add opt-in voice recording with in-page playback and explicit audio download; recordings remain in memory and are not persisted or uploaded by the app
 - [x] Add optional Dutch/English browser speech-to-text that appends final recognized text to the notes field, with unsupported/error states and a warning that recognition may be processed by a browser/provider service
@@ -20,6 +20,32 @@
 - [x] Basic CI smoke tests
 - [ ] Verify GitHub Actions result and fix any failures (not confirmed from this session)
 - [ ] Manual keyboard, screen-reader and mobile/tablet viewport review
+
+## Current feature branch — Mivoryntra intro and private tools
+
+- [x] Add a bilingual, skippable first-run intro and short returning-launch splash.
+- [x] Add the working Mivoryntra name to the prototype shell and install metadata; name clearance is still pending.
+- [x] Add an encrypted-vault gate for explicit journal entry saves and saved drawings.
+- [x] Add an encrypted local week planner, mood check-ins and trusted-person contacts.
+- [x] Preserve the additional encrypted fields when existing custom routines are edited.
+- [x] Add a separate full-vault restore action, with confirmation, 2 MiB file limit, schema/collection validation before overwrite, and localized status messages.
+- [x] Add regression tests for valid full-vault data and rejection of invalid mood values, dates, photo formats, collection limits and oversized payloads.
+- [x] Add date/time duplicate prevention to the week planner: same-date appointments within 30 minutes are rejected, and identical titles are checked when an appointment has no time; editing excludes the appointment itself.
+- [x] Add appointment durations, time-overlap and transition-buffer checks, and bounded weekly recurrence (up to eight separate appointments).
+- [x] Add opt-in browser notifications for appointment reminders while the app is open; closed-app delivery is not guaranteed.
+- [x] Add a copy-previous-week action for staff rosters, skipping duplicate same-name/day assignments and reusing encrypted staff profiles.
+- [x] Add agenda month navigation and date selection, appointment search and status filters, and individual mood-entry deletion.
+- [x] Add optional staff shift start/end times with validation and backup-restore checks.
+- [x] Build Android test/release candidates from the feature branch in GitHub Actions; real-device install and usability review remain manual.
+- [x] Add an editable “Who is working today?” roster with previous/next week navigation, date-specific assignments, name, role, notes and photo.
+- [x] Store each staff photo once in the encrypted staff directory and reference the profile from daily assignments; edits and deletion update the current assignment and remove unused profiles.
+- [x] Prevent the same normalized staff name from being scheduled twice on the same date; permit the same staff member on different dates.
+- [x] Add phone/tablet responsive styling, lock-time roster DOM cleanup, full-vault validation and regression tests for the agenda and staff roster.
+- [x] Add edit/cancel flows for appointments and trusted contacts; preserve appointment identity and keep a contact photo unless the user chooses a replacement.
+- [x] Add regression tests that check editing updates the existing encrypted record rather than creating duplicates.
+- [ ] Confirm the latest GitHub Actions CI run for the newest source commit after the agenda/roster additions.
+- [ ] Manually exercise add/edit/cancel/delete/lock/unlock, recurring appointments, notification permission/reminders, roster week-copy and full-vault backup/restore on Android phone/tablet, including screen readers, reduced motion and offline start.
+- [ ] Complete official trademark, app-store and domain checks before making the name public.
 
 ## Phase 2 — Make the prototype more robust
 - [x] Web app manifest and install metadata
@@ -55,6 +81,7 @@
 - [ ] Signed APK/AAB artifacts from verified CI builds
 
 ## Phase 5 — Windows
+- [x] Add a separate Electron desktop shell and Windows NSIS installer-candidate workflow; the installer is unsigned until signing is configured.
 - [ ] Keyboard-first desktop UI
 - [ ] High-DPI and resize testing
 - [ ] Installer, upgrade and uninstall validation

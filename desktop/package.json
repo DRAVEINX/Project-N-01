@@ -1,0 +1,52 @@
+{
+  "name": "mivoryntra-desktop",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Mivoryntra accessible daily-life companion for Windows",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist:windows": "electron-builder --win nsis"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "electron": "44.9.0",
+    "electron-builder": "26.17.0"
+  },
+  "build": {
+    "appId": "com.draveinx.mivoryntra.desktop",
+    "productName": "Mivoryntra",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "app-web",
+        "to": "app-web"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "Mivoryntra-${version}-Windows-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Mivoryntra"
+    }
+  }
+}

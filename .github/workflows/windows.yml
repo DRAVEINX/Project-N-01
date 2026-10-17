@@ -1,0 +1,55 @@
+name: Mivoryntra Windows installer candidate
+
+on:
+  push:
+    branches: [main, feature/brand-splash-next-features]
+    paths:
+      - "index.html"
+      - "offline.html"
+      - "manifest.webmanifest"
+      - "service-worker.js"
+      - "src/**"
+      - "assets/**"
+      - "scripts/prepare-desktop.mjs"
+      - "desktop/**"
+      - "package.json"
+      - ".github/workflows/windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-installer:
+    name: Build Windows installer candidate
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install and test the web prototype
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+
+      - name: Prepare desktop web assets
+        run: node scripts/prepare-desktop.mjs
+
+      - name: Install desktop packaging tools
+        run: npm install --prefix desktop --no-audit --no-fund
+
+      - name: Build Windows installer
+        run: npm run dist:windows --prefix desktop
+
+      - name: Upload unsigned Windows installer candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: mivoryntra-windows-installer-candidate
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+          retention-days: 30

@@ -1,11 +1,15 @@
-const CACHE_NAME = "project-n-01-prototype-v10";
+const CACHE_NAME = "project-n-01-prototype-v16";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/src/styles.css",
   "/src/app.js",
+  "/src/brand-intro.js",
+  "/src/next-features.js",
+  "/src/appointment-rules.js",
   "/src/secure-storage.js",
   "/src/encrypted-vault.js",
+  "/src/vault-restore-validation.js",
   "/src/routine-migration.js",
   "/manifest.webmanifest",
   "/assets/app-icon.svg",

@@ -1,10 +1,53 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { validateFullVaultData } from "../src/vault-restore-validation.js";
+import { findDuplicateAppointment, findDuplicateWorkAssignment, findAppointmentConflict, generateWeeklyOccurrences, getWorkWeekCopies } from "../src/appointment-rules.js";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
+
+test("appointment duration and transition-buffer checks catch long overlaps", () => {
+  const existing = [{ id: "long", title: "Appointment", date: "2026-10-19", time: "10:00", durationMinutes: 90 }];
+  assert.equal(findAppointmentConflict({ date: "2026-10-19", time: "11:00", durationMinutes: 30 }, existing)?.id, "long");
+  assert.equal(findAppointmentConflict({ date: "2026-10-19", time: "12:00", durationMinutes: 30 }, existing), null);
+  assert.equal(findAppointmentConflict({ date: "2026-10-19", time: "10:00", durationMinutes: 15 }, [{ ...existing[0], done: true }]), null);
+});
+
+test("weekly appointment recurrence preserves local calendar dates and respects limits", () => {
+  assert.deepEqual(generateWeeklyOccurrences("2026-10-19", 4), ["2026-10-19", "2026-10-26", "2026-11-02", "2026-11-09"]);
+  assert.equal(generateWeeklyOccurrences("2026-02-30", 3).length, 0);
+  assert.equal(generateWeeklyOccurrences("2026-10-19", 99).length, 8);
+});
+
+test("copying the previous week's staff roster reuses staff profiles and skips duplicate names", () => {
+  const rows = [
+    { id: "mon", date: "2026-10-12", name: "Alex", staffId: "staff-1", notes: "Early" },
+    { id: "tue", date: "2026-10-13", name: "Sam", staffId: "staff-2" },
+    { id: "already", date: "2026-10-20", name: "SAM", staffId: "staff-2" }
+  ];
+  const copies = getWorkWeekCopies(rows, "2026-10-19");
+  assert.equal(copies.length, 1);
+  assert.deepEqual(copies[0], { id: "mon", date: "2026-10-19", name: "Alex", staffId: "staff-1", notes: "Early" });
+});
+
+test("appointment collision rules block same-day appointments within 30 minutes", () => {
+  const existing = [{ id: "a1", title: "Meeting", date: "2026-10-22", time: "10:00" }];
+  assert.equal(findDuplicateAppointment({ title: "Another appointment", date: "2026-10-22", time: "10:30" }, existing)?.id, "a1");
+  assert.equal(findDuplicateAppointment({ title: "Another appointment", date: "2026-10-22", time: "09:30" }, existing)?.id, "a1");
+  assert.equal(findDuplicateAppointment({ title: "Another appointment", date: "2026-10-22", time: "10:31" }, existing), null);
+  assert.equal(findDuplicateAppointment({ title: "Another appointment", date: "2026-10-23", time: "10:00" }, existing), null);
+  assert.equal(findDuplicateAppointment({ title: "  MEETING  ", date: "2026-10-22", time: "" }, existing)?.id, "a1");
+  assert.equal(findDuplicateAppointment({ title: "Meeting", date: "2026-10-22", time: "10:00" }, existing, "a1") , null);
+});
+
+test("work-roster rules prevent the same person being listed twice on one date", () => {
+  const existing = [{ id: "w1", name: "Sam de Vries", date: "2026-10-22" }];
+  assert.equal(findDuplicateWorkAssignment({ name: "  SAM DE VRIES ", date: "2026-10-22" }, existing)?.id, "w1");
+  assert.equal(findDuplicateWorkAssignment({ name: "Sam de Vries", date: "2026-10-23" }, existing), null);
+  assert.equal(findDuplicateWorkAssignment({ name: "Sam de Vries", date: "2026-10-22" }, existing, "w1"), null);
+});
 
 test("daily task and built-in routine progress persists locally for the current day", () => {
   assert.match(js, /const dailyProgressKey = "project-n-01-daily-progress-v1"/);
@@ -15,7 +58,7 @@ test("daily task and built-in routine progress persists locally for the current 
   assert.match(js, /saveDailyProgress\(\);/);
   assert.match(js, /encryptedVaultStorageKey, dailyProgressKey/);
   assert.match(js, /Today’s progress and accessibility preferences are stored unencrypted/);
-  assert.match(js, /De voortgang van vandaag en toegankelijkheidsvoorkeuren worden onversleuteld/);
+  assert.match(js, /De voortgang van vandaag en toegankelijkheidsvoorkeuren staan onversleuteld/);
 });
 
 test("PWA manifest is valid and points to the cached app icon", async () => {
@@ -115,14 +158,20 @@ test("clipboard failure selects the note for manual copying and has its own empt
   assert.match(js, /\$\("#note-text"\)\.focus\(\);\s*\$\("#note-text"\)\.select\(\);/);
 });
 
-test("notes explicitly warn that the prototype does not save them", () => {
-  assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
+test("notes are only persisted after an explicit encrypted save action", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(html, /data-i18n="notesIntro"/);
+  assert.match(js, /notesIntro:"[^"]*versleuteld opslaat/);
+  assert.match(features, /saveJournal/);
+  assert.match(features, /isVaultUnlocked\(\)/);
+  assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
 });
 const manifest = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 test("service worker cache version is bumped when shipping updated app assets", () => {
-  assert.match(serviceWorker, /project-n-01-prototype-v10/);
-  assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v9/);
+  assert.match(serviceWorker, /project-n-01-prototype-v16/);
+  assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v14/);
+  assert.ok(serviceWorker.includes('"/src/appointment-rules.js"'));
 });
 
 test("encrypted import tracks temporary vault unlock in local scope", () => {
@@ -160,7 +209,7 @@ test("routine checkbox and completion listeners use the shared query helper", ()
 
 test("document title follows the active view and updates when language changes", () => {
   assert.match(js, /function updateDocumentTitle\(\)/);
-  assert.match(js, /document\.title = pageName \? `\$\{pageName\} · Project N-01` : "Project N-01"/);
+  assert.match(js, /document\.title = pageName \? `\$\{pageName\} · Mivoryntra` : "Mivoryntra"/);
   assert.match(js, /updateDocumentTitle\(\);/);
 });
 
@@ -184,10 +233,10 @@ test("prototype does not depend on external runtime scripts or styles", () => {
 
 test("install metadata and offline assets are present", () => {
   const parsed = JSON.parse(manifest);
-  assert.equal(parsed.name.startsWith("Project N-01"), true);
+  assert.equal(parsed.name.startsWith("Mivoryntra"), true);
   assert.equal(parsed.display, "standalone");
   assert.ok(parsed.icons.some(icon => icon.src === "/assets/app-icon.svg"));
-  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/offline.html"]) {
+  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/brand-intro.js", "/src/next-features.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/vault-restore-validation.js", "/src/routine-migration.js", "/offline.html"]) {
     assert.ok(serviceWorker.includes(`"${asset}"`), `offline shell missing ${asset}`);
   }
 });
@@ -204,7 +253,7 @@ test("preferences persist locally without persisting private notes", () => {
   assert.ok(js.includes('reducedMotion: $("#less-motion").checked'));
   assert.ok(js.includes('quietView: $("#quiet-view").checked'));
   assert.match(html, /voorkeuren worden lokaal in deze browser bewaard/i);
-  assert.match(html, /notities worden niet opgeslagen/i);
+  assert.match(html, /notities worden alleen bewaard/i);
   assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
 });
 
@@ -216,8 +265,8 @@ test("drawing pad provides a bilingual PNG export without storing the drawing", 
   assert.match(js, /sketchEmpty:/);
   assert.match(js, /sketchExportError:/);
   assert.match(js, /sketchExported:/);
-  assert.match(js, /De tekening wordt niet opgeslagen/);
-  assert.match(js, /The drawing is not saved/);
+  assert.match(js, /De tekening wordt niet automatisch bewaard/);
+  assert.match(js, /The drawing is not saved automatically/);
 });
 
 test("drawing pad supports pointer and keyboard input without persistent storage", () => {
@@ -373,7 +422,7 @@ test("encrypted migration UI is explicit, bilingual and preserves legacy routine
   assert.match(js, /import\("\.\/encrypted-vault\.js"\)/);
   assert.match(js, /import\("\.\/routine-migration\.js"\)/);
   assert.match(js, /readLegacyRoutines\(localStorage\)/);
-  assert.match(js, /activeVault\.exportEnvelope\(\)/);
+  assert.match(js, /vault\.exportEnvelope\(\)/);
   assert.match(js, /vault\.lock\(\)/);
   assert.match(js, /vaultRoutinePrivacy:"Je routines worden versleuteld opgeslagen/);
   assert.match(js, /vaultRoutinePrivacy:"Your routines are encrypted/);
@@ -381,9 +430,9 @@ test("encrypted migration UI is explicit, bilingual and preserves legacy routine
   assert.match(js, /routinePrivacy.textContent = encryptedVaultExists && !locked/);
   assert.match(js, /updateVaultControls\(\);/);
   assert.match(js, /if \(!\(await saveCustomRoutines\(\)\)\)/);
-  assert.match(js, /vaultMigrationSuccess:"De versleutelde kluis is gemaakt/);
-  assert.match(js, /vaultMigrationSuccess:"The encrypted vault was created/);
-  assert.match(js, /De oorspronkelijke routines blijven staan en zijn nog steeds onversleuteld/);
+  assert.match(js, /vaultMigrationSuccess:"De volledige versleutelde kluis-back-up is gedownload/);
+  assert.match(js, /vaultMigrationSuccess:"The full encrypted vault backup was downloaded/);
+  assert.match(js, /De oude onversleutelde routinekopie wordt niet automatisch verwijderd/);
 });
 
 const secureStorage = await readFile(new URL("../src/secure-storage.js", import.meta.url), "utf8");
@@ -401,7 +450,7 @@ test("encrypted routine storage has an explicit unlock/lock UI and keeps keys in
   assert.match(html, /id="migrate-routines-to-vault"/);
   assert.match(html, /id="lock-encrypted-vault"/);
   assert.match(html, /id="delete-plaintext-routines"/);
-  assert.match(js, /await activeVault\.save\(\{ routines: customRoutines \}\)/);
+  assert.match(js, /await activeVault\.save\(\{ \.\.\.activeVault\.read\(\), routines: customRoutines \}\)/);
   assert.match(js, /activeVault\.lock\(\)/);
   assert.match(secureStorage, /openEncryptedJsonSession/);
   assert.match(secureStorage, /fresh random IV for every save/);
@@ -444,8 +493,8 @@ test("encrypted backup controls are present and accessible in Dutch and English"
   assert.match(html, /id="export-encrypted-routines"/);
   assert.match(html, /id="import-encrypted-routines"/);
   assert.match(html, /aria-describedby="backup-passphrase-help"/);
-  assert.match(js, /exportEncryptedRoutines:"Versleutelde back-up maken"/);
-  assert.match(js, /exportEncryptedRoutines:"Create encrypted backup"/);
+  assert.match(js, /exportEncryptedRoutines:"Versleutelde back-up van routines maken"/);
+  assert.match(js, /exportEncryptedRoutines:"Create encrypted routines backup"/);
   assert.match(js, /await import\("\.\/secure-storage\.js"\)/);
   assert.match(js, /file\.size > 1024 \* 1024/);
   assert.match(js, /project-n-01-routines-encrypted\.json/);
@@ -561,6 +610,23 @@ test("vault restore authenticates before replacing stored data", async () => {
   await assert.rejects(() => second.restoreEnvelope("verkeerde-testzin-123", exported));
   assert.equal(secondStorage.getItem("vault-b"), before);
   assert.deepEqual(await second.restoreEnvelope("een-veilige-testzin-123", exported), { profile: "A" });
+});
+
+test("full-vault restore validates decrypted data before replacing a valid existing vault", async () => {
+  const firstStorage = createMemoryStorage();
+  const first = new EncryptedVault(firstStorage, "vault-a");
+  await first.initialize("een-veilige-testzin-123", { profile: "A" });
+  const exported = first.exportEnvelope();
+  const secondStorage = createMemoryStorage();
+  const second = new EncryptedVault(secondStorage, "vault-b");
+  await second.initialize("een-veilige-testzin-123", { profile: "B" });
+  const before = secondStorage.getItem("vault-b");
+  await assert.rejects(
+    () => second.restoreEnvelope("een-veilige-testzin-123", exported, data => Boolean(data && Array.isArray(data.routines))),
+    /validation/i
+  );
+  assert.equal(secondStorage.getItem("vault-b"), before);
+  assert.deepEqual(second.read(), { profile: "B" });
 });
 
 test("vault save keeps the prior in-memory and persisted data when storage write fails", async () => {
@@ -683,11 +749,85 @@ test("tablet routine cards use two columns while phone layouts stay single-colum
 
 test("offline app shell cache version is refreshed and includes core app assets", async () => {
   const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(serviceWorker, /project-n-01-prototype-v10/);
-  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/manifest.webmanifest", "/assets/app-icon.svg", "/offline.html"]) {
+  assert.match(serviceWorker, /project-n-01-prototype-v16/);
+  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/brand-intro.js", "/src/next-features.js", "/src/appointment-rules.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/vault-restore-validation.js", "/src/routine-migration.js", "/manifest.webmanifest", "/assets/app-icon.svg", "/offline.html"]) {
     assert.ok(serviceWorker.includes(JSON.stringify(asset)), `offline shell missing ${asset}`);
   }
   assert.match(serviceWorker, /key !== CACHE_NAME/);
+});
+
+test("Mivoryntra splash screen is bilingual, keyboard dismissible and respects reduced motion", async () => {
+  const intro = await readFile(new URL("../src/brand-intro.js", import.meta.url), "utf8");
+  assert.match(html, /src="src\/brand-intro.js" defer/);
+  assert.match(intro, /aria-modal/);
+  assert.match(intro, /event.key === "Escape"/);
+  assert.match(intro, /prefers-reduced-motion: reduce/);
+  assert.match(intro, /introTitle/);
+  assert.match(intro, /Your day. Your pace. Your space./);
+  assert.match(css, /launch-screen/);
+});
+
+test("new personal modules use the unlocked encrypted vault and do not write private data to local storage", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(js, /window.ProjectNApp =/);
+  assert.match(js, /async updateVaultData\(mutator\)/);
+  assert.match(js, /\.\.\.activeVault\.read\(\), routines: customRoutines/);
+  for (const key of ["journalEntries", "savedDrawings", "agendaItems", "moodEntries", "trustedPeople", "workStaff", "workSchedules"]) {
+    assert.ok(features.includes(key), `missing secure data collection ${key}`);
+  }
+  assert.match(features, /isVaultUnlocked\(\)/);
+  assert.match(features, /updateVaultData\(/);
+  assert.match(features, /data-feature-text/);
+  assert.doesNotMatch(features, /localStorage\.setItem/);
+  assert.match(serviceWorker, /"\/src\/next-features.js"/);
+});
+
+test("trusted people can store bounded photos, edit contacts, and preserve an existing photo", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(features, /peoplePhotoTooLarge/);
+  assert.match(features, /photoFile\.size>120\*1024/);
+  assert.match(features, /data\.trustedPeople\.push\(\{id:id\("person"\),\.\.\.values,createdAt:new Date\(\)\.toISOString\(\)\}\)/);
+  assert.match(features, /editingPersonPhoto=""/);
+  assert.match(features, /let photo=targetId\?editingPersonPhoto:""/);
+  assert.match(features, /data\.trustedPeople\[index\]=\{\.\.\.data\.trustedPeople\[index\],\.\.\.values/);
+  assert.match(features, /button\(text\("peopleEdit"\),"secondary-button",\(\)=>beginPersonEdit\(person\)\)/);
+  assert.match(features, /peopleCancelEdit/);
+  assert.match(features, /peopleUpdate/);
+  assert.match(css, /\.trusted-photo/);
+  assert.doesNotMatch(features, /localStorage\.setItem/);
+});
+
+
+test("appointments can be edited in the encrypted vault without creating duplicates", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(features, /function beginAppointmentEdit\(item\)/);
+  assert.match(features, /button\(text\("agendaEdit"\),"secondary-button",\(\)=>beginAppointmentEdit\(item\)\)/);
+  assert.match(features, /const targetId=editingAppointmentId/);
+  assert.match(features, /const found=data\.agendaItems\.find\(item=>item && item\.id===targetId\)/);
+  assert.match(features, /Object\.assign\(found, values, \{updatedAt:new Date\(\)\.toISOString\(\)\}\)/);
+  assert.match(features, /agendaCancelEdit/);
+  assert.match(features, /agendaUpdated/);
+  assert.doesNotMatch(features, /localStorage\.setItem/);
+});
+test("mood selection requires an intentional choice instead of preselecting a mood", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(features, /chooseMood:"Choose a mood…"/);
+  assert.match(features, /placeholder\.disabled=true; placeholder\.selected=true/);
+});
+
+test("secure feature module iterates querySelectorAll collections safely", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.doesNotMatch(features, /(?<!\$)\$\([^;\n]*\)\.forEach/);
+  assert.doesNotMatch(features, /(?<!\$)\$\([^;\n]*\)\.filter/);
+  assert.ok(features.includes('$$("[data-feature-text]").forEach'));
+});
+
+test("Mivoryntra manifest and visible app shell use the new provisional product name", () => {
+  assert.match(html, /<title>Mivoryntra/);
+  assert.match(html, /<strong>Mivoryntra<\/strong>/);
+  const parsed = JSON.parse(manifest);
+  assert.equal(parsed.short_name, "Mivoryntra");
+  assert.match(parsed.name, /Mivoryntra/);
 });
 
 test("offline page marks Dutch and English text with the correct language", async () => {
@@ -882,4 +1022,123 @@ test("daily progress restoration accepts only explicit completed booleans", asyn
   assert.match(restore, /input\.checked = progress\.tasks\[index\] === true/);
   assert.match(restore, /if \(!Array\.isArray\(saved\)\) continue/);
   assert.match(restore, /input\.checked = saved\[index\] === true/);
+});
+
+test("full vault restore validation accepts supported private data and rejects invalid limits or formats", () => {
+  const valid = {
+    routines: [{ id: "r1", name: "Ochtend", steps: ["Water drinken"] }],
+    journalEntries: [{ id: "n1", text: "Een korte notitie", createdAt: "2026-10-17T09:00:00.000Z" }],
+    savedDrawings: [{ id: "d1", dataUrl: "data:image/png;base64,AA==", createdAt: "2026-10-17T09:00:00.000Z" }],
+    agendaItems: [{ id: "a1", title: "Afspraak", date: "2026-10-18", time: "09:30", details: "", done: false }],
+    moodEntries: [{ id: "m1", date: "2026-10-17", mood: 4, note: "" }],
+    trustedPeople: [{ id: "p1", name: "Vertrouwd persoon", role: "Begeleider", contact: "", details: "", photo: "" }],
+    workStaff: [{ id: "s1", name: "Sam de Vries", role: "Begeleider", photo: "data:image/png;base64,AA==" }],
+    workSchedules: [{ id: "w1", staffId: "s1", name: "Sam de Vries", date: "2026-10-18", role: "Begeleider", notes: "" }]
+  };
+  assert.equal(validateFullVaultData(valid), true);
+  assert.equal(validateFullVaultData(null), false);
+  assert.equal(validateFullVaultData({ profile: "not-a-vault" }), false);
+  assert.equal(validateFullVaultData({ ...valid, routines: [{ id: "", name: "Ochtend", steps: ["Water drinken"] }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, routines: [{ id: "r1", name: "Ochtend", steps: [] }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, moodEntries: [{ ...valid.moodEntries[0], mood: 6 }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, agendaItems: [{ ...valid.agendaItems[0], date: "2026-02-30" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, trustedPeople: [{ ...valid.trustedPeople[0], photo: "data:image/svg+xml;base64,PHN2Zz4=" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, agendaItems: Array.from({ length: 101 }, (_, i) => ({ ...valid.agendaItems[0], id: "a" + i })) }), false);
+  assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], date: "2026-02-30" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], startTime: "16:00", endTime: "09:00" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], startTime: "09:00", endTime: "10:00" }] }), true);
+  assert.equal(validateFullVaultData({ ...valid, workStaff: [{ ...valid.workStaff[0], photo: "data:image/svg+xml;base64,PHN2Zz4=" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, workSchedules: [{ ...valid.workSchedules[0], staffId: "missing-profile" }] }), false);
+  assert.equal(validateFullVaultData({ ...valid, workSchedules: Array.from({ length: 501 }, (_, i) => ({ ...valid.workSchedules[0], id: "w" + i })) }), false);
+  assert.equal(validateFullVaultData({ ...valid, extra: "x".repeat(1_000_001) }), false);
+});
+
+test("agenda blocks possible duplicates and shows a bilingual warning", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(features, /findDuplicateAppointment\(values,data\.agendaItems,targetId,30\)/);
+  assert.match(features, /agendaDuplicate:"Deze afspraak botst mogelijk/);
+  assert.match(features, /agendaDuplicate:"This appointment overlaps/);
+  assert.match(features, /duplicate-appointment/);
+});
+
+test("daily and weekly staff roster supports photos, editing and deleting through encrypted storage", async () => {
+  const features = await readFile(new URL("../src/next-features.js", import.meta.url), "utf8");
+  assert.match(features, /const workRoster = addView\("work",/);
+  assert.match(features, /workSchedules/);
+  assert.match(features, /workStaff/);
+  assert.match(features, /data\.workStaff\.find\(person=>person&&normaliseAppointmentTitle\(person\.name\)===normaliseAppointmentTitle\(values\.name\)\)/);
+  assert.match(features, /const profile=profiles\.find\(person=>person&&person\.id===item\.staffId\)/);
+  assert.match(features, /id="work-previous-week"/);
+  assert.match(features, /id="work-next-week"/);
+  assert.match(features, /id="work-schedule-form"/);
+  assert.match(features, /work-start-time/);
+  assert.match(features, /work-end-time/);
+  assert.match(features, /workTimeError/);
+  assert.match(features, /shiftMeta/);
+  assert.match(features, /findDuplicateWorkAssignment\(values,data\.workSchedules,targetId\)/);
+  assert.match(features, /function beginWorkScheduleEdit\(item\)/);
+  assert.match(features, /renderWorkSchedule\(\)/);
+  assert.match(features, /workPhotoTooLarge/);
+  assert.match(features, /agenda-enable-reminders/);
+  assert.match(features, /Notification\.requestPermission\(\)/);
+  assert.match(features, /checkAppointmentReminders/);
+  assert.match(features, /agenda-duration/);
+  assert.match(features, /generateWeeklyOccurrences/);
+  assert.match(features, /work-copy-previous-week/);
+  assert.match(features, /agenda-filter-toolbar/);
+  assert.match(features, /agenda-search/);
+  assert.match(features, /agenda-filter/);
+  assert.match(features, /filterUpcoming/);
+  assert.match(features, /moodDelete/);
+  assert.match(features, /agendaMonthTitle/);
+  assert.match(features, /agenda-month-grid/);
+  assert.match(features, /renderAgendaMonth/);
+  assert.match(features, /selectedAgendaDate/);
+  assert.match(features, /agenda-filter-toolbar/);
+  assert.match(features, /agenda-search/);
+  assert.match(features, /agenda-filter/);
+  assert.match(features, /filterUpcoming/);
+  assert.match(features, /moodDelete/);
+  assert.match(features, /selectedFile\.size>120\*1024/);
+  assert.match(features, /data\.workSchedules=data\.workSchedules\.filter\(entry=>entry&&entry\.id!==item\.id\)/);
+  assert.match(features, /renderAgenda\(\);renderMoods\(\);renderPeople\(\);renderWorkSchedule\(\)/);
+  assert.match(css, /\.work-week-grid/);
+  assert.match(css, /\.work-assignment-photo/);
+  assert.doesNotMatch(features, /localStorage\.setItem/);
+});
+
+test("Windows desktop shell uses isolated browser defaults and includes an installer workflow", async () => {
+  const main = await readFile(new URL("../desktop/main.cjs", import.meta.url), "utf8");
+  const desktopPackage = await readFile(new URL("../desktop/package.json", import.meta.url), "utf8");
+  const prepare = await readFile(new URL("../scripts/prepare-desktop.mjs", import.meta.url), "utf8");
+  const workflow = await readFile(new URL("../.github/workflows/windows.yml", import.meta.url), "utf8");
+  assert.match(main, /contextIsolation: true/);
+  assert.match(main, /nodeIntegration: false/);
+  assert.match(main, /sandbox: true/);
+  assert.match(main, /isInsideRoot\(root, target\)/);
+  assert.match(main, /protocol\.registerSchemesAsPrivileged/);
+  assert.match(main, /setWindowOpenHandler/);
+  assert.match(main, /setPermissionRequestHandler/);
+  assert.match(main, /permission !== "media"/);
+  assert.match(desktopPackage, /"productName": "Mivoryntra"/);
+  assert.match(desktopPackage, /"target": "nsis"/);
+  assert.match(prepare, /scripts|service-worker\.js/);
+  assert.match(workflow, /runs-on: windows-latest/);
+  assert.match(workflow, /mivoryntra-windows-installer-candidate/);
+});
+
+test("full vault restore has its own confirmation and validates before replacing stored data", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const adapter = await readFile(new URL("../src/encrypted-vault.js", import.meta.url), "utf8");
+  assert.match(html, /id="restore-full-vault-file"/);
+  assert.match(html, /data-i18n="restoreFullVaultWarning"/);
+  assert.match(app, /window\.confirm\(t\("restoreFullVaultConfirm"\)\)/);
+  assert.match(app, /file\.size > 2 \* 1024 \* 1024/);
+  assert.match(app, /restoreEnvelope\(passphrase, envelope, validateFullVaultData\)/);
+  assert.match(app, /customRoutines = restoredData\.routines;/);
+  assert.match(app, /throw new Error\("full-vault-backup"\)/);
+  assert.match(app, /t\("fullVaultUseRestore"\)/);
+  assert.match(adapter, /validateRestoredData\(restored\) !== true/);
+  assert.match(adapter, /Validate decrypted data before touching the current stored vault/);
 });

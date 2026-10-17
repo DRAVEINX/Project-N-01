@@ -1,8 +1,8 @@
-name: Project N-01 Android build
+name: Mivoryntra Android build
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/brand-splash-next-features]
     paths:
       - "index.html"
       - "offline.html"
@@ -81,7 +81,7 @@ jobs:
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: project-n-01-android-debug-apk
+          name: mivoryntra-android-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
@@ -100,7 +100,7 @@ jobs:
       - name: Upload Android release candidates
         uses: actions/upload-artifact@v4
         with:
-          name: project-n-01-android-release-candidate
+          name: mivoryntra-android-release-candidate
           path: |
             android/app/build/outputs/apk/release/*.apk
             android/app/build/outputs/bundle/release/*.aab
