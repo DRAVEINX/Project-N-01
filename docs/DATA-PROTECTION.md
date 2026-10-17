@@ -6,7 +6,7 @@
 - Routine JSON exports are plaintext and must be treated as readable by anyone who obtains the file.
 - Notes and drawings are currently temporary and are not persisted.
 - The experimental `src/secure-storage.js` module provides Web Crypto AES-256-GCM encryption with a random 128-bit salt, random 96-bit IV, PBKDF2-SHA-256 key derivation, and a 128-bit authentication tag.
-- The optional encrypted vault is connected to custom routine-template persistence. The user must unlock it with a passphrase on each page load; a derived `CryptoKey` is retained only in an in-memory closure while unlocked and is discarded on lock. The prototype auto-locks after five minutes without activity and when the page is hidden or navigated away from; key recovery and independent security review are still missing, so this is not yet a release-ready security guarantee.
+- The optional encrypted vault is connected to custom routine-template persistence. The user must unlock it with a passphrase on each page load; a derived `CryptoKey` is retained only in an in-memory closure while unlocked and is discarded on lock. The prototype auto-locks after five minutes without activity and when the page is hidden or navigated away from; there is no password-reset service and independent security review is still missing, so this is not yet a release-ready security guarantee. A separate encrypted recovery-file/code workflow is described below.
 - Browser encryption does not protect data from a compromised device, malicious browser extension, injected script, or someone with access to an unlocked app session.
 
 ## Proposed data categories
@@ -23,7 +23,7 @@
 
 1. Agree a threat model and decide whether the app is single-user per device or supports multiple profiles.
 2. Design passphrase setup, unlock, lock timeout, password change and account/data deletion.
-3. Define recovery honestly: if a user loses the passphrase and has no recovery key, encrypted data may be unrecoverable. Do not create a hidden server-side backdoor.
+3. Define recovery honestly: if a user loses the passphrase and has neither a usable encrypted backup nor its separate recovery code, encrypted data may be unrecoverable. Do not create a hidden server-side backdoor.
 4. Continue reviewing the versioned encrypted storage repository; existing plaintext routines are copied only after a deliberate user action. Keep the plaintext copy until the user explicitly deletes it after checking the encrypted vault and downloaded backup.
 5. Do not store the passphrase or derived key beside ciphertext. Keep keys in memory only for the minimum session and clear references on lock where feasible.
 6. Encrypt backups with a separate user-held passphrase or key; validate file size, schema and version before importing.
@@ -60,7 +60,7 @@ The adapter is connected to the custom-routine editor after an explicit opt-in a
 
 ## Non-destructive routine migration helper
 
-`src/routine-migration.js` can preview and normalize the existing plaintext custom-routine record, then copy valid routines into a new encrypted vault and verify the decrypted result. It deliberately preserves the original plaintext record and refuses to overwrite an existing vault or proceed when the legacy record is malformed. The UI now exposes a deliberate copy-and-download action. It checks for at least one valid legacy routine, verifies the encrypted copy through the helper, exports only the ciphertext envelope, and locks the helper in memory after the operation. It does not delete plaintext data automatically. After unlocking and checking the routines, the user can separately choose to delete the legacy plaintext copy. Normal routine changes use the encrypted vault while it is active; preferences remain plaintext. The inactivity/tab-hide lock is implemented, while recovery and a safe rollback flow remain future work. Do not interpret this as full app-data encryption.
+`src/routine-migration.js` can preview and normalize the existing plaintext custom-routine record, then copy valid routines into a new encrypted vault and verify the decrypted result. It deliberately preserves the original plaintext record and refuses to overwrite an existing vault or proceed when the legacy record is malformed. The UI now exposes a deliberate copy-and-download action. It checks for at least one valid legacy routine, verifies the encrypted copy through the helper, exports only the ciphertext envelope, and locks the helper in memory after the operation. It does not delete plaintext data automatically. After unlocking and checking the routines, the user can separately choose to delete the legacy plaintext copy. Normal routine changes use the encrypted vault while it is active; preferences remain plaintext. The inactivity/tab-hide lock is implemented, while password reset, safe rollback and independent review remain future work. Do not interpret this as full app-data encryption.
 
 
 ## Daily Life Suite security boundary (browser prototype)
