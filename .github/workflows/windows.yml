@@ -45,6 +45,8 @@ jobs:
           Remove-Item desktop/web -Recurse -Force -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Force desktop/web | Out-Null
           Copy-Item -Path www/* -Destination desktop/web -Recurse -Force
+          New-Item -ItemType Directory -Force desktop/build | Out-Null
+          Copy-Item -Path assets/app-icon.svg -Destination desktop/build/icon.svg -Force
           if (!(Test-Path desktop/web/index.html)) { throw "Desktop web assets were not generated." }
 
       - name: Check desktop wrapper syntax and config
