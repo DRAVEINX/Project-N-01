@@ -3,8 +3,8 @@
   "use strict";
   const copy = {
     nl: {
-      navAgenda:"Weekplanner", navMood:"Stemming", navPeople:"Vertrouwde mensen", navWork:"Wie werkt er?", introAgain:"Introductie opnieuw bekijken",
-      agendaEyebrow:"OVERZICHT", agendaTitle:"Mijn weekplanner", agendaIntro:"Leg afspraken vast en bekijk wat er de komende dagen op de planning staat.",
+      navAgenda:"Agenda", navMood:"Stemming", navPeople:"Vertrouwde mensen", navWork:"Wie werkt er?", introAgain:"Introductie opnieuw bekijken",
+      agendaEyebrow:"OVERZICHT", agendaTitle:"Mijn agenda", agendaIntro:"Beheer afspraken, voorkom dubbele boekingen en bekijk wat er de komende dagen op de planning staat.",
       agendaTitleLabel:"Waar gaat de afspraak over?", agendaDate:"Datum", agendaTime:"Tijd", agendaDetails:"Extra informatie (optioneel)", agendaAdd:"Afspraak opslaan",
       agendaEmpty:"Er staan nog geen afspraken in je planner.", agendaDone:"Afgerond", agendaUndo:"Opnieuw openzetten", agendaDelete:"Afspraak verwijderen", agendaEdit:"Afspraak bewerken", agendaCancelEdit:"Bewerken annuleren", agendaUpdate:"Wijzigingen opslaan", agendaUpdated:"De afspraak is bijgewerkt.", agendaEditStarted:"Je kunt de afspraak nu aanpassen.",
       weekHeading:"De komende 7 dagen", agendaSaved:"De afspraak is veilig opgeslagen.", agendaDuplicate:"Mogelijke dubbele afspraak: op deze datum staat al een afspraak binnen 30 minuten. Kies een ander tijdstip of bewerk de bestaande afspraak.", agendaError:"Opslaan lukte niet. Controleer of je kluis ontgrendeld is en voldoende ruimte heeft.",
@@ -30,8 +30,8 @@
       secureDeleteConfirm:"Wil je dit item definitief verwijderen?", deleting:"Verwijderen…", today:"Vandaag", done:"Klaar", cancel:"Annuleren"
     },
     en: {
-      navAgenda:"Week planner", navMood:"Mood", navPeople:"Trusted people", navWork:"Staff on duty", introAgain:"View the introduction again",
-      agendaEyebrow:"OVERVIEW", agendaTitle:"My week planner", agendaIntro:"Add appointments and see what is planned for the coming days.",
+      navAgenda:"Agenda", navMood:"Mood", navPeople:"Trusted people", navWork:"Staff on duty", introAgain:"View the introduction again",
+      agendaEyebrow:"OVERVIEW", agendaTitle:"My agenda", agendaIntro:"Manage appointments, prevent duplicates, and see what is planned for the coming days.",
       agendaTitleLabel:"What is the appointment about?", agendaDate:"Date", agendaTime:"Time", agendaDetails:"Extra details (optional)", agendaAdd:"Save appointment",
       agendaEmpty:"There are no appointments in your planner yet.", agendaDone:"Completed", agendaUndo:"Mark as open", agendaDelete:"Delete appointment", agendaEdit:"Edit appointment", agendaCancelEdit:"Cancel editing", agendaUpdate:"Save changes", agendaUpdated:"Appointment updated.", agendaEditStarted:"You can edit this appointment now.",
       weekHeading:"The next 7 days", agendaSaved:"Appointment saved securely.", agendaDuplicate:"Possible duplicate: an appointment already exists on this date within 30 minutes. Choose another time or edit the existing appointment.", agendaError:"Could not save. Check that your vault is unlocked and has enough free space.",
