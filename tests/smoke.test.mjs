@@ -539,6 +539,39 @@ test("vault restore authenticates before replacing stored data", async () => {
   assert.deepEqual(await second.restoreEnvelope("een-veilige-testzin-123", exported), { profile: "A" });
 });
 
+test("vault save keeps the prior in-memory and persisted data when storage write fails", async () => {
+  const storage = createMemoryStorage();
+  const vault = new EncryptedVault(storage, "atomic-vault");
+  await vault.initialize("een-veilige-testzin-123", { routines: [{ name: "Ochtend" }] });
+  const before = storage.getItem("atomic-vault");
+  const originalSetItem = storage.setItem.bind(storage);
+  storage.setItem = () => { throw new Error("quota exceeded"); };
+  await assert.rejects(() => vault.save({ routines: [{ name: "Avond" }] }), /quota exceeded/);
+  assert.equal(storage.getItem("atomic-vault"), before);
+  assert.deepEqual(vault.read(), { routines: [{ name: "Ochtend" }] });
+  storage.setItem = originalSetItem;
+  vault.lock();
+});
+
+test("vault restore keeps the current vault unchanged when storage write fails", async () => {
+  const sourceStorage = createMemoryStorage();
+  const source = new EncryptedVault(sourceStorage, "source-vault");
+  await source.initialize("een-veilige-testzin-123", { profile: "source" });
+  const backup = source.exportEnvelope();
+  const targetStorage = createMemoryStorage();
+  const target = new EncryptedVault(targetStorage, "target-vault");
+  await target.initialize("een-veilige-testzin-123", { profile: "target" });
+  const before = targetStorage.getItem("target-vault");
+  const originalSetItem = targetStorage.setItem.bind(targetStorage);
+  targetStorage.setItem = () => { throw new Error("quota exceeded"); };
+  await assert.rejects(() => target.restoreEnvelope("een-veilige-testzin-123", backup), /quota exceeded/);
+  assert.equal(targetStorage.getItem("target-vault"), before);
+  assert.deepEqual(target.read(), { profile: "target" });
+  targetStorage.setItem = originalSetItem;
+  target.lock();
+  source.lock();
+});
+
 test("legacy routine preview validates and normalizes data without changing the source", () => {
   const storage = createMemoryStorage();
   const original = JSON.stringify([
