@@ -88,3 +88,12 @@ test("language changes update all translated placeholders and accessible labels"
   assert.match(js, /\$\$\("\[data-i18n-aria-label\]"\)/);
   assert.match(html, /data-i18n-aria-label="sketchCanvasLabel"/);
 });
+
+test("routine completion state is accessible and follows the selected language", () => {
+  assert.equal((html.match(/data-complete-routine="/g) || []).length, 3);
+  assert.equal((html.match(/aria-pressed="false"/g) || []).length, 3);
+  assert.match(js, /button\.setAttribute\("aria-pressed", String\(done\)\)/);
+  assert.match(js, /button\.textContent = done \? t\("routineMarkedDone"\) : t\("routineMarkDone"\)/);
+  assert.match(js, /\$\$\("\[data-i18n-placeholder\]"\)\.forEach/);
+  assert.match(js, /\$\$\("\[data-i18n-aria-label\]"\)\.forEach/);
+});
