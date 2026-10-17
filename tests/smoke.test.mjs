@@ -233,6 +233,13 @@ test("routines can be completed one step at a time", () => {
   assert.match(js, /\$\$\("\[data-complete-routine\]"\)\.forEach/);
 });
 
+test("plain routine imports enforce the routine limit", () => {
+  assert.ok(js.includes('if (validCandidateCount > 50) throw new Error("routine-limit");'));
+  assert.ok(js.includes('if (customRoutines.length + imported.length > 50) throw new Error("routine-limit");'));
+  assert.ok(js.includes('t("routineImportLimit") : t("routineImportError")'));
+  assert.ok(!js.includes('customRoutines = [...customRoutines, ...imported].slice(0,50)'));
+});
+
 test("routine imports reject over-limit backups without silently truncating existing routines", () => {
   assert.match(js, /if \(validCandidateCount > 50\)/);
   assert.match(js, /if \(customRoutines\.length \+ imported\.length > 50\)/);
