@@ -27,8 +27,8 @@ function updateDocumentTitle() {
   document.title = pageName ? `${pageName} · Project N-01` : "Project N-01";
 }
 function setView(view) {
-  $(".view").forEach(section => section.classList.toggle("active", section.id === `view-${view}`));
-  $(".nav-item[data-view]").forEach(button => {
+  $$(".view").forEach(section => section.classList.toggle("active", section.id === `view-${view}`));
+  $$(".nav-item[data-view]").forEach(button => {
     const isCurrent = button.dataset.view === view;
     button.classList.toggle("active", isCurrent);
     if (isCurrent) button.setAttribute("aria-current", "page");
@@ -493,7 +493,7 @@ $("#import-custom-routines").addEventListener("change", async event => {
   }
 });
 
-$("[data-view]").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
+$$("[data-view]").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
 $("#language").addEventListener("change", event => { applyLanguage(event.target.value); updateNoteCharacterCount(); savePreferences(); });
 $("#language-settings").addEventListener("change", event => { applyLanguage(event.target.value); updateNoteCharacterCount(); savePreferences(); });
 $$("[data-task]").forEach(input => input.addEventListener("change", () => {
