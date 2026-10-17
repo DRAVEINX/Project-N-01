@@ -398,7 +398,7 @@
       event.preventDefault();
       if(!app().isVaultUnlocked()){status.textContent=text("secureGateTitle");gate.hidden=false;return;}
       const targetId=editingWorkScheduleId;
-      let photo=targetId?editingWorkSchedulePhoto:"";
+      let photo="";
       const selectedFile=photoInput.files&&photoInput.files[0];
       if(selectedFile){
         if(!["image/png","image/jpeg","image/webp"].includes(selectedFile.type)||selectedFile.size>120*1024){
@@ -442,6 +442,8 @@
             if(data.workSchedules.length>=500)throw new Error("work-limit");
             data.workSchedules.push({id:id("work"),...assignment,createdAt:new Date().toISOString()});
           }
+          const referencedStaff=new Set(data.workSchedules.map(item=>item&&item.staffId).filter(Boolean));
+          data.workStaff=data.workStaff.filter(person=>person&&referencedStaff.has(person.id));
           return data;
         });
         editingWorkScheduleId=null;editingWorkSchedulePhoto="";form.reset();date.value=localDate();
@@ -671,9 +673,9 @@
       const workSubmit=$("#work-submit"),workCancel=$("#work-cancel-edit");
       if(workSubmit)workSubmit.textContent=text("workSave");if(workCancel)workCancel.hidden=true;
       ["agenda-form","mood-form","people-form","work-schedule-form"].forEach(formId=>{const form=$("#"+formId);if(form)form.reset();});
-      ["agenda-status","mood-status","people-status"].forEach(statusId=>{const status=$("#"+statusId);if(status)status.textContent="";});
+      ["agenda-status","mood-status","people-status","work-status"].forEach(statusId=>{const status=$("#"+statusId);if(status)status.textContent="";});
       $$(".drawing-gallery img").forEach(img=>{img.removeAttribute("src");});
-      $$(".feature-list,.drawing-gallery").forEach(list=>list.replaceChildren());
+      $(".feature-list,.drawing-gallery,.work-week-grid").forEach(list=>list.replaceChildren());
     }
     ["agenda-form","mood-form","people-form","work-schedule-form"].forEach(formId=>{
       const form=$("#"+formId);
@@ -733,7 +735,12 @@
             button(text("workEdit"),"secondary-button",()=>beginWorkScheduleEdit(item)),
             button(text("workDelete"),"secondary-button",async()=>{
               try{
-                await deleteItem("workSchedules",item.id);
+                await updateSecure(data=>{
+                  data.workSchedules=data.workSchedules.filter(entry=>entry&&entry.id!==item.id);
+                  const referencedStaff=new Set(data.workSchedules.map(entry=>entry&&entry.staffId).filter(Boolean));
+                  data.workStaff=data.workStaff.filter(person=>person&&referencedStaff.has(person.id));
+                  return data;
+                });
                 if(editingWorkScheduleId===item.id){
                   editingWorkScheduleId=null;editingWorkSchedulePhoto="";
                   const form=$("#work-schedule-form");if(form)form.reset();
