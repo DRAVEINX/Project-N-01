@@ -536,7 +536,7 @@ $("#restore-full-vault-file").addEventListener("change", async event => {
     if (activeVault) activeVault.lock();
     activeVault = restoredVault;
     encryptedVaultExists = true;
-    customRoutines = normaliseImportedRoutines(Array.isArray(restoredData.routines) ? restoredData.routines : []);
+    customRoutines = restoredData.routines;
     updateVaultControls();
     renderCustomRoutines();
     scheduleVaultAutoLock();
