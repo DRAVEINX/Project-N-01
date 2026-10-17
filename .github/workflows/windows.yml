@@ -1,0 +1,71 @@
+name: Project N-01 Windows MSI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "offline.html"
+      - "manifest.webmanifest"
+      - "service-worker.js"
+      - "src/**"
+      - "assets/**"
+      - "scripts/prepare-mobile.mjs"
+      - "package.json"
+      - "capacitor.config.json"
+      - "desktop/**"
+      - ".github/workflows/windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-msi:
+    name: Build Windows MSI installer
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and test application
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+          npm run build:mobile
+
+      - name: Prepare desktop web assets
+        shell: pwsh
+        run: |
+          Remove-Item desktop/web -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force desktop/web | Out-Null
+          Copy-Item -Path www/* -Destination desktop/web -Recurse -Force
+          if (!(Test-Path desktop/web/index.html)) { throw "Desktop web assets were not generated." }
+
+      - name: Check desktop wrapper syntax and config
+        shell: pwsh
+        run: |
+          node --check desktop/main.cjs
+          node -e "JSON.parse(require('fs').readFileSync('desktop/package.json','utf8'))"
+
+      - name: Install desktop packaging dependencies
+        working-directory: desktop
+        run: npm install --no-audit --no-fund
+
+      - name: Build MSI installer
+        working-directory: desktop
+        run: npm run dist:msi
+
+      - name: Upload Windows MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-n-01-windows-msi-unsigned
+          path: desktop/dist/*.msi
+          if-no-files-found: error
+          retention-days: 30
