@@ -100,7 +100,7 @@ test("service worker cache version is bumped when shipping updated app assets", 
 });
 
 test("all multi-element event loops use querySelectorAll helper", () => {
-  assert.doesNotMatch(js, /\$\(["'][^\n]*?["']\)\.forEach/);
+  assert.doesNotMatch(js, /(?<!\$)\$\([^\n]*?\)\.forEach/);
   assert.match(js, /\$\$\("\.view"\)\.forEach/);
   assert.match(js, /\$\$\("\.nav-item\[data-view\]"\)\.forEach/);
   assert.match(js, /\$\$\("\[data-view\]"\)\.forEach/);
