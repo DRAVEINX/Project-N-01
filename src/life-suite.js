@@ -491,7 +491,7 @@
       const oldSeries = existing ? (existing.seriesId || (existing.repeat==="weekly" ? existing.id : "")) : "";
       const id = v.id || uid("appointment");
       const repeat = v.repeat || "none";
-      const a = {id:id,profileId:state.currentProfileId,title:v.title.trim(),date:v.date,start:v.start,end:v.end,location:v.location.trim(),notes:v.notes.trim(),preparation:v.preparation.trim(),reminderMins:Number(v.reminderMins)||0,repeat:repeat,createdAt:existing?existing.createdAt:now,updatedAt:now};
+      const a = {id:id,profileId:existing?existing.profileId:state.currentProfileId,title:v.title.trim(),date:v.date,start:v.start,end:v.end,location:v.location.trim(),notes:v.notes.trim(),preparation:v.preparation.trim(),reminderMins:Number(v.reminderMins)||0,repeat:repeat,createdAt:existing?existing.createdAt:now,updatedAt:now};
       if(repeat==="weekly") {
         const editingSeriesRoot=existing && existing.repeat==="weekly" && (!existing.seriesId || existing.seriesId===existing.id);
         a.seriesId=editingSeriesRoot ? (oldSeries || id) : id;
@@ -508,16 +508,13 @@
       }
       const pool = state.appointments.filter(x=>!removeIds.has(x.id));
       const generated = addAppointmentRepeat(a);
-      for(const candidate of generated) {
-        const conflict=appointmentConflict(candidate,pool);
-        if(conflict && conflict.start===candidate.start) {
-          const status=$("#ls-appointment-status");if(status)status.textContent=t("exactDuplicate");
-          return;
-        }
-        if(conflict && !window.confirm(t("overlap")+" "+t("overlapInfo"))) return;
-        pool.push(candidate);
+      const foundConflicts = generated.map(candidate=>({candidate,conflict:appointmentConflict(candidate,pool)})).filter(item=>item.conflict);
+      if(foundConflicts.some(item=>item.conflict.start===item.candidate.start)) {
+        const status=$("#ls-appointment-status");if(status)status.textContent=t("exactDuplicate");
+        return;
       }
-      state.appointments = pool;
+      if(foundConflicts.length && !window.confirm(t("overlap")+" "+t("overlapInfo"))) return;
+      state.appointments = pool.concat(generated);
       editingAppointmentId = "";
       recordAudit(existing?"appointment-updated":"appointment-created",a.title);
       const ok=await saveState(false);if(ok){selectedDate=a.date;renderApp();setStatus(t("saved"));}
