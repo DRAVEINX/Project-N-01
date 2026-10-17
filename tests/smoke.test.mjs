@@ -656,3 +656,12 @@ test("tablet routine cards use two columns while phone layouts stay single-colum
   assert.match(css, /@media\(max-width:1100px\)[\s\S]*?\.routine-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
   assert.match(css, /@media\(max-width:760px\)[\s\S]*?\.routine-grid\{grid-template-columns:1fr;gap:12px\}/);
 });
+
+test("offline app shell cache version is refreshed and includes core app assets", async () => {
+  const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
+  assert.match(serviceWorker, /project-n-01-prototype-v8/);
+  for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/manifest.webmanifest", "/offline.html"]) {
+    assert.ok(serviceWorker.includes(JSON.stringify(asset)), `offline shell missing ${asset}`);
+  }
+  assert.match(serviceWorker, /key !== CACHE_NAME/);
+});
