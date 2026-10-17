@@ -509,25 +509,6 @@ $("#import-encrypted-routines").addEventListener("change", async event => {
   }
 });
 
-function validateFullVaultData(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  let serialized;
-  try { serialized = JSON.stringify(value); } catch { return false; }
-  if (typeof serialized !== "string" || new TextEncoder().encode(serialized).byteLength > 1_000_000) return false;
-  const limits = { routines:50, journalEntries:100, savedDrawings:8, agendaItems:100, moodEntries:365, trustedPeople:50 };
-  for (const [key, limit] of Object.entries(limits)) {
-    if (value[key] !== undefined && (!Array.isArray(value[key]) || value[key].length > limit)) return false;
-  }
-  const text = (item, max, required = false) => typeof item === "string" && item.length <= max && (!required || Boolean(item.trim()));
-  const date = item => typeof item === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item) && !Number.isNaN(Date.parse(item + "T12:00:00"));
-  if ((value.routines || []).some(item => !item || typeof item !== "object" || !text(item.name,60,true) || !Array.isArray(item.steps) || item.steps.length > 10 || item.steps.some(step => !text(step,120,true)))) return false;
-  if ((value.journalEntries || []).some(item => !item || typeof item !== "object" || !text(item.text,5000,true) || !text(item.id,120,true))) return false;
-  if ((value.savedDrawings || []).some(item => !item || typeof item !== "object" || !text(item.id,120,true) || typeof item.dataUrl !== "string" || item.dataUrl.length > 200000 || !item.dataUrl.startsWith("data:image/png;base64,"))) return false;
-  if ((value.agendaItems || []).some(item => !item || typeof item !== "object" || !text(item.id,120,true) || !text(item.title,80,true) || !date(item.date) || (item.time !== "" && item.time !== undefined && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.time)) || !text(item.details || "",600))) return false;
-  if ((value.moodEntries || []).some(item => !item || typeof item !== "object" || !text(item.id,120,true) || !date(item.date) || !Number.isInteger(item.mood) || item.mood < 1 || item.mood > 5 || !text(item.note || "",300))) return false;
-  if ((value.trustedPeople || []).some(item => !item || typeof item !== "object" || !text(item.id,120,true) || !text(item.name,80,true) || !text(item.role,80,true) || !text(item.contact || "",120) || !text(item.details || "",500) || !text(item.photo || "",180000) || (item.photo && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(item.photo)))) return false;
-  return true;
-}
 $("#restore-full-vault-file").addEventListener("change", async event => {
   const file = event.target.files && event.target.files[0];
   const status = $("#restore-full-vault-status");
@@ -544,7 +525,10 @@ $("#restore-full-vault-file").addEventListener("change", async event => {
       status.textContent = t("restoreFullVaultCancelled");
       return;
     }
-    const { EncryptedVault } = await import("./encrypted-vault.js");
+    const [{ EncryptedVault }, { validateFullVaultData }] = await Promise.all([
+      import("./encrypted-vault.js"),
+      import("./vault-restore-validation.js")
+    ]);
     const restoredVault = new EncryptedVault(localStorage, encryptedVaultStorageKey);
     const restoredData = await restoredVault.restoreEnvelope(passphrase, envelope, validateFullVaultData);
     if (activeVault) activeVault.lock();
