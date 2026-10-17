@@ -47,3 +47,28 @@
 [hidden]{display:none!important}
 
 .note-tools{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.65rem;margin-top:.65rem}.note-tools .inline-status{margin:.15rem 0}
+
+/* Touch and keyboard accessibility refinements */
+@media (hover: none) and (pointer: coarse) {
+  button, .file-pick-label, .nav-item, .option-row, .phrase-card {
+    min-height: 44px;
+  }
+  .task-row {
+    min-height: 56px;
+  }
+  .setting-row {
+    min-height: 64px;
+  }
+}
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, canvas:focus-visible, .file-pick-label:focus-within {
+  outline: 3px solid var(--mint);
+  outline-offset: 3px;
+}
+@media (forced-colors: active) {
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, canvas:focus-visible, .file-pick-label:focus-within {
+    outline: 2px solid Highlight;
+  }
+  .nav-item.active {
+    outline: 1px solid Highlight;
+  }
+}
