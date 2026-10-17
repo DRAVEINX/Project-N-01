@@ -8,7 +8,7 @@ export function validateFullVaultData(value) {
   try { serialized = JSON.stringify(value); } catch { return false; }
   if (typeof serialized !== "string" || new TextEncoder().encode(serialized).byteLength > 1_000_000) return false;
 
-  const limits = { routines:50, journalEntries:100, savedDrawings:8, agendaItems:100, moodEntries:365, trustedPeople:50, workSchedules:500 };
+  const limits = { routines:50, journalEntries:100, savedDrawings:8, agendaItems:100, moodEntries:365, trustedPeople:50, workStaff:100, workSchedules:500 };
   for (const [key, limit] of Object.entries(limits)) {
     if (value[key] !== undefined && (!Array.isArray(value[key]) || value[key].length > limit)) return false;
   }
@@ -51,12 +51,18 @@ export function validateFullVaultData(value) {
     !optionalText(item.photo, 180000) ||
     (item.photo && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(item.photo))
   )) return false;
+  if ((value.workStaff || []).some(item =>
+    !item || typeof item !== "object" || !text(item.id, 120, true) ||
+    !text(item.name, 80, true) || !optionalText(item.role, 80) ||
+    !optionalText(item.photo, 180000) ||
+    (item.photo && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(item.photo))
+  )) return false;
+  const staffIds = new Set((value.workStaff || []).map(item => item && item.id));
   if ((value.workSchedules || []).some(item =>
     !item || typeof item !== "object" || !text(item.id, 120, true) ||
     !text(item.name, 80, true) || !date(item.date) ||
-    !optionalText(item.role, 80) || !optionalText(item.notes, 400) ||
-    !optionalText(item.photo, 180000) ||
-    (item.photo && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(item.photo))
+    !text(item.staffId, 120, true) || !staffIds.has(item.staffId) ||
+    !optionalText(item.role, 80) || !optionalText(item.notes, 400)
   )) return false;
   return true;
 }
