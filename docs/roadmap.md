@@ -32,11 +32,11 @@
 - [ ] Data model and local-first storage strategy
 - [ ] Backup/export and deletion design
 - [x] Draft data-protection threat model and encryption integration checklist (`docs/DATA-PROTECTION.md`); review still required
-- [x] Experimental Web Crypto AES-GCM/PBKDF2 JSON helper and runtime tests; not integrated with app data yet
+- [x] Web Crypto AES-GCM/PBKDF2 helper with an in-memory derived-key session for the optional routine vault
 - [x] Encrypted routine backup export/restore with passphrase prompt, input validation and a 1 MiB import limit; restored routines still use unencrypted browser storage
 - [x] Encryption helper rejects non-JSON values and oversized payloads with regression tests
 - [ ] Security expert review and threat-model sign-off
-- [x] Add standalone experimental encrypted vault adapter with passphrase verification and restore tests; not connected to app data
+- [x] Add encrypted vault adapter with an in-memory key session, authenticated unlock, encrypted saves, lock and restore tests
 - [x] Add non-destructive legacy routine preview/copy helper with validation and tests; original plaintext remains untouched
 - [x] Add an explicit UI action to copy existing routines into the encrypted vault and download the encrypted envelope; the original plaintext remains in place
 - [ ] Integrate encrypted storage into normal routine/preferences persistence, plus unlock/lock timeout and recovery without losing existing data
