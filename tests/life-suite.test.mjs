@@ -7,6 +7,11 @@ const js = await readFile(new URL("../src/life-suite.js", import.meta.url), "utf
 const css = await readFile(new URL("../src/life-suite.css", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 const workflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
+const desktopMain = await readFile(new URL("../desktop/main.cjs", import.meta.url), "utf8");
+const desktopPackage = JSON.parse(await readFile(new URL("../desktop/package.json", import.meta.url), "utf8"));
+const windowsWorkflow = await readFile(new URL("../.github/workflows/windows.yml", import.meta.url), "utf8");
+const iosWorkflow = await readFile(new URL("../.github/workflows/ios.yml", import.meta.url), "utf8");
+const packageConfig = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 
 test("life suite is wired into the existing app without replacing its core views", () => {
   assert.match(html, /data-view="life"/);
@@ -100,7 +105,7 @@ test("mobile-first accessible styling and offline cache include the new module",
   assert.match(css, /ls-high-contrast/);
   assert.match(css, /ls-large-text/);
   assert.match(css, /ls-reduced-motion/);
-  assert.match(serviceWorker, /project-n-01-prototype-v11/);
+  assert.match(serviceWorker, /project-n-01-prototype-v12/);
   assert.match(serviceWorker, /"\/src\/life-suite\.js"/);
   assert.match(serviceWorker, /"\/src\/life-suite\.css"/);
   assert.match(workflow, /node --check src\/life-suite\.js/);
@@ -111,4 +116,18 @@ test("sensitive module never writes readable personal records as standalone loca
   assert.doesNotMatch(js, /localStorage\.setItem\(["'](?:project-n-01-(?:journal|mood|appointments|contacts))/);
   assert.match(js, /lockVault/);
   assert.match(js, /AUTO_LOCK_MS = 5 \* 60 \* 1000/);
+});
+
+test("Windows desktop MSI and iOS archive pipelines are configured separately", () => {
+  assert.match(desktopMain, /nodeIntegration: false/);
+  assert.match(desktopMain, /contextIsolation: true/);
+  assert.match(desktopMain, /const LOCAL_PORT = 41739/);
+  assert.match(desktopMain, /filename.startsWith\(WEB_ROOT \+ path.sep\)/);
+  assert.equal(desktopPackage.build.win.target[0].target, "msi");
+  assert.match(windowsWorkflow, /windows-latest/);
+  assert.match(windowsWorkflow, /project-n-01-windows-msi-unsigned/);
+  assert.match(iosWorkflow, /macos-26/);
+  assert.match(iosWorkflow, /CODE_SIGNING_ALLOWED=NO/);
+  assert.match(iosWorkflow, /project-n-01-ios-unsigned-archive/);
+  assert.equal(packageConfig.devDependencies["@capacitor/ios"], "8.5.3");
 });
