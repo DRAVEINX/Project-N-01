@@ -54,6 +54,10 @@ test("profiles, revocable consent and local invitation groundwork exist", () => 
   assert.match(js, /create-invite/);
   assert.match(js, /profileHint/);
   assert.match(js, /function visibleItems/);
+  assert.match(js, /name="modifyScope"/);
+  assert.match(js, /function canModify/);
+  assert.match(js, /function requireModify/);
+  assert.match(js, /v.ownerId!==state.currentProfileId/);
 });
 
 test("trusted contact actions require confirmation and do not imply an automatic emergency dispatch", () => {
