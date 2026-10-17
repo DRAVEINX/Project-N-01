@@ -1,0 +1,73 @@
+name: Project N-01 Android build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "offline.html"
+      - "manifest.webmanifest"
+      - "service-worker.js"
+      - "src/**"
+      - "assets/**"
+      - "scripts/prepare-mobile.mjs"
+      - "scripts/ensure-android-microphone-permission.mjs"
+      - "package.json"
+      - "capacitor.config.json"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-debug:
+    name: Build Android test APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install JavaScript dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run application regression tests
+        run: npm test
+
+      - name: Prepare web assets for the native shell
+        run: npm run build:mobile
+
+      - name: Generate the Android project
+        run: npx cap add android
+
+      - name: Enable Android microphone permission
+        run: node scripts/ensure-android-microphone-permission.mjs
+
+      - name: Synchronize the native project
+        run: npx cap sync android
+
+      - name: Build a debug APK
+        run: cd android && ./gradlew --no-daemon --stacktrace assembleDebug
+
+      - name: Upload test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-n-01-android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
