@@ -1,0 +1,14 @@
+{
+  "name": "project-n-01",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Accessible daily-life companion prototype",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "node scripts/serve.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
