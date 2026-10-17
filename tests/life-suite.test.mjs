@@ -37,6 +37,15 @@ test("roster includes support-worker photos and editable dated shifts", () => {
   assert.match(js, /data-guide-step/);
 });
 
+test("weekly planner supports weekday schedules, saved completion and profile-scoped access", () => {
+  assert.match(js, /function weekPlanView\(\)/);
+  assert.match(js, /weeklyPlans/);
+  assert.match(js, /data-plan-complete/);
+  assert.match(js, /week-plan-prev/);
+  assert.match(js, /planAccess/);
+  assert.match(js, /modifyScope/);
+});
+
 test("mood, journal, drawings, guide photos and audio are kept inside encrypted app data", () => {
   assert.match(js, /function encryptState/);
   assert.match(js, /AES-256-GCM/);
