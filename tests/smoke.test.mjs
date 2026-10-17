@@ -710,3 +710,9 @@ test("local preview server serves web manifest and SVG with explicit MIME types"
   assert.match(server, /"\.webmanifest":"application\/manifest\+json; charset=utf-8"/);
   assert.match(server, /"\.svg":"image\/svg\+xml"/);
 });
+
+
+test("leaving the calm view stops the breathing timer", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  assert.match(app, /function setView\(view\)\s*\{[\s\S]*?if \(view !== "calm" && breathInterval !== null\) stopBreathing\(false\);/);
+});
