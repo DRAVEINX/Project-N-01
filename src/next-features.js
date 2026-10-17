@@ -23,7 +23,7 @@
       peopleName:"Naam", peoplePhoto:"Foto (optioneel, maximaal 120 KB)", peoplePhotoTooLarge:"Kies een PNG-, JPG- of WebP-foto van maximaal 120 KB.", peopleRole:"Wie is deze persoon voor jou?", peopleContact:"Telefoon, e-mail of andere contactgegevens", peopleDetails:"Extra informatie (optioneel)", peopleAdd:"Contact opslaan",
       peopleEmpty:"Je hebt nog geen vertrouwde mensen toegevoegd.", peopleDelete:"Contact verwijderen", peopleEdit:"Contact bewerken", peopleCancelEdit:"Bewerken annuleren", peopleUpdate:"Wijzigingen opslaan", peopleUpdated:"Contact is bijgewerkt.", peopleEditStarted:"Je kunt het contact nu aanpassen.", peopleSaved:"Contact is veilig opgeslagen.", peopleError:"Opslaan lukte niet. Ontgrendel de kluis en controleer of er voldoende ruimte is.",
       workEyebrow:"DAG- EN WEEKPLANNING", workTitle:"Wie werkt er vandaag?", workIntro:"Bewaar per dag wie er werkt. Kies een datum, voeg een naam en foto toe en pas de planning op elk moment aan.",
-      workDate:"Voor welke datum?", workName:"Naam medewerker of begeleider", workRole:"Functie of rol (optioneel)", workPhoto:"Foto (optioneel, maximaal 120 KB)", workPhotoAlt:"Foto van", workPhotoTooLarge:"Kies een PNG-, JPG- of WebP-foto van maximaal 120 KB.", workNotes:"Opmerking (optioneel)", workSave:"Dienst opslaan",
+      workDate:"Voor welke datum?", workStartTime:"Begintijd (optioneel)", workEndTime:"Eindtijd (optioneel)", workTimeError:"Vul beide tijden in en kies een eindtijd na de begintijd.", workName:"Naam medewerker of begeleider", workRole:"Functie of rol (optioneel)", workPhoto:"Foto (optioneel, maximaal 120 KB)", workPhotoAlt:"Foto van", workPhotoTooLarge:"Kies een PNG-, JPG- of WebP-foto van maximaal 120 KB.", workNotes:"Opmerking (optioneel)", workSave:"Dienst opslaan",
       workWeekHeading:"Weekplanning", workPreviousWeek:"Vorige week", workNextWeek:"Volgende week", workCopyPrevious:"Kopieer vorige week", workCopySuccess:"{count} diensten uit de vorige week gekopieerd.", workCopyNone:"Er zijn geen nieuwe diensten gekopieerd; de week is leeg of medewerkers stonden al ingepland.", workCopyError:"De vorige week kon niet worden gekopieerd. Controleer of er ruimte is in de kluis.", workEmpty:"Voor deze dag is nog niemand ingepland.", workWeekEmpty:"Er zijn deze week nog geen medewerkers ingepland.",
       workEdit:"Planning bewerken", workDelete:"Planning verwijderen", workCancelEdit:"Bewerken annuleren", workUpdate:"Wijzigingen opslaan", workSaved:"De planning is opgeslagen.", workUpdated:"De planning is bijgewerkt.", workEditStarted:"Je kunt deze planning nu aanpassen.", workDuplicate:"Deze persoon staat op deze datum al ingepland. Bewerk de bestaande planning om dubbele vermeldingen te voorkomen.", workError:"Opslaan lukte niet. Controleer of de kluis ontgrendeld is en voldoende ruimte heeft.",
       secureGateTitle:"Je persoonlijke gegevens zijn vergrendeld", secureGateText:"Dagboek, stemming, afspraken, contacten en tekeningen worden alleen opgeslagen in je versleutelde kluis op dit apparaat. Ontgrendel de kluis via Routines om verder te gaan.",
@@ -57,7 +57,7 @@
       peopleName:"Name", peoplePhoto:"Photo (optional, maximum 120 KB)", peoplePhotoTooLarge:"Choose a PNG, JPG or WebP photo of 120 KB or less.", peopleRole:"How do you know this person?", peopleContact:"Phone, email or other contact details", peopleDetails:"Extra details (optional)", peopleAdd:"Save contact",
       peopleEmpty:"You have not added any trusted people yet.", peopleDelete:"Delete contact", peopleEdit:"Edit contact", peopleCancelEdit:"Cancel editing", peopleUpdate:"Save changes", peopleUpdated:"Contact updated.", peopleEditStarted:"You can edit this contact now.", peopleSaved:"Contact saved securely.", peopleError:"Could not save. Unlock the vault and check that there is enough free space.",
       workEyebrow:"DAY AND WEEK PLANNING", workTitle:"Who is working today?", workIntro:"Keep a schedule of who is working each day. Choose a date, add a name and photo, and update the plan at any time.",
-      workDate:"Date", workName:"Staff member or support worker name", workRole:"Role (optional)", workPhoto:"Photo (optional, maximum 120 KB)", workPhotoAlt:"Photo of", workPhotoTooLarge:"Choose a PNG, JPG or WebP photo of 120 KB or less.", workNotes:"Notes (optional)", workSave:"Save shift",
+      workDate:"Date", workStartTime:"Start time (optional)", workEndTime:"End time (optional)", workTimeError:"Enter both times and choose an end time later than the start time.", workName:"Staff member or support worker name", workRole:"Role (optional)", workPhoto:"Photo (optional, maximum 120 KB)", workPhotoAlt:"Photo of", workPhotoTooLarge:"Choose a PNG, JPG or WebP photo of 120 KB or less.", workNotes:"Notes (optional)", workSave:"Save shift",
       workWeekHeading:"Weekly roster", workPreviousWeek:"Previous week", workNextWeek:"Next week", workCopyPrevious:"Copy previous week", workCopySuccess:"Copied {count} shifts from the previous week.", workCopyNone:"No new shifts were copied; the week is empty or staff were already scheduled.", workCopyError:"Could not copy last week's roster. Check that the vault has enough space.", workEmpty:"No one is scheduled for this day yet.", workWeekEmpty:"No staff are scheduled for this week yet.",
       workEdit:"Edit shift", workDelete:"Delete shift", workCancelEdit:"Cancel editing", workUpdate:"Save changes", workSaved:"The schedule was saved.", workUpdated:"The schedule was updated.", workEditStarted:"You can edit this schedule now.", workDuplicate:"This person is already scheduled for this date. Edit the existing entry to avoid a duplicate.", workError:"Could not save. Check that the vault is unlocked and has enough free space.",
       secureGateTitle:"Your personal information is locked", secureGateText:"Journal, mood, appointments, contacts and drawings are saved only in your encrypted vault on this device. Unlock the vault under Routines to continue.",
@@ -430,6 +430,13 @@
 
     const dateLabelEl=make("label","",text("workDate"));dateLabelEl.htmlFor="work-date";dateLabelEl.dataset.featureText="workDate";
     const date=make("input");date.type="date";date.id="work-date";date.name="date";date.required=true;date.value=localDate();
+    const timeRow=make("div","feature-form-grid work-time-grid");
+    const startBox=make("div");const startLabel=make("label","",text("workStartTime"));startLabel.htmlFor="work-start-time";startLabel.dataset.featureText="workStartTime";
+    const startTime=make("input");startTime.type="time";startTime.id="work-start-time";startTime.name="startTime";
+    startBox.append(startLabel,startTime);
+    const endBox=make("div");const endLabel=make("label","",text("workEndTime"));endLabel.htmlFor="work-end-time";endLabel.dataset.featureText="workEndTime";
+    const endTime=make("input");endTime.type="time";endTime.id="work-end-time";endTime.name="endTime";
+    endBox.append(endLabel,endTime);timeRow.append(startBox,endBox);
 
     const nameLabel=make("label","",text("workName"));nameLabel.htmlFor="work-name";nameLabel.dataset.featureText="workName";
     const name=make("input");name.id="work-name";name.name="name";name.required=true;name.maxLength=80;name.autocomplete="off";
@@ -446,7 +453,7 @@
     const submit=make("button","primary-button",text("workSave"));submit.type="submit";submit.id="work-submit";submit.dataset.featureText="workSave";
     const cancel=make("button","secondary-button",text("workCancelEdit"));cancel.type="button";cancel.id="work-cancel-edit";cancel.hidden=true;cancel.dataset.featureText="workCancelEdit";
     const status=make("p","inline-status");status.id="work-status";status.setAttribute("role","status");status.setAttribute("aria-live","polite");
-    form.append(dateLabelEl,date,nameLabel,name,roleLabel,role,photoLabel,photoInput,notesLabel,notes,submit,cancel,status);
+    form.append(dateLabelEl,date,timeRow,nameLabel,name,roleLabel,role,photoLabel,photoInput,notesLabel,notes,submit,cancel,status);
 
     cancel.addEventListener("click",()=>{
       editingWorkScheduleId=null;editingWorkSchedulePhoto="";form.reset();date.value=localDate();
@@ -520,8 +527,11 @@
           status.textContent=text("workPhotoTooLarge");return;
         }
       }
-      const values={date:date.value,name:name.value.trim().slice(0,80),role:role.value.trim().slice(0,80),photo,notes:notes.value.trim().slice(0,400)};
+      const values={date:date.value,startTime:startTime.value,endTime:endTime.value,name:name.value.trim().slice(0,80),role:role.value.trim().slice(0,80),photo,notes:notes.value.trim().slice(0,400)};
       if(!values.date||!values.name)return;
+      if(Boolean(values.startTime)!==Boolean(values.endTime)||(values.startTime&&values.endTime&&values.endTime<=values.startTime)){
+        status.textContent=text("workTimeError");return;
+      }
       try{
         const {findDuplicateWorkAssignment,normaliseAppointmentTitle}=await import("./appointment-rules.js");
         await updateSecure(data=>{
@@ -852,6 +862,8 @@
     editingWorkSchedulePhoto=profile&&typeof profile.photo==="string"?profile.photo:"";
     const form=$("#work-schedule-form");if(form)form.reset();
     $("#work-date").value=item.date||localDate();
+    $("#work-start-time").value=item.startTime||"";
+    $("#work-end-time").value=item.endTime||"";
     $("#work-name").value=item.name||"";
     $("#work-role").value=item.role||"";
     $("#work-notes").value=item.notes||"";
@@ -908,7 +920,8 @@
               }catch{$("#work-status").textContent=text("workError");}
             })
           ];
-          const card=createItemCard(item.name,item.role||"",item.notes||"",actions);
+          const shiftMeta=[item.role||"",item.startTime&&item.endTime?item.startTime+"–"+item.endTime:""].filter(Boolean).join(" · ");
+          const card=createItemCard(item.name,shiftMeta,item.notes||"",actions);
           const profile=profiles.find(person=>person&&person.id===item.staffId);
           const staffPhoto=profile&&typeof profile.photo==="string"?profile.photo:"";
           if(/^data:image\/(png|jpeg|webp);base64,/.test(staffPhoto)&&staffPhoto.length<=180000){
