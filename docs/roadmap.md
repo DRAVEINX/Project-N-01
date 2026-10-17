@@ -38,7 +38,8 @@
 - [ ] Security expert review and threat-model sign-off
 - [x] Add standalone experimental encrypted vault adapter with passphrase verification and restore tests; not connected to app data
 - [x] Add non-destructive legacy routine preview/copy helper with validation and tests; original plaintext remains untouched
-- [ ] Integrate encrypted storage, unlock/lock and recovery without losing existing data
+- [x] Add an explicit UI action to copy existing routines into the encrypted vault and download the encrypted envelope; the original plaintext remains in place
+- [ ] Integrate encrypted storage into normal routine/preferences persistence, plus unlock/lock timeout and recovery without losing existing data
 
 ## Phase 4 — Android phone and tablet
 - [ ] Separate phone and tablet layout validation
