@@ -871,3 +871,15 @@ test("daily progress safely ignores corrupt or outdated local data", async () =>
   assert.match(reader, /catch \{\s*return null;\s*\}/);
   assert.match(app, /function restoreDailyProgress\(\) \{\s*const progress = readDailyProgress\(\);\s*if \(!progress\) return;/);
 });
+
+test("daily progress restoration accepts only explicit completed booleans", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const start = app.indexOf("function restoreDailyProgress() {");
+  const end = app.indexOf("\n}", start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const restore = app.slice(start, end);
+  assert.match(restore, /input\.checked = progress\.tasks\[index\] === true/);
+  assert.match(restore, /if \(!Array\.isArray\(saved\)\) continue/);
+  assert.match(restore, /input\.checked = saved\[index\] === true/);
+});
