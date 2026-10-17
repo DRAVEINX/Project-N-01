@@ -95,8 +95,8 @@ test("notes explicitly warn that the prototype does not save them", () => {
   assert.match(html, /Nothing is saved in this prototype|niets opgeslagen/i);
 });
 test("service worker cache version is bumped when shipping updated app assets", () => {
-  assert.match(serviceWorker, /project-n-01-prototype-v6/);
-  assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v5/);
+  assert.match(serviceWorker, /project-n-01-prototype-v8/);
+  assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v7/);
 });
 
 test("encrypted import tracks temporary vault unlock in local scope", () => {
