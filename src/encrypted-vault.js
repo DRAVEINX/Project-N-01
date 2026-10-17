@@ -3,7 +3,7 @@
  * The derived CryptoKey is retained only inside an in-memory session while unlocked.
  * Locking drops that session and its plaintext cache; neither passphrase nor key is stored.
  */
-import { encryptJson, decryptJson, openEncryptedJsonSession } from "./secure-storage.js";
+import { encryptJson, openEncryptedJsonSession } from "./secure-storage.js";
 
 function cloneJson(value) {
   const serialized = JSON.stringify(value);
