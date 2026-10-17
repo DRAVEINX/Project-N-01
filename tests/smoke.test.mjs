@@ -805,3 +805,12 @@ test("voice recorder runtime errors stop microphone tracks and restore recording
   assert.match(handler, /voiceRecorder\.addEventListener\("error", \(\) => \{[\s\S]*?recordingError[\s\S]*?voiceNoteStart\.disabled = false;[\s\S]*?voiceNoteStop\.disabled = true;[\s\S]*?releaseVoiceStream\(\)/);
   assert.match(app, /function releaseVoiceStream\(\) \{\s*if \(voiceStream\) voiceStream\.getTracks\(\)\.forEach\(track => track\.stop\(\)\);\s*voiceStream = null;/);
 });
+
+test("leaving the app stops microphone tracks and revokes temporary voice audio", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const handler = app.slice(app.indexOf('window.addEventListener("pagehide", () => {', app.indexOf("// Explicit, in-memory voice notes")), app.indexOf('\n});', app.indexOf('window.addEventListener("pagehide", () => {', app.indexOf("// Explicit, in-memory voice notes"))));
+  assert.match(handler, /voiceRecorder && voiceRecorder\.state !== "inactive"[\s\S]*?voiceRecorder\.stop\(\)/);
+  assert.match(handler, /releaseVoiceStream\(\)/);
+  assert.match(handler, /clearVoiceObjectUrl\(\)/);
+  assert.match(app, /function clearVoiceObjectUrl\(\) \{\s*if \(voiceObjectUrl\) URL\.revokeObjectURL\(voiceObjectUrl\);\s*voiceObjectUrl = null;/);
+});
