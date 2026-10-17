@@ -205,7 +205,7 @@
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
       try { mediaRecorder.stop(); } catch {}
     }
-    sessionKey = null; saltB64 = null; state = null; draftPhoto = ""; draftGuideAudio = ""; draftJournalAudio = "";
+    sessionKey = null; saltB64 = null; state = null; draftPhoto = ""; draftGuideAudio = ""; draftJournalAudio = ""; pendingRecoveryCode = "";
     renderLocked(false, showMessage ? t("closed") : "");
   }
   function renderLocked(createMode, extra) {
