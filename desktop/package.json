@@ -1,8 +1,8 @@
 {
-  "name": "project-n-01-desktop",
+  "name": "novalife-desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "Windows desktop package for the Project N-01 daily-life companion",
+  "description": "Windows desktop package for the NovaLife daily-life companion",
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
@@ -14,7 +14,7 @@
   },
   "build": {
     "appId": "com.draveinx.projectn01.desktop",
-    "productName": "Project N-01",
+    "productName": "NovaLife",
     "asar": true,
     "directories": {
       "output": "dist",
@@ -34,7 +34,7 @@
           ]
         }
       ],
-      "artifactName": "Project-N-01-0.1.0-x64.msi",
+      "artifactName": "NovaLife-0.1.0-x64.msi",
       "icon": "build/icon.svg"
     },
     "msi": {
