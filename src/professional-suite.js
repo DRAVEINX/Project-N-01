@@ -98,7 +98,7 @@
     else if (activeTab === "support") content = supportView(p, data.snapshot, data.role);
     else if (activeTab === "documents") content = documentsView(p);
     else if (activeTab === "reports") content = reportsView(p, data.snapshot);
-    else if (activeTab === "accessibility") content = accessibilityView();
+    else if (activeTab === "accessibility") content = accessibilityView(p);
     else if (activeTab === "versions") content = versionsView(p);
     else content = accountsView();
     root.innerHTML = '<div class="pn-professional"><header class="pn-heading"><div><p class="eyebrow">PROJECT N-01 · EXTRA HULPMIDDELEN</p><h2>Dagelijkse ondersteuning</h2><p>Doelen, noodinformatie, documenten en rapporten op één plek.</p></div><span class="pn-vault-tag"><span aria-hidden="true">🔒</span> Versleutelde kluis actief</span></header><nav class="pn-tabs" aria-label="Professionele hulpmiddelen">' + tabHtml + '</nav><div id="pn-professional-status" role="status" aria-live="polite" class="' + (lastStatusError?"is-error":"") + '">' + escapeHtml(lastStatus) + '</div><div class="pn-content">' + content + '</div><p class="pn-footnote">Lokale rechten en profielen zijn op zichzelf geen beveiligde online accountrechten. Deel gevoelige gegevens alleen wanneer je begrijpt wie er toegang krijgt.</p></div>';
@@ -141,8 +141,10 @@
     return card("Weekoverzicht", '<p>Periode: ' + escapeHtml(start.toLocaleDateString()) + " t/m " + escapeHtml(now.toLocaleDateString()) + '</p><div class="pn-stats"><div><strong>' + recentAppointments.length + '</strong><span>Afspraken</span></div><div><strong>' + donePlans + " / " + recentPlans.length + '</strong><span>Geplande taken afgerond</span></div><div><strong>' + recentMoods.length + '</strong><span>Stemmingsmomenten</span></div></div><form id="pn-report-form" class="pn-checklist"><label><input type="checkbox" name="includeAppointments" ' + (p.reportPreferences.includeAppointments !== false ? "checked" : "") + '> Aantal afspraken opnemen</label><label><input type="checkbox" name="includeRoutineProgress" ' + (p.reportPreferences.includeRoutineProgress !== false ? "checked" : "") + '> Voortgang geplande taken opnemen</label><label><input type="checkbox" name="includeMood" ' + (p.reportPreferences.includeMood !== false ? "checked" : "") + '> Alleen het aantal stemmingsmomenten opnemen (geen gevoelens of dagboektekst)</label><button class="pn-button primary" type="submit">Rapportvoorkeuren bewaren</button></form><div class="pn-form-actions">' + button("print-report","Rapport afdrukken / als PDF bewaren") + button("export-calendar","Agenda exporteren als .ics") + '</div><p class="pn-privacy-note">Voor het printen wordt geen dagboektekst, audio-opname, noodplan, documentinhoud of contactinformatie toegevoegd. Rapporten worden niet automatisch gedeeld.</p>', "Eenvoudig weekrapport zonder dagboekinhoud") +
       card("Wat telt mee?", '<ul class="pn-checklist static"><li>Voltooide taken uit de weekplanning</li><li>Afspraak-aantallen in de gekozen periode</li><li>Aantallen stemmingmomenten, nooit de notities</li><li>Persoonlijke doelen zijn apart zichtbaar op de tab Doelen</li></ul>');
   }
-  function accessibilityView() {
-    return card("Toegankelijkheid", '<p>Kies hoe de app voor jou prettiger werkt. De instellingen zijn alleen visueel en worden lokaal in deze versleutelde kluis bewaard.</p><form id="pn-accessibility-form" class="pn-checklist"><label><input type="checkbox" name="simpleMode"> Eenvoudige weergave met minder afleiding</label><label><input type="checkbox" name="largeControls"> Extra grote knoppen en velden</label><label><input type="checkbox" name="highContrast"> Extra contrast</label><label><input type="checkbox" name="reducedMotion"> Minder beweging</label><div class="pn-form-actions"><button class="pn-button primary" type="submit">Toegankelijkheid bewaren</button>' + button("read-page","Lees deze pagina voor") + '</div></form><div class="pn-item"><h4>Spraak-naar-tekst</h4><p>Beschikbaar als de browser of het apparaat Web Speech ondersteunt. De spraakherkenning kan internet gebruiken; bespreek geen gevoelige informatie via spraakherkenning als je niet zeker weet hoe het apparaat die verwerkt.</p>' + button("dictate:note","Probeer spraak naar tekst") + '</div><div class="pn-item"><h4>Schermlezer</h4><p>De knoppen hebben labels en statusmeldingen. Volledige TalkBack-validatie moet nog op echte Android-telefoons en -tablets worden uitgevoerd.</p></div>');
+  function accessibilityView(p) {
+    const a = Object.assign({simpleMode:false,largeControls:false,highContrast:false,reducedMotion:false,nativeNotifications:false,privateNotifications:true,quietStart:"22:00",quietEnd:"07:00"},p.accessibility||{});
+    const info = '<p>Optionele stille uren verplaatsen herinneringen naar het einde van de stille periode. De standaardmelding toont geen afspraaknaam of andere privétekst. Je kunt meldingen uitzetten in de instellingen van je apparaat.</p>';
+    return card("Toegankelijkheid", '<p>Kies hoe de app voor jou prettiger werkt. Voorkeuren worden in de versleutelde kluis bewaard.</p><form id="pn-accessibility-form" class="pn-checklist"><label><input type="checkbox" name="simpleMode" ' + (a.simpleMode?"checked":"") + '> Eenvoudige weergave met minder afleiding</label><label><input type="checkbox" name="largeControls" ' + (a.largeControls?"checked":"") + '> Extra grote knoppen en velden</label><label><input type="checkbox" name="highContrast" ' + (a.highContrast?"checked":"") + '> Extra contrast</label><label><input type="checkbox" name="reducedMotion" ' + (a.reducedMotion?"checked":"") + '> Minder beweging</label><label><input type="checkbox" name="nativeNotifications" ' + (a.nativeNotifications?"checked":"") + '> Native herinneringen plannen als dit een Android/iOS-app is</label><label><input type="checkbox" name="privateNotifications" ' + (a.privateNotifications!==false?"checked":"") + '> Geen privé-afspraaknamen op het vergrendelscherm tonen</label><div class="pn-form-grid">' + field("Stilte begint","quietStart",a.quietStart||"22:00","time") + field("Stilte eindigt","quietEnd",a.quietEnd||"07:00","time") + '</div><div class="pn-form-actions"><button class="pn-button primary" type="submit">Toegankelijkheid bewaren</button>' + button("native-notify-enable","Meldingsrechten controleren") + button("native-notify-exact","Nauwkeurige meldingen instellen") + button("read-page","Lees deze pagina voor") + '</div></form>' + info + '<div class="pn-item"><h4>Spraak-naar-tekst</h4><p>Beschikbaar als de browser of het apparaat Web Speech ondersteunt. De spraakherkenning kan internet gebruiken; bespreek geen gevoelige informatie via spraakherkenning als je niet zeker weet hoe het apparaat die verwerkt.</p>' + button("dictate:note","Probeer spraak naar tekst") + '</div><div class="pn-item"><h4>Schermlezer</h4><p>Semantische bediening en statusmeldingen zijn aanwezig, maar volledige TalkBack-validatie moet nog op echte Android-telefoons en -tablets worden uitgevoerd.</p></div>');
   }
   function versionsView(p) {
     const versions = p.versions.slice().reverse().map(v => '<article class="pn-item"><div class="pn-item-heading"><div><h4>' + escapeHtml(v.label || "Herstelpunt") + '</h4><p>' + escapeHtml(v.at ? nl.format(new Date(v.at)) : "") + '</p></div></div>' + button("version-restore:" + v.id,"Deze versie herstellen","pn-button") + '</article>').join("");
@@ -291,8 +293,10 @@
       await saveProfessional(p,"Rapportvoorkeuren bijgewerkt");return;
     }
     if(form.id==="pn-accessibility-form"){
-      event.preventDefault();const p=normalizeProfessional(getProfessional());p.accessibility={simpleMode:fd.get("simpleMode")==="on",largeControls:fd.get("largeControls")==="on",highContrast:fd.get("highContrast")==="on",reducedMotion:fd.get("reducedMotion")==="on"};
-      if(await saveProfessional(p,"Toegankelijkheidsvoorkeuren bijgewerkt"))applyAccess(p.accessibility);return;
+      event.preventDefault();const p=normalizeProfessional(getProfessional());
+      p.accessibility={simpleMode:fd.get("simpleMode")==="on",largeControls:fd.get("largeControls")==="on",highContrast:fd.get("highContrast")==="on",reducedMotion:fd.get("reducedMotion")==="on",nativeNotifications:fd.get("nativeNotifications")==="on",privateNotifications:fd.get("privateNotifications")==="on",quietStart:String(fd.get("quietStart")||"22:00"),quietEnd:String(fd.get("quietEnd")||"07:00")};
+      if(await saveProfessional(p,"Toegankelijkheidsvoorkeuren bijgewerkt")){applyAccess(p.accessibility);if(p.accessibility.nativeNotifications)await scheduleNativeReminders(true);}
+      return;
     }
     if(form.id==="pn-register-form"){
       event.preventDefault();try{const result=await api("/auth/register",{method:"POST",body:JSON.stringify({displayName:fd.get("displayName"),email:fd.get("email"),password:fd.get("password")})});setAccount(result);status("Account aangemaakt. Bewaar ook de wachtzin van je lokale kluis apart.");activeTab="accounts";render();}catch(error){status(accountError(error),true);}return;
@@ -419,6 +423,8 @@ let accountIdleTimer = null;
     if(action.startsWith("document-download:")){const doc=p.documents.find(d=>d.id===action.slice(18));if(!doc||!doc.dataUrl)return;const a=document.createElement("a");a.href=doc.dataUrl;a.download=doc.fileName||"project-n-01-document";a.click();status("Document geëxporteerd. Het gedownloade bestand staat buiten de beveiligde kluis.");return;}
     if(action.startsWith("version-restore:")){const id=action.slice(16);if(!window.confirm("De extra persoonlijke gegevens herstellen naar deze eerdere versie? De huidige extra gegevens worden als nieuw herstelpunt bewaard."))return;vault().restoreVersion(id).then(ok=>{status(ok?"Eerdere versie hersteld.":"Herstellen is mislukt.",!ok);render();});return;}
     if(action==="read-emergency"){const e=p.emergencyPlan||{};readAloud("Mijn noodplan. "+(e.instructions||"Er zijn geen instructies opgeslagen.")+". Wat helpt mij rustig te worden: "+(e.supportNeeds||"Niet ingevuld")+". Eerste stap: "+(e.preferredHelp||"Niet ingevuld")+".");return;}
+    if(action==="native-notify-enable"){(async()=>{const bridge=window.ProjectN01NativeNotifications;if(!bridge||!bridge.isNative()){status("Native meldingen zijn alleen beschikbaar in de geïnstalleerde Android/iOS-app. De webversie heeft geen betrouwbare meldingen als deze gesloten is.",true);return;}try{const granted=await bridge.requestPermissions();if(granted.display!=="granted"){status("Meldingen zijn niet toegestaan. Zet ze aan in de systeeminstellingen van het apparaat.",true);return;}const p=normalizeProfessional(getProfessional());p.accessibility=Object.assign(p.accessibility||{},{nativeNotifications:true});if(await saveProfessional(p,"Native herinneringen geactiveerd")){const result=await scheduleNativeReminders(true);status("Meldingsrechten toegestaan. "+result.count+" komende herinneringen ingepland.");}}catch(error){status("Meldingen konden niet worden ingesteld: "+String(error.message||error),true);}})();return;}
+    if(action==="native-notify-exact"){(async()=>{const bridge=window.ProjectN01NativeNotifications;if(!bridge||!bridge.isNative()){status("Nauwkeurige native meldingen zijn alleen beschikbaar in de geïnstalleerde app.",true);return;}try{const result=await bridge.checkExactNotificationSetting();if(result.exactAlarm){status("Nauwkeurige meldingen zijn toegestaan. Android kan nog steeds meldingen uitstellen door energiebesparing.");return;}await bridge.changeExactNotificationSetting();status("Controleer in de Android-instellingen of je nauwkeurige meldingen wilt toestaan.");}catch(error){status("Instelling kon niet worden geopend: "+String(error.message||error),true);}})();return;}
     if(action==="read-page"){readAloud(root.querySelector(".pn-content")?.innerText||"");return;}
     if(action==="dictate:note"){startDictation("note");return;}
     if(action==="print-report"){printReport();return;}
@@ -441,11 +447,34 @@ let accountIdleTimer = null;
     const file=event.target;
     if(file && file.matches('input[type="file"]')&&file.files && file.files[0]&&file.files[0].size>MAX_FILE_BYTES){file.value="";status("Bestand is groter dan 512 KB.",true);}
   });
+  
+  let nativeScheduleTimer=null;
+  async function scheduleNativeReminders(reportFailure) {
+    const bridge=window.ProjectN01NativeNotifications;
+    const p=getProfessional(),s=getSnapshot();
+    if(!bridge||!bridge.isNative()||!unlocked()||!p||!s||!p.accessibility||p.accessibility.nativeNotifications!==true)return {count:0};
+    try {
+      const result=await bridge.replace(s, p.accessibility);
+      if(reportFailure)status(result.count+" herinneringen ingepland. Meldingen kunnen door systeeminstellingen of energiebesparing worden uitgesteld.");
+      return result;
+    } catch(error) {
+      if(reportFailure)status("Herinneringen niet ingepland: "+String(error.message||error)+". Controleer meldingsrechten en exacte-alarminstellingen.",true);
+      return {count:0,error:String(error.message||error)};
+    }
+  }
+  function queueNativeSchedule() {
+    if(nativeScheduleTimer)clearTimeout(nativeScheduleTimer);
+    nativeScheduleTimer=setTimeout(()=>scheduleNativeReminders(false),1800);
+  }
+  window.addEventListener("projectn-native-notifications-ready",()=>queueNativeSchedule());
+  window.addEventListener("projectn-native-notifications-error",()=>status("Native meldingen laden niet. Installeer de build opnieuw of schakel meldingen uit.",true));
+
   window.addEventListener("projectn-vault-state",event=>{
-    if(event.detail && event.detail.unlocked){render();const p=getProfessional();if(p&&p.accessibility)applyAccess(p.accessibility);}
+    if(event.detail && event.detail.unlocked){render();const p=getProfessional();if(p&&p.accessibility){applyAccess(p.accessibility);queueNativeSchedule();}}
     else render();
   });
   window.addEventListener("projectn-vault-saved",()=>{
+    queueNativeSchedule();
     if(!accountToken||!unlocked()||knownServerRevision===null)return;
     if(saveTimer)clearTimeout(saveTimer);
     saveTimer=setTimeout(()=>syncPush(),1200);
