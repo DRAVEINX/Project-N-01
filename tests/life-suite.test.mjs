@@ -179,7 +179,8 @@ test("professional workspace is integrated with encrypted vault, account API and
   assert.match(professional, /exportCalendar/);
   assert.match(professional, /SpeechRecognition/);
   assert.match(professional, /exportEncryptedEnvelope/);
-  assert.match(professional, /sync-conflict/);
+  assert.match(professional, /syncPush/);
+  assert.match(api, /sync-conflict/);
   assert.match(professionalCss, /pn-large-controls/);
   assert.match(api, /scryptCallback/);
   assert.match(api, /twoFactorEnabled/);
