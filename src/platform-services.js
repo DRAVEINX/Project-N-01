@@ -32,6 +32,7 @@
   let inactivityTimer = null;
   let syncTimer = null;
   let secretCode = "";
+  let mfaSetupSecret = "";
 
   function readConfig() {
     try {
@@ -249,7 +250,7 @@
     const factor=await api("/auth/v1/factors",{method:"POST",body:{factor_type:"totp",friendly_name:"Project N-01"}});
     if(!factor?.id || !factor?.totp?.secret)throw new Error("De accountdienst heeft geen TOTP-instelgegevens teruggegeven.");
     enrolledFactor=factor.id;
-    secretCode=factor.totp.secret;
+    mfaSetupSecret=factor.totp.secret;
     setStatus("Authenticator aangemaakt. Voeg de onderstaande code of provisioning-URI toe in je authenticator-app en bevestig daarna met de actuele code.");
     render();
   }
@@ -267,7 +268,7 @@
     const verified=await api("/auth/v1/factors/"+encodeURIComponent(selected)+"/verify",{method:"POST",body:{challenge_id:challenge.id,code:String(code).trim()}});
     if(verified?.access_token)saveSession({...session,...verified,user:verified.user||session?.user,mfaPending:false});
     else if(mfaPending)throw new Error("De server heeft geen verhoogde sessie bevestigd. Controleer de Supabase Auth-configuratie.");
-    mfaPending=false;mfaFactorId="";enrolledFactor=null;secretCode="";
+    mfaPending=false;mfaFactorId="";enrolledFactor=null;mfaSetupSecret="";
     if(session){await loadProfile();await loadCareLinks();scheduleAutomaticSync();await refreshRemoteStatus({quiet:true});}
     setStatus("De authenticatorcode is geverifieerd.");
     render();
@@ -356,7 +357,7 @@
     }
     if(mfaPending)return '<div class="ps-panel"><h4>Bevestig tweestapsverificatie</h4><p>Open je authenticator-app en voer de huidige code in. Account- en cloudgegevens blijven geblokkeerd totdat de code is geverifieerd.</p><form id="ps-mfa-form" class="ps-form"><label>Actuele 6-cijferige code<input name="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="one-time-code" required></label><button class="primary-button" type="submit">Code verifiëren</button></form>'+button("Uitloggen","signout","danger-button")+'</div>';
     const email=esc(session.user.email||"account");
-    const mfa= '<div class="ps-panel"><h4>Tweestapsverificatie</h4><p>Gebruik een authenticator-app (TOTP). Bewaar de herstelcodes die de accountdienst aanbiedt veilig.</p><div class="ps-actions">'+button("Authenticator instellen","mfa-enroll")+button("Authenticatorcode bevestigen","mfa-focus")+'</div>'+(secretCode?'<p class="ps-secret"><strong>Instelcode / uitnodigingscode (eenmalig tonen)</strong><code>'+esc(secretCode)+'</code></p>':"")+'<form id="ps-mfa-form" class="ps-form"><label>Actuele 6-cijferige code<input name="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="one-time-code" required></label><button class="primary-button" type="submit">Code verifiëren</button></form></div>';
+    const mfa= '<div class="ps-panel"><h4>Tweestapsverificatie</h4><p>Gebruik een authenticator-app (TOTP). Bewaar de herstelcodes die de accountdienst aanbiedt veilig.</p><div class="ps-actions">'+button("Authenticator instellen","mfa-enroll")+button("Authenticatorcode bevestigen","mfa-focus")+'</div>'+(mfaSetupSecret?'<p class="ps-secret"><strong>Authenticator-instelcode (eenmalig tonen)</strong><code>'+esc(mfaSetupSecret)+'</code></p>':"")+'<form id="ps-mfa-form" class="ps-form"><label>Actuele 6-cijferige code<input name="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="one-time-code" required></label><button class="primary-button" type="submit">Code verifiëren</button></form></div>';
     return '<div class="ps-account-row"><div><strong>'+email+'</strong><p>Ingelogd · automatisch uitloggen na 15 minuten inactiviteit</p></div>'+button("Uitloggen","signout","danger-button")+'</div>'+mfa;
   }
   function renderSync() {
@@ -376,7 +377,7 @@
     if(!root.isConnected)return;
     root.innerHTML='<section class="ps-shell" aria-labelledby="ps-title"><div class="ps-heading"><div><p class="ps-kicker">PROJECT N-01 · BEVEILIGDE DIENSTEN</p><h3 id="ps-title">Accounts, synchronisatie en begeleiderstoegang</h3><p>Accountlogin, wachtwoordherstel, optionele authenticator en versleutelde back-upversies.</p></div><span class="ps-badge">'+(session?"INGELOGD":"LOKAAL")+'</span></div><div class="ps-status '+(isError?"is-error":"")+'" role="status" aria-live="polite">'+esc(statusText || (configured()?"Configureer of log in bij je eigen accountdienst.":"Geen cloudbackend ingesteld."))+'</div><div class="ps-grid"><section class="ps-panel"><h3>1. Account en beveiliging</h3>'+renderAuth()+'</section><section class="ps-panel"><h3>2. Versleutelde synchronisatie en herstel</h3>'+renderSync()+'</section><section class="ps-panel"><h3>3. Begeleidersportaal en toestemming</h3>'+renderCare()+'</section></div><p class="ps-footer">Privacy: de Supabase anon/publishable key is een publieke browserkey en is geen admin-sleutel. Veiligheid wordt afgedwongen met database-RLS. Deel geen service_role-key. Cloudback-ups blijven versleuteld met je bestaande kluis-wachtzin.</p></section>';
     root.querySelectorAll("form").forEach(form=>form.addEventListener("submit",handleSubmit));
-    root.querySelectorAll("[data-ps-action]").forEach(el=>el.addEventListener("click",()=>handleAction(el.dataset.psAction)));
+    root.querySelectorAll("[data-ps-action]").forEach(el=>el.addEventListener("click",()=>handleAction(el.dataset.psAction,el.dataset.id)));
   }
   async function handleAction(action,actionId) {
     try {
