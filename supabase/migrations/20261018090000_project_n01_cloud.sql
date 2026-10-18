@@ -2,6 +2,23 @@
 -- Run this only in the user's own Supabase project. Never expose service_role keys in the client.
 create extension if not exists pgcrypto with schema extensions;
 
+-- If a user enrolled a verified authenticator, require an AAL2 token for private records.
+-- Security-definer is limited to this boolean check; no account data is returned.
+create or replace function public.project_n01_mfa_ok()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, auth
+as $
+  select (auth.jwt()->>'aal' = 'aal2') or not exists (
+    select 1 from auth.mfa_factors f
+    where f.user_id = auth.uid() and f.status = 'verified'
+  );
+$;
+revoke all on function public.project_n01_mfa_ok() from public;
+grant execute on function public.project_n01_mfa_ok() to authenticated;
+
 create table if not exists public.user_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
@@ -11,11 +28,11 @@ create table if not exists public.user_profiles (
 );
 alter table public.user_profiles enable row level security;
 drop policy if exists "profile owner reads own profile" on public.user_profiles;
-create policy "profile owner reads own profile" on public.user_profiles for select to authenticated using (user_id = (select auth.uid()));
+create policy "profile owner reads own profile" on public.user_profiles for select to authenticated using (user_id = (select auth.uid()) and public.project_n01_mfa_ok());
 drop policy if exists "profile owner inserts own profile" on public.user_profiles;
-create policy "profile owner inserts own profile" on public.user_profiles for insert to authenticated with check (user_id = (select auth.uid()));
+create policy "profile owner inserts own profile" on public.user_profiles for insert to authenticated with check (user_id = (select auth.uid()) and public.project_n01_mfa_ok());
 drop policy if exists "profile owner updates own profile" on public.user_profiles;
-create policy "profile owner updates own profile" on public.user_profiles for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+create policy "profile owner updates own profile" on public.user_profiles for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()) and public.project_n01_mfa_ok());
 
 create or replace function public.project_n01_handle_new_user()
 returns trigger language plpgsql security definer set search_path = public, auth
@@ -44,11 +61,11 @@ create table if not exists public.app_sync_snapshots (
 create index if not exists app_sync_snapshots_owner_time on public.app_sync_snapshots(user_id, created_at desc);
 alter table public.app_sync_snapshots enable row level security;
 drop policy if exists "owner reads snapshots" on public.app_sync_snapshots;
-create policy "owner reads snapshots" on public.app_sync_snapshots for select to authenticated using(user_id=(select auth.uid()));
+create policy "owner reads snapshots" on public.app_sync_snapshots for select to authenticated using(user_id=(select auth.uid()) and public.project_n01_mfa_ok());
 drop policy if exists "owner creates snapshots" on public.app_sync_snapshots;
-create policy "owner creates snapshots" on public.app_sync_snapshots for insert to authenticated with check(user_id=(select auth.uid()));
+create policy "owner creates snapshots" on public.app_sync_snapshots for insert to authenticated with check(user_id=(select auth.uid()) and public.project_n01_mfa_ok());
 drop policy if exists "owner deletes snapshots" on public.app_sync_snapshots;
-create policy "owner deletes snapshots" on public.app_sync_snapshots for delete to authenticated using(user_id=(select auth.uid()));
+create policy "owner deletes snapshots" on public.app_sync_snapshots for delete to authenticated using(user_id=(select auth.uid()) and public.project_n01_mfa_ok());
 
 create table if not exists public.care_links (
   id uuid primary key default gen_random_uuid(),
@@ -66,11 +83,11 @@ create table if not exists public.care_links (
 create index if not exists care_links_caregiver on public.care_links(caregiver_id,status);
 alter table public.care_links enable row level security;
 drop policy if exists "participants can read their care links" on public.care_links;
-create policy "participants can read their care links" on public.care_links for select to authenticated using(owner_id=(select auth.uid()) or caregiver_id=(select auth.uid()));
+create policy "participants can read their care links" on public.care_links for select to authenticated using((owner_id=(select auth.uid()) or caregiver_id=(select auth.uid())) and public.project_n01_mfa_ok());
 drop policy if exists "owner can revoke care links" on public.care_links;
-create policy "owner can revoke care links" on public.care_links for update to authenticated using(owner_id=(select auth.uid())) with check(owner_id=(select auth.uid()) and status='revoked');
+create policy "owner can revoke care links" on public.care_links for update to authenticated using(owner_id=(select auth.uid()) and public.project_n01_mfa_ok()) with check(owner_id=(select auth.uid()) and status='revoked' and public.project_n01_mfa_ok());
 drop policy if exists "owner can delete care links" on public.care_links;
-create policy "owner can delete care links" on public.care_links for delete to authenticated using(owner_id=(select auth.uid()));
+create policy "owner can delete care links" on public.care_links for delete to authenticated using(owner_id=(select auth.uid()) and public.project_n01_mfa_ok());
 
 create table if not exists public.care_invites (
   id uuid primary key default gen_random_uuid(),
@@ -87,9 +104,9 @@ create table if not exists public.care_invites (
 );
 alter table public.care_invites enable row level security;
 drop policy if exists "owner can read own invites" on public.care_invites;
-create policy "owner can read own invites" on public.care_invites for select to authenticated using(owner_id=(select auth.uid()));
+create policy "owner can read own invites" on public.care_invites for select to authenticated using(owner_id=(select auth.uid()) and public.project_n01_mfa_ok());
 drop policy if exists "owner can delete own invites" on public.care_invites;
-create policy "owner can delete own invites" on public.care_invites for delete to authenticated using(owner_id=(select auth.uid()));
+create policy "owner can delete own invites" on public.care_invites for delete to authenticated using(owner_id=(select auth.uid()) and public.project_n01_mfa_ok());
 
 create or replace function public.create_care_invite(
   p_email text, p_role text, p_read_scopes text[], p_write_scopes text[]
@@ -99,6 +116,7 @@ as $$
 declare v_token text; v_email text;
 begin
   if auth.uid() is null then raise exception 'Authentication required'; end if;
+  if not public.project_n01_mfa_ok() then raise exception 'Second factor verification required'; end if;
   v_email:=lower(trim(coalesce(p_email,'')));
   if length(v_email)<5 or position('@' in v_email)<2 then raise exception 'Valid invite email required'; end if;
   if p_role not in ('caregiver','parent','guardian') then raise exception 'Invalid role'; end if;
