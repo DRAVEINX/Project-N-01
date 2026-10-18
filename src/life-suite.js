@@ -376,7 +376,7 @@
     const editingDrawing = editingDrawingId ? state.drawings.find(d=>d.id===editingDrawingId) : null;
     const entries = visibleItems("journal","journal").slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,30);
     const drawings = visibleItems("drawings","journal").slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,30);
-    const moodHistory = visibleItems("moods","mood").slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
+    const moodHistory = visibleItems("moods","mood").filter(m=>!m.trafficLight).slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
     const trafficReports = visibleItems("moods","mood").filter(m=>m.trafficLight).sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||"")).slice(0,20);
     const trafficLabel = value => value === "green" ? "Groen · het gaat goed" : value === "orange" ? "Oranje · ik heb extra steun nodig" : "Rood · ik heb nu hulp nodig";
     const trafficCards = trafficReports.length ? trafficReports.map(m=>'<article class="ls-item ls-traffic-item ls-traffic-' + esc(m.trafficLight) + '"><strong>' + esc(trafficLabel(m.trafficLight)) + '</strong><small>' + esc(new Date(m.createdAt).toLocaleString(lang==="nl"?"nl-NL":"en-GB")) + '</small><p>' + esc(m.trafficNote||"") + '</p></article>').join("") : '<p class="ls-empty">Nog geen groen/oranje/rood-meldingen.</p>';
