@@ -914,7 +914,14 @@
     return saveState(false);
   }
   function getAppPreferences(){return state&&sessionKey?JSON.parse(JSON.stringify(state.appPreferences||{})):null;}
-  window.ProjectN01LifeSuite=Object.freeze({getWeeklyReport:weeklyReport,getCalendarIcs:calendarIcs,isUnlocked:()=>Boolean(state&&sessionKey),getRoutineProgress,saveRoutineProgress,getAppPreferences,saveAppPreferences});
+  function clearLocalVault() {
+    stopAutoLock();
+    localStorage.removeItem(STORAGE_KEY);
+    if(window.ProjectN01VersionHistory)window.ProjectN01VersionHistory.clear(HISTORY_KEY).catch(()=>{});
+    state=null;sessionKey=null;saltB64=null;draftPhoto="";draftGuideAudio="";draftJournalAudio="";
+    renderLocked(true,t("deleted"));
+  }
+  window.ProjectN01LifeSuite=Object.freeze({getWeeklyReport:weeklyReport,getCalendarIcs:calendarIcs,isUnlocked:()=>Boolean(state&&sessionKey),getRoutineProgress,saveRoutineProgress,getAppPreferences,saveAppPreferences,clearLocalData:clearLocalVault});
   if(!window.crypto||!crypto.subtle){renderLocked(true,t("unsupported"));return;}
   let hasVault=false;try{hasVault=localStorage.getItem(STORAGE_KEY)!==null;}catch{}
   renderLocked(!hasVault,"");
