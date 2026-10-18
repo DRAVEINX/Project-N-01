@@ -197,6 +197,11 @@
     const data=await api("/auth/v1/token?grant_type=password",{method:"POST",token:"",body:{email,password}});
     if(!data?.access_token || !data?.user)throw new Error("Inloggen is niet voltooid. Controleer of je e-mailadres is bevestigd.");
     saveSession(data);
+    mfaPending=false;mfaFactorId="";
+    const factorResponse=await api("/auth/v1/factors");
+    const factors=Array.isArray(factorResponse)?factorResponse:[...(factorResponse?.all||[]),...(factorResponse?.totp||[]),...(factorResponse?.phone||[])];
+    const verifiedFactor=factors.find(f=>f.status==="verified"&&(f.factor_type==="totp"||f.type==="totp"));
+    if(verifiedFactor){mfaPending=true;mfaFactorId=verifiedFactor.id;setStatus("Tweestapsverificatie is ingeschakeld. Bevestig je authenticatorcode om door te gaan.");render();return;}
     await loadProfile();
     await loadCareLinks();
     scheduleAutomaticSync();
@@ -248,18 +253,23 @@
     render();
   }
   async function verifyAuthenticator(code) {
-    if(!enrolledFactor) {
+    const factorId=mfaFactorId||enrolledFactor;
+    let selected=factorId;
+    if(!selected) {
       const response=await api("/auth/v1/factors");
-      const factors=Array.isArray(response?.all)?response.all:(Array.isArray(response)?response:[]);
-      const factor=factors.find(item=>item.factor_type==="totp"&&item.status==="verified");
+      const factors=Array.isArray(response)?response:[...(response?.all||[]),...(response?.totp||[]),...(response?.phone||[])];
+      const factor=factors.find(item=>(item.factor_type==="totp"||item.type==="totp")&&item.status==="verified");
       if(!factor)throw new Error("Stel eerst een authenticator in.");
-      enrolledFactor=factor.id;
+      selected=factor.id;
     }
-    const challenge=await api("/auth/v1/factors/"+encodeURIComponent(enrolledFactor)+"/challenge",{method:"POST",body:{}});
-    const verified=await api("/auth/v1/factors/"+encodeURIComponent(enrolledFactor)+"/verify",{method:"POST",body:{challenge_id:challenge.id,code:String(code).trim()}});
-    if(verified?.access_token)saveSession(verified);
-    secretCode="";
+    const challenge=await api("/auth/v1/factors/"+encodeURIComponent(selected)+"/challenge",{method:"POST",body:{}});
+    const verified=await api("/auth/v1/factors/"+encodeURIComponent(selected)+"/verify",{method:"POST",body:{challenge_id:challenge.id,code:String(code).trim()}});
+    if(verified?.access_token)saveSession({...session,...verified,user:verified.user||session?.user,mfaPending:false});
+    else if(mfaPending)throw new Error("De server heeft geen verhoogde sessie bevestigd. Controleer de Supabase Auth-configuratie.");
+    mfaPending=false;mfaFactorId="";enrolledFactor=null;secretCode="";
+    if(session){await loadProfile();await loadCareLinks();scheduleAutomaticSync();await refreshRemoteStatus({quiet:true});}
     setStatus("De authenticatorcode is geverifieerd.");
+    render();
   }
   async function loadCareLinks() {
     careLinks = await api("/rest/v1/care_links?select=id,owner_id,caregiver_id,invite_email,role,read_scopes,write_scopes,status,created_at,revoked_at&order=created_at.desc&limit=50");
