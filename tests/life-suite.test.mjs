@@ -362,8 +362,8 @@ test("NovaLife accent themes update the shared design tokens and key interface e
     assert.match(appStyles, new RegExp('body\\[data-accent-theme="' + theme + '"\\]'));
   }
   assert.match(appStyles, /--theme-primary/);
-  assert.match(appStyles, /body\\[data-accent-theme\\] \\.primary-button/);
-  assert.match(appStyles, /body\\[data-accent-theme\\] \\.welcome-panel/);
-  assert.match(appStyles, /body\\[data-accent-theme\\] \\.ls-tab\\.active/);
+  assert.ok(appStyles.includes("body[data-accent-theme] .primary-button"));
+  assert.ok(appStyles.includes("body[data-accent-theme] .welcome-panel"));
+  assert.ok(appStyles.includes("body[data-accent-theme] .ls-tab.active"));
   assert.match(serviceWorker, /project-n-01-prototype-v20/);
 });
