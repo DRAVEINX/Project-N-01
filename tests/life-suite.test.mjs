@@ -392,6 +392,15 @@ test("native notifications request permission only after explicit user action", 
 });
 
 
+test("NovaLife command center highlights the next upcoming appointment and provides a timeline shortcut", () => {
+  assert.match(js, /nextActivity:"Volgende activiteit"/);
+  assert.match(js, /nextActivity:"Next activity"/);
+  assert.match(js, /const nowTime = new Date\(\)\.toTimeString\(\)\.slice\(0,5\)/);
+  assert.match(js, /panel\(t\("nextActivity"\),\(future\.length \? appointmentCard\(future\[0\]\)/);
+  assert.match(js, /button\(t\("timeline"\),"go-timeline"/);
+  assert.match(js, /if\(action==="go-timeline"\)\{activeTab="timeline";renderApp\(\);return;\}/);
+});
+
 test("NovaLife dashboard lets users complete today's weekly-plan items without opening the planner", () => {
   assert.match(js, /todayPlans\.map\(p=>'<div class="ls-plan-summary"><label class="ls-plan-done"><input type="checkbox" data-plan-complete=/);
   assert.match(js, /data-plan-date=/);
