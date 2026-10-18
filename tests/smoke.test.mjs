@@ -885,3 +885,13 @@ test("local storage inventory validates encrypted envelope shape before labeling
   assert.match(portalSource, /encryptedKey&&looksLikeEncryptedEnvelope\(value\)/);
   assert.match(portalSource, /controleert niet of de wachtzin werkt of de inhoud authentiek kan worden ontsleuteld/);
 });
+
+
+test("NovaLife startup splash is branded and always dismisses", () => {
+  assert.match(html, /id="novalife-splash"/);
+  assert.match(html, /class="startup-splash__icon" src="\/assets\/app-icon\.svg"/);
+  assert.match(css, /\.startup-splash\.is-leaving\{opacity:0;visibility:hidden;pointer-events:none\}/);
+  assert.match(html, /splash\.classList\.add\("is-leaving"\)/);
+  assert.match(html, /window\.addEventListener\("load",\s*\(\)\s*=>\s*window\.setTimeout\(dismiss,\s*820\)/);
+  assert.match(html, /window\.setTimeout\(dismiss,\s*3500\)/);
+});
