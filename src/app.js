@@ -334,32 +334,27 @@ function normaliseImportedRoutines(value) {
     .filter(item => item.name && item.steps.length)
     .slice(0,50);
 }
-$("#clear-local-app-data").addEventListener("click", () => {
+$("#clear-local-app-data").addEventListener("click", async () => {
   if (!window.confirm(t("clearLocalDataConfirm"))) return;
   if (vaultAutoLockTimer !== null) window.clearTimeout(vaultAutoLockTimer);
   vaultAutoLockTimer = null;
   if (activeVault) activeVault.lock();
   activeVault = null;
   customRoutines = [];
+  sessionPreferences = null;
+  try { if (window.ProjectN01AccountPortal && typeof window.ProjectN01AccountPortal.clearSession === "function") await window.ProjectN01AccountPortal.clearSession(); } catch {}
+  try { if (window.ProjectN01LifeSuite && typeof window.ProjectN01LifeSuite.clearLocalData === "function") window.ProjectN01LifeSuite.clearLocalData(); } catch {}
   $("#large-text").checked = false;
   $("#less-motion").checked = false;
   $("#quiet-view").checked = false;
   document.body.classList.remove("large-text", "reduced-motion", "quiet-view");
   applyLanguage("nl");
   let allRemoved = true;
-  for (const key of [customRoutineStorageKey, preferenceKey, encryptedVaultStorageKey, dailyProgressKey]) {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      allRemoved = false;
-    }
+  for (const key of [customRoutineStorageKey, preferenceKey, encryptedVaultStorageKey, dailyProgressKey, "project-n-01-secure-life-v1"]) {
+    try { localStorage.removeItem(key); } catch { allRemoved = false; }
   }
-  try {
-    encryptedVaultExists = localStorage.getItem(encryptedVaultStorageKey) !== null;
-  } catch {
-    allRemoved = false;
-    encryptedVaultExists = true;
-  }
+  try { if (window.ProjectN01VersionHistory) await window.ProjectN01VersionHistory.clear("project-n-01-life-v1"); } catch { allRemoved = false; }
+  try { encryptedVaultExists = localStorage.getItem(encryptedVaultStorageKey) !== null; } catch { allRemoved = false; encryptedVaultExists = true; }
   renderCustomRoutines();
   updateVaultControls();
   $("#local-data-status").textContent = t(allRemoved ? "localDataCleared" : "localDataClearError");
