@@ -252,3 +252,41 @@ test("vault rejects non-canonical base64 in stored encrypted envelopes", async (
   assert.equal(reopened.isUnlocked, false);
 });
 
+
+
+test("save with passphrase refuses to overwrite a concurrent storage change", async () => {
+  class ChangingStorage extends MemoryStorage {
+    constructor() { super(); this.changeOnRead = false; this.readCount = 0; }
+    getItem(key) {
+      this.readCount += 1;
+      if (this.changeOnRead && this.readCount === 2) {
+        super.setItem(key, '{"external":"newer-data"}');
+      }
+      return super.getItem(key);
+    }
+  }
+
+  const storage = new ChangingStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { current: "original" });
+  storage.readCount = 0;
+  storage.changeOnRead = true;
+
+  await assert.rejects(
+    vault.saveWithPassphrase(passphrase, { current: "replacement" }),
+    /changed in another session/
+  );
+  assert.equal(storage.getItem("test-vault"), '{"external":"newer-data"}');
+  assert.deepEqual(vault.read(), { current: "original" });
+});
+
+test("save with passphrase rejects malformed stored JSON without changing vault memory", async () => {
+  const storage = new MemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { current: "keep" });
+  storage.setItem("test-vault", "{malformed");
+
+  await assert.rejects(vault.saveWithPassphrase(passphrase, { current: "replace" }));
+  assert.equal(storage.getItem("test-vault"), "{malformed");
+  assert.deepEqual(vault.read(), { current: "keep" });
+});
