@@ -76,3 +76,15 @@ test("mobile build script creates a complete www bundle", async () => {
     assert.ok(bundledHtml.includes(asset), "Bundled entry point should reference " + asset);
   }
 });
+
+
+test("Android workflow builds and publishes APK/AAB artifacts", async () => {
+  const workflow = await read(".github/workflows/novalife-android-build.yml");
+  assert.match(workflow, /npx cap add android/);
+  assert.match(workflow, /npx cap sync android/);
+  assert.match(workflow, /npm test/);
+  assert.match(workflow, /assembleDebug bundleRelease/);
+  assert.match(workflow, /outputs\/apk\/debug\/\*\.apk/);
+  assert.match(workflow, /outputs\/bundle\/release\/\*\.aab/);
+  assert.match(workflow, /actions\/upload-artifact@v4/);
+});
