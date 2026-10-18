@@ -141,8 +141,11 @@ jobs:
           test -s "$tablet_apk"
           test -s "$phone_aab"
           test -s "$tablet_aab"
-          apksigner verify --verbose "$phone_apk"
-          apksigner verify --verbose "$tablet_apk"
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          apksigner_path="$sdk_root/build-tools/36.0.0/apksigner"
+          test -x "$apksigner_path"
+          "$apksigner_path" verify --verbose "$phone_apk"
+          "$apksigner_path" verify --verbose "$tablet_apk"
           jarsigner -verify "$phone_aab"
           jarsigner -verify "$tablet_aab"
           sha256sum "$phone_apk" "$tablet_apk" "$phone_aab" "$tablet_aab" > android-release-SHA256SUMS.txt
