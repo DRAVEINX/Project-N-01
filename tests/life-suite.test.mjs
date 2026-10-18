@@ -564,6 +564,16 @@ test("Smart Assistant supports a profile-scoped private daily intention", () => 
 });
 
 
+test("My Life Timeline searches event titles, categories and details with a bounded query", () => {
+  assert.match(js, /timelineFilters = \{type:"all",from:"",to:"",search:""\}/);
+  assert.match(js, /timelineFilterSearch:"Zoek in titel, categorie of details"/);
+  assert.match(js, /timelineFilterSearch:"Search titles, categories or details"/);
+  assert.match(js, /field\(t\("timelineFilterSearch"\),"search","search",timelineFilters\.search/);
+  assert.match(js, /\[e\.title,e\.type,e\.detail,e\.category\]\.some\(value=>String\(value\|\|""\)\.toLocaleLowerCase\(lang\)\.includes\(query\)\)/);
+  assert.match(js, /search:String\(values\.search\|\|""\)\.trim\(\)\.slice\(0,100\)/);
+  assert.match(js, /timelineFilters=\{type:"all",from:"",to:"",search:""\}/);
+});
+
 test("My Life Timeline filters events by category and inclusive date range", () => {
   assert.match(js, /timelineFilters = \{type:"all",from:"",to:""\}/);
   assert.match(js, /id="ls-timeline-filter-form"/);
