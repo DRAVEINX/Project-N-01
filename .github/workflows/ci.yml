@@ -24,7 +24,7 @@ jobs:
       - name: Run automated smoke tests
         run: npm test
       - name: Check JavaScript syntax
-        run: node --check src/app.js && node --check src/life-suite.js && node --check src/account-portal.js && node --check src/version-history.js && node --check src/native-notifications-entry.js && node --check server/core.mjs && node --check server/server.mjs && node --check server/migrate.mjs && node --check scripts/build-native-notifications.mjs && node --check desktop/main.cjs && node --check src/secure-storage.js && node --check src/encrypted-vault.js && node --check src/routine-migration.js && node --check scripts/serve.mjs && node --check scripts/prepare-mobile.mjs && node --check scripts/configure-android-signing.mjs && node --check scripts/configure-android-build-variants.mjs && node --check service-worker.js && node --check tests/smoke.test.mjs
+        run: node --check src/app.js && node --check src/life-suite.js && node --check src/account-portal.js && node --check src/version-history.js && node --check src/native-notifications-entry.js && node --check server/core.mjs && node --check server/server.mjs && node --check server/migrate.mjs && node --check scripts/build-native-notifications.mjs && node --check desktop/main.cjs && node --check src/secure-storage.js && node --check src/encrypted-vault.js && node --check src/routine-migration.js && node --check scripts/serve.mjs && node --check scripts/prepare-mobile.mjs && node --check scripts/configure-android-signing.mjs && node --check scripts/configure-android-build-variants.mjs && node --check scripts/generate-windows-icon.mjs && node --check service-worker.js && node --check tests/smoke.test.mjs
       - name: Verify expected project files
         run: |
           test -f index.html
@@ -55,6 +55,7 @@ jobs:
           test -f scripts/prepare-mobile.mjs
           test -f scripts/configure-android-signing.mjs
           test -f scripts/configure-android-build-variants.mjs
+          test -f scripts/generate-windows-icon.mjs
           test -f .github/workflows/android.yml
           test -f capacitor.config.json
           node -e "JSON.parse(require('fs').readFileSync('desktop/package.json','utf8'))"
