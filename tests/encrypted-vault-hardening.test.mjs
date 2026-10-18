@@ -144,3 +144,33 @@ test("tampered ciphertext cannot unlock a vault or expose plaintext", async () =
   assert.throws(() => reopened.read(), /Unlock the vault/);
 });
 
+test("vault restore refuses to overwrite a concurrent storage change", async () => {
+  class ChangingStorage extends MemoryStorage {
+    constructor() { super(); this.changeOnSecondRead = false; this.readCount = 0; }
+    getItem(key) {
+      this.readCount += 1;
+      if (this.changeOnSecondRead && this.readCount === 2) {
+        super.setItem(key, '{"external":"newer-data"}');
+      }
+      return super.getItem(key);
+    }
+  }
+
+  const storage = new ChangingStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { current: "original" });
+  const backupStorage = new MemoryStorage();
+  const backupVault = new EncryptedVault(backupStorage, "backup-vault");
+  await backupVault.initialize(passphrase, { current: "backup" });
+  const backup = backupVault.exportEnvelope();
+
+  storage.changeOnSecondRead = true;
+  storage.readCount = 0;
+  await assert.rejects(
+    vault.restoreEnvelope(passphrase, backup),
+    /changed in another session/
+  );
+  assert.equal(storage.getItem("test-vault"), '{"external":"newer-data"}');
+  assert.deepEqual(vault.read(), { current: "original" });
+});
+
