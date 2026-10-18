@@ -562,3 +562,16 @@ test("Smart Assistant supports a profile-scoped private daily intention", () => 
   assert.match(js, /assistantFocusSaved/);
   assert.match(css, /\.ls-assistant-focus\s*\{/);
 });
+
+
+test("My Life Timeline filters events by category and inclusive date range", () => {
+  assert.match(js, /timelineFilters = \{type:"all",from:"",to:""\}/);
+  assert.match(js, /id="ls-timeline-filter-form"/);
+  assert.match(js, /timelineFilters\.type === "all" \|\| e\.category === timelineFilters\.type/);
+  assert.match(js, /e\.date >= timelineFilters\.from/);
+  assert.match(js, /e\.date <= timelineFilters\.to/);
+  assert.match(js, /timeline-reset/);
+  assert.match(js, /values\.from>values\.to/);
+  assert.match(js, /timelineFilterNoResults/);
+  assert.match(css, /\.ls-timeline-filters\s*\{/);
+});
