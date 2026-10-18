@@ -299,7 +299,7 @@
       return;
     }
     if(form.id==="pn-register-form"){
-      event.preventDefault();try{const result=await api("/auth/register",{method:"POST",body:JSON.stringify({displayName:fd.get("displayName"),email:fd.get("email"),password:fd.get("password")})});setAccount(result);status("Account aangemaakt. Bewaar ook de wachtzin van je lokale kluis apart.");activeTab="accounts";render();}catch(error){status(accountError(error),true);}return;
+      event.preventDefault();try{const result=await api("/auth/register",{method:"POST",body:JSON.stringify({displayName:fd.get("displayName"),email:fd.get("email"),password:fd.get("password")})});setAccount(result);status("Account aangemaakt. Bewaar ook de wachtzin van je lokale kluis apart.");await loadSyncStatus();activeTab="accounts";render();}catch(error){status(accountError(error),true);}return;
     }
     if(form.id==="pn-login-form"){
       event.preventDefault();try{const result=await api("/auth/login",{method:"POST",body:JSON.stringify({email:fd.get("email"),password:fd.get("password"),code:fd.get("code")})});
@@ -354,6 +354,7 @@ let accountIdleTimer = null;
       remoteRecord=await api("/sync");
       knownServerRevision=remoteRecord.payload ? null : Number(remoteRecord.revision||0);
       await updateSyncStatus(remoteRecord.payload ? "Cloudkluis gevonden (versie "+remoteRecord.revision+"). Kies eerst downloaden of maak bewust een lokale back-up voordat je overschrijft." : "Er staat nog geen kluis in de cloud. De volgende opslag kan versie 1 maken.");
+      if(!remoteRecord.payload && unlocked()) await syncPush();
     }catch(error){await updateSyncStatus(accountError(error),true);}
   }
   async function syncCheck() {
