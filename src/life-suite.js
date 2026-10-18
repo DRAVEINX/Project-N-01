@@ -451,7 +451,7 @@
   function timelineView() {
     const events = [];
     const add = (date, time, type, title, detail) => {
-      if (!date || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return;
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
       events.push({date, time:time || "", type, title, detail:detail || ""});
     };
     visibleItems("appointments","calendar").forEach(a => add(a.date, a.allDay ? "" : a.start, t("agenda"), a.title, a.location || ""));
