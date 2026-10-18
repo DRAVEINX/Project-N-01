@@ -29,8 +29,12 @@ test("web manifest is valid and has product identity", async () => {
   assert.equal(typeof manifest.name, "string");
   assert.ok(manifest.name.trim().length > 0);
   assert.equal(typeof manifest.short_name, "string");
+  assert.match(manifest.name, /NovaLife/i);
   assert.ok(Array.isArray(manifest.icons));
   assert.ok(manifest.icons.length > 0);
+  const capacitor = JSON.parse(await read("capacitor.config.json"));
+  assert.equal(capacitor.appName, "NovaLife");
+  assert.equal(capacitor.appId, "com.draveinx.projectn01", "Native app ID must remain stable for upgrades");
 });
 
 test("mobile preparation includes all required web assets", async () => {
@@ -67,4 +71,8 @@ test("mobile build script creates a complete www bundle", async () => {
   }
   const bundledHtml = await read("www/index.html");
   assert.match(bundledHtml, /NovaLife/);
+  for (const asset of ["src/styles.css", "src/life-suite.css", "src/app.js", "src/life-suite.js", "manifest.webmanifest", "assets/app-icon.svg"]) {
+    await assert.doesNotReject(() => access(resolve(root, "www", asset)), undefined, "Bundled HTML dependency missing: " + asset);
+    assert.ok(bundledHtml.includes(asset), "Bundled entry point should reference " + asset);
+  }
 });
