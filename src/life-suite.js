@@ -142,6 +142,17 @@
   function currentProfile() {
     return state && state.profiles.find(p => p.id === state.currentProfileId) || (state && state.profiles[0]) || null;
   }
+  // UI-level role policy for the local prototype. Production permissions must
+  // also be enforced server-side; this helper is not an authentication boundary.
+  function roleCanAccessTab(tab, profile = currentProfile()) {
+    if (!profile) return false;
+    const role = profile.role || "self";
+    const isAdmin = role === "developer_admin" || role === "admin";
+    const isCaregiver = role === "caregiver" || role === "parent" || role === "guardian";
+    if (tab === "roles") return isAdmin;
+    if (tab === "care" || tab === "roster") return isAdmin || isCaregiver;
+    return ["dashboard","weekplan","agenda","mood","help","guides","reminders","data"].includes(tab) || isAdmin || isCaregiver;
+  }
   function scopeMatches(item) {
     return !item.profileId || item.profileId === state.currentProfileId;
   }
@@ -284,10 +295,11 @@
   }
   function topBar() {
     const p = currentProfile();
-    return '<div class="ls-app-head"><div><p class="ls-kicker">NOVALIFE</p><h3>' + esc(t("appTitle")) + '</h3><p>' + esc(t("appIntro")) + '</p></div><div class="ls-head-actions">' + select(t("activeProfile"), "active-profile", state.profiles.map(p => ({value:p.id,label:p.name + " · " + t(p.role)})), state.currentProfileId) + button(t("lock"), "lock", "secondary-button") + '</div></div>';
+    const profileControl = p && (p.role === "developer_admin" || p.role === "admin") ? select(t("activeProfile"), "active-profile", state.profiles.map(profile => ({value:profile.id,label:profile.name + " · " + t(profile.role)})), state.currentProfileId) : '<span class="ls-badge">' + esc(p ? t(p.role) : t("self")) + '</span>';
+    return '<div class="ls-app-head"><div><p class="ls-kicker">NOVALIFE</p><h3>' + esc(t("appTitle")) + '</h3><p>' + esc(t("appIntro")) + '</p></div><div class="ls-head-actions">' + profileControl + button(t("lock"), "lock", "secondary-button") + '</div></div>';
   }
   function tabBar() {
-    const tabs = [["dashboard","dashboard"],["weekplan","weekplan"],["agenda","agenda"],["roster","roster"],["mood","mood"],["care","care"],["roles","roles"],["help","help"],["guides","guides"],["reminders","reminders"],["data","data"]];
+    const tabs = [["dashboard","dashboard"],["weekplan","weekplan"],["agenda","agenda"],["roster","roster"],["mood","mood"],["care","care"],["roles","roles"],["help","help"],["guides","guides"],["reminders","reminders"],["data","data"]].filter(x => roleCanAccessTab(x[0]));
     return '<div class="ls-tabs" role="tablist" aria-label="' + esc(t("appTitle")) + '">' + tabs.map(x => tabButton(x[0], t(x[1]))).join("") + '</div>';
   }
   function visibleAppointmentList(date) {
@@ -542,6 +554,7 @@
     function renderApp() {
     if (!state || !sessionKey) { renderLocked(localStorage.getItem(STORAGE_KEY) === null, ""); return; }
     lang = document.documentElement.lang === "en" ? "en" : "nl";
+    if (!roleCanAccessTab(activeTab)) activeTab = "dashboard";
     const content = activeTab === "weekplan" ? weekPlanView() : activeTab === "agenda" ? agendaView() : activeTab === "roster" ? rosterView() : activeTab === "mood" ? moodView() : activeTab === "care" ? careView() : activeTab === "roles" ? rolesView() : activeTab === "help" ? helpView() : activeTab === "guides" ? guidesView() : activeTab === "reminders" ? remindersView() : activeTab === "data" ? dataView() : dashboardView();
     root.innerHTML = topBar() + tabBar() + '<div class="ls-status-row"><p id="ls-status" role="status" aria-live="polite">' + esc(t("ready")) + '</p><p class="ls-network">' + esc(navigator.onLine ? t("online") : t("offline")) + '</p></div><div class="ls-content">' + content + '</div>';
     bindEvents();
@@ -613,7 +626,7 @@
     return result;
   }
     function bindEvents() {
-    $$("[data-ls-tab]").forEach(el=>el.addEventListener("click",()=>{activeTab=el.dataset.lsTab;renderApp();}));
+    $("[data-ls-tab]").forEach(el=>el.addEventListener("click",()=>{if(!roleCanAccessTab(el.dataset.lsTab)){activeTab="dashboard";renderApp();return;}activeTab=el.dataset.lsTab;renderApp();}));
     const profileSelect = $('select[name="active-profile"]');
     if (profileSelect) profileSelect.addEventListener("change",async()=>{state.currentProfileId=profileSelect.value;recordAudit("profile-switched",state.currentProfileId);await saveState(false);renderApp();});
     $$("[data-ls-action]").forEach(el=>el.addEventListener("click",()=>handleAction(el.dataset.lsAction,el.dataset.id,el)));
