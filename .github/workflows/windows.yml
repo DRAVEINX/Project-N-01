@@ -49,6 +49,13 @@ jobs:
           Copy-Item -Path assets/app-icon.svg -Destination desktop/build/icon.svg -Force
           if (!(Test-Path desktop/web/index.html)) { throw "Desktop web assets were not generated." }
 
+      - name: Verify current web assets in desktop package
+        shell: pwsh
+        run: |
+          if (!(Test-Path desktop/web/src/life-suite.js)) { throw "Daily Life Suite script is missing." }
+          if (!(Test-Path desktop/web/src/styles.css)) { throw "Responsive layout styles are missing." }
+          if (!(Select-String -Path desktop/web/service-worker.js -Pattern "project-n-01-prototype-v15" -Quiet)) { throw "Offline cache version is stale." }
+
       - name: Check desktop wrapper syntax and config
         shell: pwsh
         run: |
