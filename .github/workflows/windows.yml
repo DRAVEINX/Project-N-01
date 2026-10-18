@@ -11,6 +11,7 @@ on:
       - "src/**"
       - "assets/**"
       - "scripts/prepare-mobile.mjs"
+      - "scripts/build-native-notifications.mjs"
       - "package.json"
       - "capacitor.config.json"
       - "desktop/**"
@@ -54,7 +55,7 @@ jobs:
         run: |
           if (!(Test-Path desktop/web/src/life-suite.js)) { throw "Daily Life Suite script is missing." }
           if (!(Test-Path desktop/web/src/styles.css)) { throw "Responsive layout styles are missing." }
-          if (!(Select-String -Path desktop/web/service-worker.js -Pattern "project-n-01-prototype-v15" -Quiet)) { throw "Offline cache version is stale." }
+          if (!(Select-String -Path desktop/web/service-worker.js -Pattern "project-n-01-prototype-v16" -Quiet)) { throw "Offline cache version is stale." }
 
       - name: Check desktop wrapper syntax and config
         shell: pwsh
