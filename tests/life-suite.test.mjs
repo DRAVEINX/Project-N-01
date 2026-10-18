@@ -392,6 +392,21 @@ test("native notifications request permission only after explicit user action", 
 });
 
 
+test("NovaLife care workspace includes staff portal and care network workflows", () => {
+  assert.match(js, /carePortal:"Zorgnetwerk & werkportaal"/);
+  assert.match(js, /carePortal:"Care network & staff portal"/);
+  assert.match(js, /\["careportal","carePortal"\]/);
+  assert.match(js, /id="ls-availability-form"/);
+  assert.match(js, /id="ls-workstate-form"/);
+  assert.match(js, /id="ls-news-form"/);
+  assert.match(js, /id="ls-portal-message-form"/);
+  assert.match(js, /id="ls-care-task-form"/);
+  assert.match(js, /id="ls-care-note-form"/);
+  assert.match(js, /workstate-draft-saved/);
+  assert.match(js, /care-task-completed/);
+  assert.match(js, /external care platforms/);
+});
+
 test("NovaLife command center highlights the next upcoming appointment and provides a timeline shortcut", () => {
   assert.match(js, /nextActivity:"Volgende activiteit"/);
   assert.match(js, /nextActivity:"Next activity"/);
