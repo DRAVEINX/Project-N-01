@@ -24,6 +24,7 @@
   let busy = false;
   let enrolledFactor = null;
   let latestRemote = null;
+  let careLinks = [];
   let lastSeenRemoteHash = "";
   let syncConflict = false;
   let inactivityTimer = null;
@@ -59,7 +60,8 @@
   async function api(path, options={}) {
     if (!configured() || !config.anonKey) throw new Error("Vul eerst een geldige Supabase-project-URL en anon/publishable key in.");
     const headers = {"apikey":config.anonKey,"Content-Type":"application/json"};
-    if (options.token || session?.access_token) headers.Authorization = "Bearer " + (options.token || session.access_token);
+    const bearer = Object.prototype.hasOwnProperty.call(options,"token") ? options.token : session?.access_token;
+    if (bearer) headers.Authorization = "Bearer " + bearer;
     if (options.prefer) headers.Prefer = options.prefer;
     const response = await fetch(baseUrl()+path,{method:options.method||"GET",headers,body:options.body===undefined?undefined:JSON.stringify(options.body)});
     const text = await response.text();
@@ -129,16 +131,29 @@
       const remote=await listSnapshots();
       latestRemote=Array.isArray(remote)?remote[0]||null:null;
       lastSeenRemoteHash=latestRemote?.snapshot_hash||"";
-      syncConflict=Boolean(latestRemote && latestRemote.snapshot_hash!==local.hash);
+      const baselineKey=LAST_HASH_KEY+":"+session.user.id;
+      const baseline=localStorage.getItem(baselineKey)||"";
+      const remoteHash=latestRemote?.snapshot_hash||"";
       if(!latestRemote) {
-        if(!quiet) setStatus("Er staat nog geen cloud-back-up. Kies ‘Bewaar versleutelde versie online’ om te beginnen.");
+        syncConflict=false;
         if(quiet) await uploadSnapshot({quiet:true});
-      } else if(!syncConflict) {
-        if(!quiet)setStatus("Deze telefoon/tablet heeft dezelfde versleutelde versie als de cloud.");
-      } else if(!quiet) {
-        setStatus("Er bestaan verschillende lokale en online versies. Kies bewust welke versie je wilt bewaren of herstellen.",true);
+        else setStatus("Er staat nog geen cloud-back-up. Bewaar je lokale versleutelde versie om te beginnen.");
+      } else if(remoteHash===local.hash) {
+        syncConflict=false;localStorage.setItem(baselineKey,local.hash);
+        if(!quiet)setStatus("Deze telefoon/tablet en de cloud hebben dezelfde versleutelde versie.");
+      } else if(baseline && remoteHash===baseline && local.hash!==baseline) {
+        // Only this device changed since the last common version: append the encrypted update.
+        syncConflict=false;
+        if(quiet)await uploadSnapshot({quiet:true});
+        else setStatus("Er zijn alleen lokale wijzigingen. Kies ‘Bewaar lokale versie online’ om deze te synchroniseren.");
+      } else if(baseline && local.hash===baseline && remoteHash!==baseline) {
+        // Only the remote copy changed. Never overwrite local data automatically.
+        syncConflict=false;
+        if(!quiet)setStatus("Er staat een nieuwere cloudversie. Je kunt die na controle herstellen.");
       } else {
-        render();
+        syncConflict=true;
+        if(!quiet)setStatus("Er bestaan verschillende lokale en online versies. Kies bewust welke versie je wilt bewaren of herstellen.",true);
+        else render();
       }
     } catch(error) {
       if(!quiet)setStatus(error.message,true);
@@ -151,6 +166,7 @@
     const payload={user_id:session.user.id,device_label:deviceLabel+" · "+deviceId().slice(0,8),snapshot_hash:local.hash,encrypted_snapshot:local.envelope};
     await api("/rest/v1/app_sync_snapshots",{method:"POST",body:payload,prefer:"return=minimal"});
     sessionStorage.setItem(LAST_HASH_KEY,local.hash);
+    localStorage.setItem(LAST_HASH_KEY+":"+session.user.id,local.hash);
     latestRemote={snapshot_hash:local.hash,created_at:new Date().toISOString(),device_label:payload.device_label,encrypted_snapshot:local.envelope};
     lastSeenRemoteHash=local.hash;
     syncConflict=false;
@@ -159,12 +175,14 @@
   }
   async function restoreLatestSnapshot() {
     if(!session||!latestRemote?.encrypted_snapshot)throw new Error("Er is geen online back-up beschikbaar.");
+    const target=latestRemote;
     const local=localEnvelope();
     if(!window.confirm("Herstellen vervangt de lokale versleutelde kluis door de gekozen online versie. Ik maak eerst een veiligheidskopie van de huidige lokale versie. Doorgaan?"))return;
     if(local) await uploadSnapshot({quiet:true});
-    const source=latestRemote.encrypted_snapshot;
+    const source=target.encrypted_snapshot;
     if(!source || typeof source!=="object" || !source.ciphertext || !source.iv || !source.salt)throw new Error("De online snapshot heeft geen herkend versleuteld formaat.");
     localStorage.setItem(VAULT_KEY,JSON.stringify(source));
+    localStorage.setItem(LAST_HASH_KEY+":"+session.user.id,target.snapshot_hash||await hashText(JSON.stringify(source)));
     setStatus("De lokale kluis is vervangen. De app wordt opnieuw geladen; ontgrendel daarna met de oorspronkelijke kluis-wachtzin.");
     window.setTimeout(()=>location.reload(),700);
   }
