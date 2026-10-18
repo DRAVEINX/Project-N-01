@@ -118,6 +118,10 @@ jobs:
         run: node scripts/configure-android-signing.mjs
 
       - name: Build phone and tablet release APKs and app bundles
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: cd android && ./gradlew --no-daemon --stacktrace assemblePhoneRelease bundlePhoneRelease assembleTabletRelease bundleTabletRelease
 
       - name: Upload phone release candidates
