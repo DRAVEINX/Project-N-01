@@ -120,7 +120,7 @@ test("notes explicitly warn that the prototype does not save them", () => {
 const manifest = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 test("service worker cache version is bumped when shipping updated app assets", () => {
-  assert.match(serviceWorker, /project-n-01-prototype-v15/);
+  assert.match(serviceWorker, /project-n-01-prototype-v17/);
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v9/);
 });
 
@@ -682,7 +682,7 @@ test("tablet routine cards use two columns while phone layouts stay single-colum
 
 test("offline app shell cache version is refreshed and includes core app assets", async () => {
   const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(serviceWorker, /project-n-01-prototype-v15/);
+  assert.match(serviceWorker, /project-n-01-prototype-v17/);
   for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/manifest.webmanifest", "/assets/app-icon.svg", "/offline.html"]) {
     assert.ok(serviceWorker.includes(JSON.stringify(asset)), `offline shell missing ${asset}`);
   }
