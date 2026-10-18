@@ -118,7 +118,7 @@
     return {
       schema:1, createdAt:new Date().toISOString(), currentProfileId:"self",
       profiles:[{id:"self",name:lang === "nl" ? "Mijn profiel" : "My profile",role:"self",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}],
-      appointments:[], workers:[], shifts:[], weeklyPlans:[], moods:[], journal:[], drawings:[], guides:[], contacts:[], reminders:[], consents:[], invites:[], audit:[], notificationLog:[], preferences:{largeText:false,highContrast:false,reducedMotion:false}
+      appointments:[], workers:[], shifts:[], weeklyPlans:[], moods:[], journal:[], drawings:[], guides:[], contacts:[], reminders:[], consents:[], invites:[], audit:[], notificationLog:[], preferences:{largeText:false,highContrast:false,reducedMotion:false}, professional:{goals:[],documents:[],versions:[],handovers:[],absences:[],dailyProgress:null,emergencyPlan:{instructions:"",supportNeeds:"",preferredHelp:"",updatedAt:""},reportPreferences:{includeMood:true,includeRoutineProgress:true,includeAppointments:true}}
     };
   }
   function normalizeState(raw) {
@@ -130,6 +130,17 @@
     blank.createdAt = typeof raw.createdAt === "string" ? raw.createdAt : blank.createdAt;
     blank.currentProfileId = typeof raw.currentProfileId === "string" ? raw.currentProfileId : "self";
     blank.preferences = Object.assign(blank.preferences, raw.preferences && typeof raw.preferences === "object" ? raw.preferences : {});
+    const p = raw.professional && typeof raw.professional === "object" ? raw.professional : {};
+    blank.professional = {
+      goals:Array.isArray(p.goals)?p.goals.filter(x=>x&&typeof x==="object").slice(-200):[],
+      documents:Array.isArray(p.documents)?p.documents.filter(x=>x&&typeof x==="object").slice(-100):[],
+      versions:Array.isArray(p.versions)?p.versions.filter(x=>x&&typeof x==="object").slice(-10):[],
+      handovers:Array.isArray(p.handovers)?p.handovers.filter(x=>x&&typeof x==="object").slice(-200):[],
+      absences:Array.isArray(p.absences)?p.absences.filter(x=>x&&typeof x==="object").slice(-200):[],
+      dailyProgress:p.dailyProgress&&typeof p.dailyProgress==="object"?p.dailyProgress:null,
+      emergencyPlan:Object.assign(blank.professional.emergencyPlan,p.emergencyPlan&&typeof p.emergencyPlan==="object"?p.emergencyPlan:{}),
+      reportPreferences:Object.assign(blank.professional.reportPreferences,p.reportPreferences&&typeof p.reportPreferences==="object"?p.reportPreferences:{})
+    };
     if (!blank.profiles.length) blank.profiles.push({id:"self",name:"My profile",role:"self",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
     if (!blank.profiles.some(p => p.id === blank.currentProfileId)) blank.currentProfileId = blank.profiles[0].id;
     return blank;
@@ -183,6 +194,7 @@
       envelope = await encryptState(state, sessionKey, b64ToBytes(saltB64));
       const raw = JSON.stringify(envelope);
       localStorage.setItem(STORAGE_KEY, raw);
+      window.dispatchEvent(new CustomEvent("projectn-vault-saved",{detail:{updatedAt:new Date().toISOString()}}));
       if (message !== false) setStatus(message || t("saved"));
       startAutoLock();
       return true;
@@ -207,6 +219,7 @@
     }
     sessionKey = null; saltB64 = null; state = null; draftPhoto = ""; draftGuideAudio = ""; draftJournalAudio = ""; pendingRecoveryCode = "";
     renderLocked(false, showMessage ? t("closed") : "");
+    window.dispatchEvent(new CustomEvent("projectn-vault-state",{detail:{unlocked:false}}));
   }
   function renderLocked(createMode, extra) {
     root.innerHTML = '<div class="ls-locked"><div class="ls-lock-mark" aria-hidden="true">🔐</div><p class="ls-kicker">PROJECT N-01</p><h3>' + esc(t("lockedTitle")) + '</h3><p>' + esc(t("lockedIntro")) + '</p><form id="ls-unlock-form" class="ls-form"><label for="ls-pass">' + esc(t("passphrase")) + '</label><input id="ls-pass" type="password" minlength="12" autocomplete="current-password" required><div id="ls-confirm-wrap"' + (createMode ? "" : " hidden") + '><label for="ls-pass-confirm">' + esc(t("confirmPass")) + '</label><input id="ls-pass-confirm" type="password" minlength="12" autocomplete="new-password"' + (createMode ? " required" : "") + '></div><p class="ls-muted">' + esc(createMode ? t("setupHint") : t("lockedHint")) + '</p><button class="primary-button" type="submit">' + esc(createMode ? t("createVault") : t("unlock")) + '</button><p class="ls-status" id="ls-lock-status" role="status" aria-live="polite">' + esc(extra || "") + '</p></form></div>';
@@ -447,6 +460,7 @@
     bindEvents();
     applyPreferences();
     startAutoLock();
+    window.dispatchEvent(new CustomEvent("projectn-vault-state",{detail:{unlocked:true}}));
   }
   function applyPreferences() {
     if (!state) return;
@@ -840,6 +854,101 @@
   window.addEventListener("pagehide",()=>{stopAutoLock();if(reminderTimer)clearInterval(reminderTimer);if(mediaRecorder&&mediaRecorder.state!=="inactive")try{mediaRecorder.stop();}catch{};});
   window.addEventListener("online",()=>{const n=$("#ls-connectivity");if(n)n.textContent=t("online");});
   window.addEventListener("offline",()=>{const n=$("#ls-connectivity");if(n)n.textContent=t("offline");});
+
+  function professionalBlank() {
+    return {goals:[],documents:[],versions:[],handovers:[],absences:[],dailyProgress:null,
+      emergencyPlan:{instructions:"",supportNeeds:"",preferredHelp:"",updatedAt:""},
+      reportPreferences:{includeMood:true,includeRoutineProgress:true,includeAppointments:true}};
+  }
+  function professionalSnapshot(value) {
+    const copy=JSON.parse(JSON.stringify(value||professionalBlank()));
+    delete copy.versions;
+    return copy;
+  }
+  window.ProjectN01Vault = {
+    isUnlocked:()=>Boolean(state&&sessionKey&&saltB64),
+    readProfessional:()=>state&&sessionKey?JSON.parse(JSON.stringify(state.professional||professionalBlank())):null,
+    readSnapshot:()=>state&&sessionKey?JSON.parse(JSON.stringify({
+      appointments:state.appointments,workers:state.workers,shifts:state.shifts,weeklyPlans:state.weeklyPlans,
+      moods:state.moods,journal:state.journal,guides:state.guides,contacts:state.contacts,reminders:state.reminders,
+      profiles:state.profiles,currentProfileId:state.currentProfileId,professional:state.professional||professionalBlank()
+    })):null,
+    saveProfessional:async(value,label)=>{
+      if(!state||!sessionKey||!saltB64) return false;
+      const previous=state.professional||professionalBlank();
+      const snapshot=professionalSnapshot(previous);
+      const versions=Array.isArray(previous.versions)?previous.versions.slice():[];
+      versions.push({id:uid("version"),at:new Date().toISOString(),label:String(label||"Gewijzigde persoonlijke gegevens").slice(0,100),snapshot:snapshot});
+      const next=Object.assign(professionalBlank(),value&&typeof value==="object"?value:{});
+      next.versions=versions.slice(-10);
+      state.professional=next;
+      recordAudit("professional-data-updated",String(label||"").slice(0,100));
+      const saved=await saveState(false);
+      if(saved) renderApp();
+      return saved;
+    },
+    restoreVersion:async(versionId)=>{
+      if(!state||!sessionKey||!state.professional) return false;
+      const version=(state.professional.versions||[]).find(v=>v.id===versionId);
+      if(!version||!version.snapshot) return false;
+      const existing=state.professional;
+      const history=(existing.versions||[]).slice();
+      history.push({id:uid("version"),at:new Date().toISOString(),label:"Herstelpunt vóór terugzetten",snapshot:professionalSnapshot(existing)});
+      state.professional=Object.assign(professionalBlank(),version.snapshot,{versions:history.slice(-10)});
+      recordAudit("professional-version-restored",String(version.label||""));
+      const saved=await saveState(false);
+      if(saved) renderApp();
+      return saved;
+    },
+    saveDailyProgress:async(progress)=>{
+      if(!state||!sessionKey) return false;
+      state.professional=Object.assign(professionalBlank(),state.professional||{});
+      state.professional.dailyProgress=JSON.parse(JSON.stringify(progress));
+      recordAudit("daily-progress-saved","Encrypted in personal vault");
+      return saveState(false);
+    },
+    getDailyProgress:(date)=>{
+      if(!state||!sessionKey||!state.professional||!state.professional.dailyProgress) return null;
+      const value=state.professional.dailyProgress;
+      return value.date===date?JSON.parse(JSON.stringify(value)):null;
+    },
+    exportEncryptedEnvelope:async()=>{
+      if(!state||!sessionKey||!saltB64) return null;
+      return encryptState(state,sessionKey,b64ToBytes(saltB64));
+    },
+    importEncryptedEnvelope:async(envelope,passphrase)=>{
+      try {
+        const opened=await decryptEnvelope(envelope,passphrase);
+        const next=opened.state;
+        const localEnvelope=await encryptState(next,opened.key,opened.salt);
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(localEnvelope));
+        stopAutoLock();state=next;sessionKey=opened.key;saltB64=bytesToB64(opened.salt);
+        startAutoLock();renderApp();
+        window.dispatchEvent(new CustomEvent("projectn-vault-state",{detail:{unlocked:true,imported:true}}));
+        return true;
+      } catch { return false; }
+    },
+    replaceWithEncryptedEnvelope:async(envelope)=>{
+      if(!envelope||envelope.format!==FORMAT||envelope.version!==1||envelope.cipher!=="AES-256-GCM"||envelope.kdf!=="PBKDF2-SHA-256") return false;
+      try {
+        const salt=b64ToBytes(envelope.salt),iv=b64ToBytes(envelope.iv),cipher=b64ToBytes(envelope.ciphertext);
+        if(salt.length!==16||iv.length!==12||cipher.length>MAX_PLAINTEXT_BYTES+16) return false;
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(envelope));
+        lockVault(false);renderLocked(false,"Versleutelde kluis gedownload. Ontgrendel met de wachtzin die bij deze kluis hoort.");
+        window.dispatchEvent(new CustomEvent("projectn-vault-state",{detail:{unlocked:false,remoteReady:true}}));
+        return true;
+      } catch { return false; }
+    },
+    storageOverview:()=>{
+      let localBytes=0;try{localBytes=String(localStorage.getItem(STORAGE_KEY)||"").length;}catch{}
+      return {unlocked:Boolean(state&&sessionKey),encryptedVaultPresent:localStorage.getItem(STORAGE_KEY)!==null,encryptedEnvelopeCharacters:localBytes,records:state&&sessionKey?{
+        appointments:state.appointments.length,roster:state.shifts.length,moods:state.moods.length,journal:state.journal.length,
+        routines:state.weeklyPlans.length,goals:(state.professional&&state.professional.goals||[]).length,
+        documents:(state.professional&&state.professional.documents||[]).length
+      }:null,legacyPlaintextKeys:["project-n-01-daily-progress-v1","project-n-01-preferences-v1"]};
+    }
+  };
+
   if(!window.crypto||!crypto.subtle){renderLocked(true,t("unsupported"));return;}
   let hasVault=false;try{hasVault=localStorage.getItem(STORAGE_KEY)!==null;}catch{}
   renderLocked(!hasVault,"");
