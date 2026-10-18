@@ -77,7 +77,7 @@ export async function migrateLegacyRoutines({ storage, vault, passphrase, legacy
   } catch (error) {
     // An existing vault is a precondition failure, not a failed migration:
     // never lock or otherwise disturb the user's already-open vault.
-    if (error?.message === "Encrypted vault already exists.") throw error;
+    if (/vault already exists|vault was created by another session/i.test(error?.message || "")) throw error;
     // If initialization or read-back fails, do not leave a partially initialized
     // vault session open and never remove or modify the legacy plaintext source.
     try { vault.lock?.(); } catch { /* Preserve the original migration failure. */ }
