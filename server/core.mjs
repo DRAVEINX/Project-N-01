@@ -122,8 +122,19 @@ export function validateEncryptedEnvelope(envelope) {
   if (!compatible || envelope.version !== 1 || envelope.cipher !== "AES-256-GCM" ||
       envelope.kdf !== "PBKDF2-SHA-256" || envelope.iterations !== 310000) return false;
   if (![envelope.salt,envelope.iv,envelope.ciphertext].every(x=>typeof x === "string" && x.length > 0)) return false;
-  if (envelope.ciphertext.length > 4_200_000 || envelope.salt.length > 128 || envelope.iv.length > 128) return false;
-  return /^[A-Za-z0-9+/=_-]+$/.test(envelope.salt) &&
-    /^[A-Za-z0-9+/=_-]+$/.test(envelope.iv) &&
-    /^[A-Za-z0-9+/=_-]+$/.test(envelope.ciphertext);
+  if (envelope.ciphertext.length > 1_400_100 || envelope.salt.length > 128 || envelope.iv.length > 128) return false;
+  const validBase64 = value => /^[A-Za-z0-9+/=_-]+$/.test(value);
+  if (!validBase64(envelope.salt) || !validBase64(envelope.iv) || !validBase64(envelope.ciphertext)) return false;
+  try {
+    const decode = value => Buffer.from(value.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+    const salt = decode(envelope.salt);
+    const iv = decode(envelope.iv);
+    const ciphertext = decode(envelope.ciphertext);
+    // Match the client AES-GCM envelope: 16-byte salt, 12-byte IV, and a
+    // 16-byte authentication tag plus at most 1 MB of encrypted JSON.
+    return salt.length === 16 && iv.length === 12 &&
+      ciphertext.length >= 16 && ciphertext.length <= 1_000_016;
+  } catch {
+    return false;
+  }
 }
