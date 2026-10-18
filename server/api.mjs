@@ -3,6 +3,7 @@ import { createHash, createHmac, randomBytes, scrypt as scryptCallback, timingSa
 import { promisify } from "node:util";
 import { mkdir, readFile, writeFile, rename, chmod } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { homedir } from "node:os";
 import { pathToFileURL } from "node:url";
 
 const scrypt = promisify(scryptCallback);
@@ -92,7 +93,7 @@ function isEncryptedEnvelope(payload) {
 }
 
 export async function createApiServer(options = {}) {
-  const dataPath = options.dataPath || process.env.PROJECT_N01_DB_PATH || join(process.cwd(), "data-private", "project-n-01-db.json");
+  const dataPath = options.dataPath || process.env.PROJECT_N01_DB_PATH || join(homedir(), ".project-n-01", "project-n-01-db.json");
   const deliveryUrl = options.deliveryUrl ?? process.env.PROJECT_N01_DELIVERY_WEBHOOK_URL ?? "";
   const deliveryToken = options.deliveryToken ?? process.env.PROJECT_N01_DELIVERY_WEBHOOK_TOKEN ?? "";
   const publicAppUrl = options.publicAppUrl ?? process.env.PROJECT_N01_PUBLIC_APP_URL ?? "";
@@ -220,7 +221,7 @@ export async function createApiServer(options = {}) {
     if (!url.pathname.startsWith("/api/")) { send(res, 404, { error: "not-found" }); return; }
     const remote = req.socket.remoteAddress || "unknown";
     const limitKey = remote + ":" + url.pathname;
-    if (!rateAllowed(limitKey, url.pathname.includes("login") || url.pathname.includes("reset") ? 8 : 50)) {
+    if (!rateAllowed(limitKey, url.pathname.includes("login") || url.pathname.includes("reset") || url.pathname.includes("/2fa") ? 8 : 50)) {
       send(res, 429, { error: "rate-limit-exceeded" }, { "retry-after": "60" });
       return;
     }
