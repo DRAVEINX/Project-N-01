@@ -138,6 +138,15 @@ test("profiles, revocable consent and local invitation groundwork exist", () => 
   assert.match(js, /v.ownerId!==state.currentProfileId/);
 });
 
+test("trusted contact safety card export and copy actions require explicit user interaction", () => {
+  assert.match(js, /downloadSafetyCard/);
+  assert.match(js, /data-ls-action="download-safety-card"/);
+  assert.match(js, /safetyCardPrivacy/);
+  assert.match(js, /safety-card-exported/);
+  assert.match(js, /navigator\\.clipboard\\?\\.writeText/);
+  assert.match(js, /contact-details-copied/);
+});
+
 test("trusted contact actions require confirmation and do not imply an automatic emergency dispatch", () => {
   assert.match(js, /contact-help/);
   assert.match(js, /window\.confirm\(t\("callConfirm"\)\)/);
