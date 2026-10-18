@@ -182,7 +182,7 @@ test("backup merge keeps the newest record and adds non-conflicting records", ()
   };
   const merged = merge(current, incoming);
   assert.deepEqual(
-    merged.journal.map(item => item.id).sort(),
+    Array.from(merged.journal, item => item.id).sort(),
     ["entry-1", "entry-2", "entry-3"],
   );
   assert.equal(merged.journal.find(item => item.id === "entry-1").text, "newer");
