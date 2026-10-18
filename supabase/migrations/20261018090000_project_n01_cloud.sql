@@ -10,12 +10,12 @@ language sql
 stable
 security definer
 set search_path = public, auth
-as $
+as $mfa$
   select (auth.jwt()->>'aal' = 'aal2') or not exists (
     select 1 from auth.mfa_factors f
     where f.user_id = auth.uid() and f.status = 'verified'
   );
-$;
+$mfa$;
 revoke all on function public.project_n01_mfa_ok() from public;
 grant execute on function public.project_n01_mfa_ok() to authenticated;
 
@@ -32,7 +32,7 @@ create policy "profile owner reads own profile" on public.user_profiles for sele
 drop policy if exists "profile owner inserts own profile" on public.user_profiles;
 create policy "profile owner inserts own profile" on public.user_profiles for insert to authenticated with check (user_id = (select auth.uid()) and public.project_n01_mfa_ok());
 drop policy if exists "profile owner updates own profile" on public.user_profiles;
-create policy "profile owner updates own profile" on public.user_profiles for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()) and public.project_n01_mfa_ok());
+create policy "profile owner updates own profile" on public.user_profiles for update to authenticated using (user_id = (select auth.uid()) and public.project_n01_mfa_ok()) with check (user_id = (select auth.uid()) and public.project_n01_mfa_ok());
 
 create or replace function public.project_n01_handle_new_user()
 returns trigger language plpgsql security definer set search_path = public, auth
@@ -116,7 +116,6 @@ as $$
 declare v_token text; v_email text;
 begin
   if auth.uid() is null then raise exception 'Authentication required'; end if;
-  if not public.project_n01_mfa_ok() then raise exception 'Second factor verification required'; end if;
   if not public.project_n01_mfa_ok() then raise exception 'Second factor verification required'; end if;
   v_email:=lower(trim(coalesce(p_email,'')));
   if length(v_email)<5 or position('@' in v_email)<2 then raise exception 'Valid invite email required'; end if;
