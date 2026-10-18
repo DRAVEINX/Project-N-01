@@ -97,7 +97,7 @@ async function createWindow() {
     minWidth: 760,
     minHeight: 600,
     show: false,
-    title: "Project N-01",
+    title: "NovaLife",
     autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: false,
@@ -122,7 +122,7 @@ async function createWindow() {
 }
 
 app.whenReady().then(() => createWindow()).catch(error => {
-  console.error("Project N-01 startup failed:", error);
+  console.error("NovaLife startup failed:", error);
   app.quit();
 });
 
