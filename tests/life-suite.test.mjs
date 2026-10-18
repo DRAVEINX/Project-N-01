@@ -422,3 +422,18 @@ test("NovaLife daily plan progress has visible and accessible progress styling",
   assert.match(css, /\.ls-plan-progress::-webkit-progress-value/);
   assert.match(css, /\.ls-plan-progress::-moz-progress-bar/);
 });
+
+
+test("NovaLife My Life Timeline is wired in Dutch and English", () => {
+  assert.match(js, /timelineView\(\)/);
+  assert.match(js, /\["timeline","timeline"\]/);
+  assert.match(js, /activeTab === "timeline" \? timelineView\(\)/);
+  assert.match(js, /timeline:"Mijn tijdlijn"/);
+  assert.match(js, /timeline:"My timeline"/);
+  assert.match(js, /timelineEmpty:/);
+  assert.match(js, /events\.sort\(/);
+  assert.match(js, /slice\(0,60\)/);
+  assert.match(js, /esc\(e\.title\)/);
+  assert.match(css, /\.ls-timeline\s*\{/);
+  assert.match(css, /\.ls-timeline-item:last-child::before/);
+});
