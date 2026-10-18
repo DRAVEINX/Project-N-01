@@ -387,7 +387,7 @@ export async function createApiServer(options = {}) {
         const role = String(body.role || "");
         const scopes = Array.isArray(body.scopes) ? [...new Set(body.scopes.filter(v => SCOPES.has(v)))] : [];
         if (!emailPattern.test(email) || !ROLES.has(role) || !scopes.length) { send(res, 400, { error: "valid-email-role-and-scopes-required" }); return; }
-        if (!deliveryUrl) { send(res, 503, { error: "invite-delivery-not-configured", message: "Configure PROJECT_N01_DELIVERY_WEBHOOK_URL before creating remote invitations." }); return; }
+        if (!deliveryUrl || !publicAppUrl) { send(res, 503, { error: "invite-delivery-not-configured", message: "Configure PROJECT_N01_DELIVERY_WEBHOOK_URL and PROJECT_N01_PUBLIC_APP_URL before creating remote invitations." }); return; }
         const rawToken = token();
         const invite = { id: id(), tokenHash: hash(rawToken), ownerId: auth.user.id, email, role, scopes, createdAt: nowIso(), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), acceptedBy: null };
         db.invites.push(invite);
