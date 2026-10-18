@@ -330,3 +330,25 @@ test("failed passphrase-save storage write preserves the active session and data
   assert.deepEqual(vault.read(), { current: "keep" });
   assert.equal(vault.isUnlocked, true);
 });
+
+
+test("export rejects malformed stored JSON with a clear error", async () => {
+  const storage = new MemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { private: "keep" });
+  storage.setItem("test-vault", "{malformed");
+
+  assert.throws(() => vault.exportEnvelope(), /Stored vault is invalid/);
+  assert.equal(storage.getItem("test-vault"), "{malformed");
+});
+
+test("export returns a detached envelope object", async () => {
+  const storage = new MemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { private: "keep" });
+  const original = storage.getItem("test-vault");
+  const exported = vault.exportEnvelope();
+  exported.ciphertext = "modified";
+
+  assert.equal(storage.getItem("test-vault"), original);
+});
