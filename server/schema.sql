@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS n01_users (
   mfa_secret_encrypted TEXT,
   mfa_pending_secret_encrypted TEXT,
   mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  email_verified_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -79,3 +80,13 @@ CREATE TABLE IF NOT EXISTS n01_consents (
   CHECK (owner_user_id <> viewer_user_id)
 );
 CREATE INDEX IF NOT EXISTS n01_consents_active ON n01_consents(household_id, owner_user_id) WHERE revoked_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS n01_email_verifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES n01_users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS n01_email_verify_user ON n01_email_verifications(user_id, expires_at);
