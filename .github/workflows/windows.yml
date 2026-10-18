@@ -1,6 +1,7 @@
 name: Project N-01 Windows MSI
 
 on:
+  pull_request:
   push:
     branches: [main]
     paths:
