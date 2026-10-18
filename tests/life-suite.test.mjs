@@ -78,6 +78,15 @@ test("client can report a green, orange or red mood and reports are stored with 
   assert.match(css, /\.ls-traffic-red/);
 });
 
+test("role policy hides caregiver portal and profile administration from client role", () => {
+  assert.match(js, /function roleCanAccessTab\(tab, profile = currentProfile\(\)\)/);
+  assert.match(js, /if \(tab === "roles"\) return isAdmin/);
+  assert.match(js, /if \(tab === "care" \|\| tab === "roster"\) return isAdmin \|\| isCaregiver/);
+  assert.match(js, /filter\(x => roleCanAccessTab\(x\[0\]\)\)/);
+  assert.match(js, /if \(!roleCanAccessTab\(activeTab\)\) activeTab = "dashboard"/);
+  assert.match(js, /roleCanAccessTab\(el\.dataset\.lsTab\)/);
+});
+
 test("profiles, revocable consent and local invitation groundwork exist", () => {
   assert.match(js, /consentForm/);
   assert.match(js, /revoke-consent/);
