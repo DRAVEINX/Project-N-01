@@ -35,7 +35,7 @@
         }
       ],
       "artifactName": "NovaLife-0.1.0-x64.msi",
-      "icon": "build/icon.svg"
+      "icon": "build/icon.ico"
     },
     "msi": {
       "perMachine": false,
