@@ -7,6 +7,9 @@ const js = await readFile(new URL("../src/life-suite.js", import.meta.url), "utf
 const css = await readFile(new URL("../src/life-suite.css", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 const workflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
+const androidWorkflow = await readFile(new URL("../.github/workflows/android.yml", import.meta.url), "utf8");
+const androidVariantScript = await readFile(new URL("../scripts/configure-android-build-variants.mjs", import.meta.url), "utf8");
+const baseStyles = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 const desktopMain = await readFile(new URL("../desktop/main.cjs", import.meta.url), "utf8");
 const desktopPackage = JSON.parse(await readFile(new URL("../desktop/package.json", import.meta.url), "utf8"));
 const windowsWorkflow = await readFile(new URL("../.github/workflows/windows.yml", import.meta.url), "utf8");
@@ -128,6 +131,19 @@ test("sensitive module never writes readable personal records as standalone loca
   assert.doesNotMatch(js, /localStorage\.setItem\(["'](?:project-n-01-(?:journal|mood|appointments|contacts))/);
   assert.match(js, /lockVault/);
   assert.match(js, /AUTO_LOCK_MS = 5 \* 60 \* 1000/);
+});
+
+test("Android phone and tablet have separate installable build variants and responsive tablet layout", () => {
+  assert.match(androidVariantScript, /applicationIdSuffix "\.phone"/);
+  assert.match(androidVariantScript, /applicationIdSuffix "\.tablet"/);
+  assert.match(androidVariantScript, /Project N-01 Telefoon/);
+  assert.match(androidVariantScript, /Project N-01 Tablet/);
+  assert.match(androidWorkflow, /assemblePhoneDebug assembleTabletDebug/);
+  assert.match(androidWorkflow, /assemblePhoneRelease bundlePhoneRelease assembleTabletRelease bundleTabletRelease/);
+  assert.match(androidWorkflow, /project-n-01-phone-release-candidate/);
+  assert.match(androidWorkflow, /project-n-01-tablet-release-candidate/);
+  assert.match(baseStyles, /@media \(min-width:761px\) and \(max-width:900px\)/);
+  assert.match(workflow, /node --check scripts\/configure-android-build-variants\.mjs/);
 });
 
 test("Windows desktop MSI and iOS archive pipelines are configured separately", () => {
