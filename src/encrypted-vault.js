@@ -118,7 +118,16 @@ export class EncryptedVault {
   exportEnvelope() {
     const raw = this.storage.getItem(this.storageKey);
     if (raw === null) throw new Error("Vault does not exist.");
-    return JSON.parse(raw);
+    let envelope;
+    try {
+      envelope = JSON.parse(raw);
+    } catch {
+      throw new Error("Stored vault is invalid.");
+    }
+    if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)) {
+      throw new Error("Stored vault is invalid.");
+    }
+    return cloneJson(envelope);
   }
 
   async restoreEnvelope(passphrase, envelope) {
