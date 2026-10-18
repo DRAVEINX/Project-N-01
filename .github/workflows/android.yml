@@ -2,7 +2,7 @@ name: Project N-01 Android build
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/novalife-care-portals]
     paths:
       - "index.html"
       - "offline.html"
@@ -115,8 +115,34 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: node scripts/configure-android-signing.mjs
 
+      - name: Require release signing configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'signingConfig signingConfigs.release' android/app/build.gradle
+          test -s android/app/upload-key.jks
+
       - name: Build phone and tablet release APKs and app bundles
         run: cd android && ./gradlew --no-daemon --stacktrace assemblePhoneRelease bundlePhoneRelease assembleTabletRelease bundleTabletRelease
+
+      - name: Verify signed release APKs and app bundles
+        shell: bash
+        run: |
+          set -euo pipefail
+          phone_apk="android/app/build/outputs/apk/phone/release/app-phone-release.apk"
+          tablet_apk="android/app/build/outputs/apk/tablet/release/app-tablet-release.apk"
+          phone_aab="android/app/build/outputs/bundle/phoneRelease/app-phone-release.aab"
+          tablet_aab="android/app/build/outputs/bundle/tabletRelease/app-tablet-release.aab"
+          test -s "$phone_apk"
+          test -s "$tablet_apk"
+          test -s "$phone_aab"
+          test -s "$tablet_aab"
+          apksigner verify --verbose "$phone_apk"
+          apksigner verify --verbose "$tablet_apk"
+          jarsigner -verify "$phone_aab"
+          jarsigner -verify "$tablet_aab"
+          sha256sum "$phone_apk" "$tablet_apk" "$phone_aab" "$tablet_aab" > android-release-SHA256SUMS.txt
+          cat android-release-SHA256SUMS.txt
 
       - name: Upload phone release candidates
         uses: actions/upload-artifact@v4
@@ -125,6 +151,14 @@ jobs:
           path: |
             android/app/build/outputs/apk/phone/release/*.apk
             android/app/build/outputs/bundle/phoneRelease/*.aab
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload release checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-n-01-release-checksums
+          path: android-release-SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
 
