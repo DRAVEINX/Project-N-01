@@ -1,57 +1,47 @@
 # Project N-01
 
-An independent, accessibility-first daily-life companion for Android phones, Android tablets, and Windows. This is a temporary project codename; the public product name will be selected after trademark, app-store, and domain checks.
+An independent, accessibility-first daily-life companion for Android phones, Android tablets, and Windows. This remains a temporary project codename; choose the public product name after trademark, app-store and domain checks.
 
 ## Principles
 - Calm, predictable interfaces with adjustable density and text size.
 - Dutch and English from the start.
 - Core daily-planning and self-support features intended to remain free.
 - Privacy by default: personal notes and feelings are not shared automatically.
-- Accessibility: keyboard support, semantic controls, reduced-motion support, and screen-reader-friendly labels.
+- Accessibility: keyboard support, semantic controls, reduced-motion support and screen-reader-friendly labels.
 - No medical claims; the app supports daily routines and communication and is not a replacement for professional care.
 
 ## Current stage
-The repository contains a responsive web prototype and a new Daily Life Suite module accessible from “Mijn leven / My life”. The suite provides calendar day/week/month views, appointment create/edit/delete with same-start duplicate blocking and overlap confirmation, support-worker names/photos and dated shifts, mood check-ins, saved journal entries, saved drawings, step-by-step guides with a photo and audio attachment, trusted contact actions, local profiles and consent records, reminder controls, search, encrypted backup/restore and data deletion. The suite stores its own records inside a passphrase-protected AES-256-GCM encrypted local envelope and locks after five minutes of inactivity or when the page is hidden. Existing routine storage and daily checklist data remain separate: daily checklist progress and accessibility preferences in the original app are still unencrypted. The old notes view remains temporary; the new suite has its own encrypted journal and drawing store. This is still a browser/Capacitor web-content prototype, not a production-ready product or a verified native Windows/iOS release. Browser reminders only run while the suite is open and unlocked. Secure cross-device identity, real remote invitations, background scheduled notifications, Android-native key storage and independent security/accessibility review remain open work; local profiles/consent records are not a substitute for authenticated separate accounts.
+
+The repository contains the original responsive prototype and the Daily Life Suite, plus a separate account/synchronization workspace on the feature branch. New local tools include an emergency plan, goals and progress, small document attachments in the encrypted local vault, absence and handover notes for support workers, opt-in downloadable weekly reports, local restore checkpoints, appointment change history, all-day appointments, travel time, simple mode, speech output/recognition and native notification scheduling.
+
+The feature branch also adds optional Supabase Auth sign-up/login/password recovery, TOTP screens, expiring caregiver invitation metadata and encrypted whole-vault snapshot uploads. These require a user-owned Supabase project and the SQL migration in supabase/migrations before they can run. This is not yet production-ready: snapshot sync is not per-record realtime merging, and an invited caregiver is not yet given the ability to decrypt/share the owner's personal vault. Email delivery and real account setup have not been configured here.
+
+The Life Suite records are stored in a passphrase-protected AES-256-GCM encrypted envelope with an automatic five-minute lock. Important limitation: legacy routine completion/progress and global accessibility preferences remain in separate, unencrypted browser storage until their migration is completed and tested. Native reminder scheduling still requires real-device testing for permissions, app close/reboot, daylight-saving and time-zone behavior. A signed Windows installer or signed iOS/App Store release has not been verified; a green build alone is not production readiness.
 
 ## Run locally
+
 Requires Node.js 22 or newer.
 
 ```bash
+npm install
 npm test
 npm run serve
 ```
 
-Then open http://localhost:4173. The serve script uses Node's built-in modules and has no runtime dependencies.
+Then open http://localhost:4173.
 
-## Current feature implementation
-- The new Daily Life Suite is integrated as a separate view, preserving the original home, routines, calm, communication, notes and settings views.
-- Suite records use a local encrypted vault. The user must create and remember a passphrase of at least 12 characters; the project does not have a recovery backdoor.
-- Agenda/roster, mood/journal/drawings, guides, contacts, local consent, reminders, search, and encrypted import/export now have a first implementation. See [feature status and limitations](docs/FEATURES-AND-LIMITATIONS.md).
-- Automated checks cover the module's wiring and privacy-sensitive storage rules. A green CI run is still required after the latest change, followed by real-device and accessibility testing.
+## Feature and rollout documentation
+- Feature status and limitations: docs/FEATURES-AND-LIMITATIONS.md
+- Data protection: docs/DATA-PROTECTION.md
+- Platform setup (Supabase, encrypted snapshots, native reminders): docs/PLATFORM-ENHANCEMENTS.md
 
 ## Remaining milestones
-1. Run CI and fix every failing test; validate phone/tablet layout manually.
-2. Add authenticated accounts and a secure server-side invitation/consent flow before claiming remote caregiver access.
-3. Implement native background reminders and platform key storage where appropriate.
-4. Implement authenticated cross-device sync with conflict review, then test Android phone/tablet, Windows packaging and any iOS target separately.
-5. Complete independent security, privacy and accessibility reviews before storing real sensitive data.
+1. Pass CI on the feature pull request, then validate on actual Android phone/tablet and Windows hardware/installations.
+2. Configure the target Supabase project, email/SMTP, password-recovery redirects and test separate accounts, MFA/AAL2 and RLS policies.
+3. Complete a dedicated key-sharing and per-record authorization design before claiming that caregivers can read private records.
+4. Test encrypted snapshot conflict resolution, offline changes, restore and migrate the legacy completion/preferences stores into appropriate protected storage.
+5. Verify native reminders after app close/reboot and through time-zone changes, and conduct independent security, privacy and accessibility reviews before production.
 
 ## Project boundaries
-This repository is separate from MoodPress, KlaarKompas, and CreatorNexus. Do not copy over or modify those projects as part of this work.
 
-
-**Local data controls:** Settings provides a confirmation-gated way to clear the app's local routine data, accessibility preferences and encrypted vault. This does not clear browser caches, exported files, or data outside this app.
-
-
-**Encrypted routine storage:** `src/secure-storage.js` and `src/encrypted-vault.js` provide PBKDF2-SHA-256/AES-256-GCM encryption and an in-memory derived-key session. The optional vault is connected to custom routine create/delete/import persistence. The passphrase and derived key are not written to storage; the in-memory session is dropped on lock. The original app’s daily progress and accessibility preferences remain unencrypted. The suite offers a separate encrypted recovery-file/code workflow, but there is no password reset or account recovery service and no independent security review. See [`docs/DATA-PROTECTION.md`](docs/DATA-PROTECTION.md) before treating this as suitable for sensitive data.
-
-
-**Routine migration:** `src/routine-migration.js` validates and copies existing routines into the vault without deleting the plaintext source. The UI supports vault setup/unlock, lock, encrypted downloads and a separate confirmation-gated plaintext cleanup action. Five-minute inactivity auto-lock and lock-on-hidden are implemented; recovery requires keeping both the downloaded encrypted recovery file and its separate recovery code. Password reset, real-device verification and independent security review remain open.
-
-
-## Platform build workflows
-- Android phone and tablet builds are produced as separate installable app flavors, with different package IDs and labels; the responsive tablet layout uses the wider workspace. Debug APKs and release APK/AAB candidates: [Android build](.github/workflows/android.yml).
-- Windows MSI: [Windows workflow](.github/workflows/windows.yml). The generated MSI is an unsigned test installer unless a signing certificate is configured separately.
-- iOS: [iOS archive workflow](.github/workflows/ios.yml). It produces an unsigned Xcode archive, not a signed IPA and not an App Store release.
-
-These workflows still need to complete successfully for the current source revision, and generated packages must be installed and tested on real devices. A successful build is not the same as a production-ready, signed release.
+This repository is separate from MoodPress, KlaarKompas and CreatorNexus. Do not copy over or modify those projects as part of this work.
