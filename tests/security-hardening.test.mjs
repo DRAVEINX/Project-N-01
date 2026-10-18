@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { signToken, verifyToken, newTotpSecret, verifyTotp, validateEncryptedEnvelope } from "../server/core.mjs";
 
@@ -66,4 +67,22 @@ test("email verification and password reset consume one-time tokens inside row-l
   assert.match(resetRoute, /UPDATE n01_sessions SET revoked_at=NOW\(\) WHERE user_id=\$1 AND revoked_at IS NULL/);
   assert.match(resetRoute, /finally \{ client\.release\(\); \}/);
   assert.doesNotMatch(resetRoute, /await pool\.query\("(?:BEGIN|COMMIT|ROLLBACK)"/);
+});
+
+
+test("signed tokens require valid issued-at and expiry claims", () => {
+  const secret = "unique-test-secret-with-at-least-thirty-two-bytes";
+  const now = Math.floor(Date.now() / 1000);
+  const signed = payload => {
+    const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+    const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    const content = header + "." + body;
+    return content + "." + createHmac("sha256", secret).update(content).digest("base64url");
+  };
+  assert.equal(verifyToken(signed({ sub: "u", iat: now, exp: now + 300 }), secret)?.sub, "u");
+  assert.equal(verifyToken(signed({ sub: "u", exp: now + 300 }), secret), null);
+  assert.equal(verifyToken(signed({ sub: "u", iat: now + 120, exp: now + 300 }), secret), null);
+  assert.equal(verifyToken(signed({ sub: "u", iat: now, exp: now }), secret), null);
+  assert.equal(verifyToken(signed({ sub: "u", iat: now + 10, exp: now + 5 }), secret), null);
+  assert.equal(verifyToken(signed({ sub: "u", iat: now, exp: now + 300 }), "short"), null);
 });
