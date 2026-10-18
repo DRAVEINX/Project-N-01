@@ -2,7 +2,7 @@ import http from "node:http";
 import { randomUUID } from "node:crypto";
 import pg from "pg";
 import {
-  normalizeEmail, hashPassword, verifyPassword, signToken, verifyToken,
+  normalizeEmail, validatePassword, hashPassword, verifyPassword, signToken, verifyToken,
   randomToken, hashToken, newTotpSecret, verifyTotp, totpUri,
   encryptMfaSecret, decryptMfaSecret, validateEncryptedEnvelope
 } from "./core.mjs";
@@ -12,7 +12,8 @@ const PORT = Number(process.env.PORT || 4180);
 const HOST = process.env.HOST || "0.0.0.0";
 const DATABASE_URL = process.env.DATABASE_URL || "";
 const JWT_SECRET = process.env.JWT_SECRET || "";
-const APP_ORIGIN = process.env.APP_ORIGIN || "";
+const ALLOWED_ORIGINS = String(process.env.APP_ORIGINS || process.env.APP_ORIGIN || "").split(",").map(value=>value.trim()).filter(Boolean);
+const APP_ORIGIN = ALLOWED_ORIGINS[0] || "";
 const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || APP_ORIGIN).replace(/\/$/, "");
 const RESET_MAIL_API_KEY = process.env.RESEND_API_KEY || "";
 const MAIL_FROM = process.env.MAIL_FROM || "";
@@ -29,7 +30,7 @@ const rateBuckets = new Map();
 
 if (!DATABASE_URL) throw new Error("DATABASE_URL must be configured before starting the API.");
 if (Buffer.byteLength(JWT_SECRET) < 32) throw new Error("JWT_SECRET must be at least 32 bytes of a unique random secret.");
-if (!APP_ORIGIN || !/^https?:\/\//.test(APP_ORIGIN)) throw new Error("APP_ORIGIN must be the exact HTTPS app origin (or localhost during development).");
+if (!ALLOWED_ORIGINS.length || ALLOWED_ORIGINS.some(origin=>{try{const parsed=new URL(origin);return parsed.origin!==origin || !(parsed.protocol==="https:" || parsed.protocol==="capacitor:" && parsed.hostname==="localhost" || parsed.protocol==="http:" && ["localhost","127.0.0.1"].includes(parsed.hostname));}catch{return true;}})) throw new Error("APP_ORIGINS must contain exact HTTPS origins (or localhost/capacitor://localhost for development).");
 if (!PUBLIC_APP_URL) throw new Error("PUBLIC_APP_URL must point to the app's public URL.");
 
 const dummyHash = await hashPassword("InvalidDummyPasswordForTimingOnly9182");
@@ -41,7 +42,7 @@ function reply(res, status, value) {
   res.end(body);
 }
 function rateLimit(req, res, name, max = 12, windowMs = 15 * 60_000) {
-  const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+  const ip = String(req.socket.remoteAddress || "unknown");
   const key = name + ":" + ip;
   const now = Date.now();
   let bucket = rateBuckets.get(key);
@@ -138,7 +139,7 @@ function requireRole(role, allowed) {
 async function runRoute(req, res, url) {
   const path = url.pathname;
   const method = req.method || "GET";
-  if (method === "OPTIONS") { res.writeHead(204, { "access-control-allow-origin": APP_ORIGIN, "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS", "access-control-allow-headers": "Content-Type, Authorization, If-Match", "access-control-max-age": "600", "vary": "Origin" }); return res.end(); }
+  if (method === "OPTIONS") { const origin=req.headers.origin;res.writeHead(204, { "access-control-allow-origin": origin&&ALLOWED_ORIGINS.includes(origin)?origin:APP_ORIGIN, "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS", "access-control-allow-headers": "Content-Type, Authorization, If-Match", "access-control-max-age": "600", "vary": "Origin" }); return res.end(); }
   if (path === "/health" && method === "GET") {
     try { await pool.query("SELECT 1"); return reply(res, 200, { status: "ok", service: "project-n-01-cloud-api" }); }
     catch { return reply(res, 503, { status: "unavailable" }); }
@@ -147,7 +148,7 @@ async function runRoute(req, res, url) {
     if (!rateLimit(req, res, "register", 5)) return;
     const body = await readBody(req);
     let email, name, password;
-    try { email = normalizeEmail(body.email); name = validateLabel(body.displayName, 80); password = body.password; await hashPassword(password); }
+    try { email = normalizeEmail(body.email); name = validateLabel(body.displayName, 80); password = body.password; validatePassword(password); }
     catch (err) { return reply(res, 400, { error: err.message === "password-policy" ? "password-policy" : "invalid-input", message: "Check the email, name and password requirements (14+ characters including lower-case, upper-case and a number)." }); }
     const passwordHash = await hashPassword(password);
     let inserted;
@@ -243,6 +244,23 @@ async function runRoute(req, res, url) {
     const name = validateLabel(body.displayName,80);
     const updated = await pool.query("UPDATE n01_users SET display_name=$1,updated_at=NOW() WHERE id=$2 RETURNING id,email,display_name,mfa_enabled", [name,user.user_id]);
     return reply(res, 200, { user: { id:updated.rows[0].id,email:updated.rows[0].email,displayName:updated.rows[0].display_name,mfaEnabled:updated.rows[0].mfa_enabled } });
+  }
+  if (path === "/v1/account" && method === "DELETE") {
+    if(!rateLimit(req,res,"delete-account",5))return;
+    const body=await readBody(req);
+    if(body.confirmation!=="DELETE")return reply(res,400,{error:"confirmation-required",message:"Type DELETE to confirm account deletion."});
+    const found=await pool.query("SELECT password_hash,mfa_enabled,mfa_secret_encrypted FROM n01_users WHERE id=$1",[user.user_id]);
+    if(!found.rowCount||!(await verifyPassword(body.password,found.rows[0].password_hash)))return reply(res,401,{error:"invalid-credentials",message:"Password is incorrect."});
+    if(found.rows[0].mfa_enabled){let valid=false;try{valid=verifyTotp(decryptMfaSecret(found.rows[0].mfa_secret_encrypted,JWT_SECRET),body.totp);}catch{}if(!valid)return reply(res,401,{error:"mfa-required-or-invalid",message:"Enter the current authenticator code."});}
+    const client=await pool.connect();
+    try{
+      await client.query("BEGIN");
+      await client.query("DELETE FROM n01_household_invites WHERE created_by=$1",[user.user_id]);
+      await client.query("DELETE FROM n01_households WHERE created_by=$1",[user.user_id]);
+      await client.query("DELETE FROM n01_users WHERE id=$1",[user.user_id]);
+      await client.query("COMMIT");
+    }catch(e){await client.query("ROLLBACK");throw e;}finally{client.release();}
+    return reply(res,200,{deleted:true,message:"Account and encrypted cloud data deleted. Local device data and downloaded exports must be cleared separately."});
   }
   if (path === "/v1/auth/mfa/setup" && method === "POST") {
     if (!rateLimit(req,res,"mfa-setup",5)) return;
@@ -389,8 +407,8 @@ async function runRoute(req, res, url) {
 const server = http.createServer(async (req,res)=>{
   res.setHeader("x-content-type-options","nosniff");
   const origin=req.headers.origin;
-  if(origin===APP_ORIGIN){
-    res.setHeader("access-control-allow-origin",APP_ORIGIN);
+  if(origin&&ALLOWED_ORIGINS.includes(origin)){
+    res.setHeader("access-control-allow-origin",origin);
     res.setHeader("vary","Origin");
   }else if(origin){
     return reply(res,403,{error:"origin-not-allowed"});
