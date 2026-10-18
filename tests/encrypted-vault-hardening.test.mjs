@@ -239,3 +239,16 @@ test("save refuses to write if the stored vault disappears during the operation"
   assert.deepEqual(vault.read(), { current: "keep" });
 });
 
+test("vault rejects non-canonical base64 in stored encrypted envelopes", async () => {
+  const storage = new MemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { private: "keep" });
+  const envelope = JSON.parse(storage.getItem("test-vault"));
+  envelope.salt = envelope.salt.replace(/=+$/, "");
+  storage.setItem("test-vault", JSON.stringify(envelope));
+
+  const reopened = new EncryptedVault(storage, "test-vault");
+  await assert.rejects(reopened.unlock(passphrase), /Invalid encrypted data format/);
+  assert.equal(reopened.isUnlocked, false);
+});
+
