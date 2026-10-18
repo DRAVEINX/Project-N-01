@@ -418,7 +418,7 @@
     if(file && file.matches('input[type="file"]')&&file.files && file.files[0]&&file.files[0].size>MAX_FILE_BYTES){file.value="";status("Bestand is groter dan 512 KB.",true);}
   });
   window.addEventListener("projectn-vault-state",event=>{
-    if(event.detail && event.detail.unlocked){render();const p=getProfessional();if(p&&p.accessibility)applyAccess(p.accessibility);if(accountToken && knownServerRevision!==null) syncPush();}
+    if(event.detail && event.detail.unlocked){render();const p=getProfessional();if(p&&p.accessibility)applyAccess(p.accessibility);}
     else render();
   });
   window.addEventListener("projectn-vault-saved",()=>{
