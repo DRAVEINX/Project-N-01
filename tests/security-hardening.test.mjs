@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { signToken, verifyToken, newTotpSecret, verifyTotp, validateEncryptedEnvelope } from "../server/core.mjs";
 
 const validEnvelope = () => ({
@@ -42,4 +43,27 @@ test("invalid TOTP formats are rejected without throwing", () => {
   for (const code of ["", "12345", "1234567", "12a456", null]) {
     assert.equal(verifyTotp(secret, code), false);
   }
+});
+
+
+test("email verification and password reset consume one-time tokens inside row-locked transactions", async () => {
+  const server = await readFile(new URL("../server/server.mjs", import.meta.url), "utf8");
+  const verifyStart = server.indexOf('if (path === "/v1/auth/verify-email" && method === "POST")');
+  const verifyEnd = server.indexOf('if (path === "/v1/auth/resend-verification" && method === "POST")', verifyStart);
+  const verifyRoute = server.slice(verifyStart, verifyEnd);
+  assert.match(verifyRoute, /const client = await pool\.connect\(\)/);
+  assert.match(verifyRoute, /FOR UPDATE OF v/);
+  assert.match(verifyRoute, /UPDATE n01_email_verifications SET used_at=NOW\(\) WHERE id=\$1 AND used_at IS NULL AND expires_at>NOW\(\) RETURNING id/);
+  assert.match(verifyRoute, /finally \{ client\.release\(\); \}/);
+  assert.doesNotMatch(verifyRoute, /await pool\.query\("(?:BEGIN|COMMIT|ROLLBACK)"/);
+
+  const resetStart = server.indexOf('if (path === "/v1/auth/reset-password" && method === "POST")');
+  const resetEnd = server.indexOf('if (path === "/v1/auth/logout" && method === "POST")', resetStart);
+  const resetRoute = server.slice(resetStart, resetEnd);
+  assert.match(resetRoute, /const client = await pool\.connect\(\)/);
+  assert.match(resetRoute, /n01_password_resets WHERE token_hash=\$1 AND used_at IS NULL AND expires_at>NOW\(\) FOR UPDATE/);
+  assert.match(resetRoute, /UPDATE n01_password_resets SET used_at=NOW\(\) WHERE id=\$1 AND used_at IS NULL AND expires_at>NOW\(\) RETURNING id/);
+  assert.match(resetRoute, /UPDATE n01_sessions SET revoked_at=NOW\(\) WHERE user_id=\$1 AND revoked_at IS NULL/);
+  assert.match(resetRoute, /finally \{ client\.release\(\); \}/);
+  assert.doesNotMatch(resetRoute, /await pool\.query\("(?:BEGIN|COMMIT|ROLLBACK)"/);
 });
