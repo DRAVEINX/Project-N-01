@@ -120,7 +120,7 @@ test("mobile-first accessible styling and offline cache include the new module",
   assert.match(css, /ls-high-contrast/);
   assert.match(css, /ls-large-text/);
   assert.match(css, /ls-reduced-motion/);
-  assert.match(serviceWorker, /project-n-01-prototype-v15/);
+  assert.match(serviceWorker, /project-n-01-prototype-v16/);
   assert.match(serviceWorker, /"\/src\/life-suite\.js"/);
   assert.match(serviceWorker, /"\/src\/life-suite\.css"/);
   assert.match(workflow, /node --check src\/life-suite\.js/);
@@ -159,4 +159,29 @@ test("Windows desktop MSI and iOS archive pipelines are configured separately", 
   assert.match(iosWorkflow, /CODE_SIGNING_ALLOWED=NO/);
   assert.match(iosWorkflow, /project-n-01-ios-unsigned-archive/);
   assert.equal(packageConfig.devDependencies["@capacitor/ios"], "8.5.3");
+});
+
+test("professional workspace is integrated with encrypted vault, account API and extra tools", async () => {
+  const professional = await readFile(new URL("../src/professional-suite.js", import.meta.url), "utf8");
+  const professionalCss = await readFile(new URL("../src/professional-suite.css", import.meta.url), "utf8");
+  const api = await readFile(new URL("../server/api.mjs", import.meta.url), "utf8");
+  assert.match(html, /id="professional-suite-root"/);
+  assert.match(html, /src\/professional-suite\.js/);
+  assert.match(html, /src\/professional-suite\.css/);
+  assert.match(serviceWorker, /project-n-01-prototype-v16/);
+  assert.match(serviceWorker, /"\/src\/professional-suite\.js"/);
+  for (const feature of ["goalsView", "emergencyView", "supportView", "documentsView", "reportsView", "accessibilityView", "versionsView", "accountsView"]) {
+    assert.match(professional, new RegExp("function " + feature + "\\("));
+  }
+  assert.match(professional, /exportCalendar/);
+  assert.match(professional, /SpeechRecognition/);
+  assert.match(professional, /exportEncryptedEnvelope/);
+  assert.match(professional, /sync-conflict/);
+  assert.match(professionalCss, /pn-large-controls/);
+  assert.match(api, /scryptCallback/);
+  assert.match(api, /twoFactorEnabled/);
+  assert.match(api, /password-reset\/request/);
+  assert.match(api, /baseRevision/);
+  assert.match(api, /team\/invite/);
+  assert.match(api, /DELETE.*\/api\/account/);
 });
