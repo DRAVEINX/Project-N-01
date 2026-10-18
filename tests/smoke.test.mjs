@@ -196,14 +196,16 @@ test("service worker limits caching to same-origin GET requests", () => {
   assert.match(serviceWorker, /caches\.match\("\/index\.html"\)/);
 });
 
-test("preferences persist locally without persisting private notes", () => {
+test("accessibility preferences use the encrypted vault and private quick notes remain unsaved", () => {
   assert.match(js, /project-n-01-preferences-v1/);
-  assert.match(js, /localStorage\.setItem\(preferenceKey/);
+  assert.match(js, /secure\.saveAppPreferences\(value\)/);
+  assert.match(js, /secure\.getAppPreferences\(\)/);
   assert.ok(js.includes('largeText: $("#large-text").checked'));
   assert.ok(js.includes('reducedMotion: $("#less-motion").checked'));
   assert.ok(js.includes('quietView: $("#quiet-view").checked'));
-  assert.match(html, /voorkeuren worden lokaal in deze browser bewaard/i);
-  assert.match(html, /notities worden niet opgeslagen/i);
+  assert.match(js, /Voorkeuren worden in de versleutelde persoonlijke kluis opgeslagen/);
+  assert.match(js, /Preferences are stored in the encrypted personal vault/);
+  assert.doesNotMatch(js, /localStorage\.setItem\(preferenceKey/);
   assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
 });
 
