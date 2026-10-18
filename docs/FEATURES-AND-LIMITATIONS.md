@@ -39,3 +39,10 @@ The suite's encryption does **not** cover existing routine progress or accessibi
 5. Validate consent filtering and confirm profiles do not imply real authentication.
 6. Test Android phone and tablet layout, offline startup, TalkBack and touch target sizes.
 7. Complete threat-model, privacy and independent security review before production use.
+
+
+## NovaLife Personal Studio — accent themes
+- [x] Added four selectable accent palettes (Nova purple, ocean blue, rose, emerald) in Settings.
+- [x] Palette selection is stored separately from existing accessibility preferences and applied on startup.
+- [x] Dutch and English labels are included; the feature does not touch encrypted personal-suite records.
+- [ ] Verify appearance and contrast on real Android phone/tablet and Windows displays before public release.
