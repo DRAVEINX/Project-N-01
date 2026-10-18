@@ -414,3 +414,11 @@ test("NovaLife dashboard summarizes completion progress for today's weekly plan"
   assert.match(js, /<progress class="ls-plan-progress" max=/);
   assert.match(js, /aria-label=.*dayPlanner/);
 });
+
+
+test("NovaLife daily plan progress has visible and accessible progress styling", () => {
+  assert.match(css, /\.ls-plan-progress-wrap\s*\{/);
+  assert.match(css, /\.ls-plan-progress\s*\{[^}]*width:100%/);
+  assert.match(css, /\.ls-plan-progress::-webkit-progress-value/);
+  assert.match(css, /\.ls-plan-progress::-moz-progress-bar/);
+});
