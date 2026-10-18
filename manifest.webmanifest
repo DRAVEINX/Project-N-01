@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Project N-01 — jouw dag, op jouw manier",
-  "short_name": "Project N-01",
-  "description": "Een rustige, toegankelijke plek voor overzicht, routines en communicatie.",
+  "name": "NovaLife — jouw leven, jouw zorg, jouw overzicht",
+  "short_name": "NovaLife",
+  "description": "Jouw persoonlijke overzicht voor het dagelijks leven, zorg, ondersteuning en planning.",
   "lang": "nl",
   "start_url": "/",
   "scope": "/",
