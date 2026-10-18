@@ -38,6 +38,12 @@ jobs:
           npm test
           npm run build:mobile
 
+      - name: Verify current web assets for iOS
+        run: |
+          test -s www/src/life-suite.js
+          test -s www/src/styles.css
+          grep -F 'project-n-01-prototype-v15' www/service-worker.js
+
       - name: Add and sync iOS platform
         run: |
           npx cap add ios
