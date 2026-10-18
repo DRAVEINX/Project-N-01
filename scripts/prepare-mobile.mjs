@@ -18,4 +18,15 @@ for (const directory of directories) {
   await cp(join(projectRoot, directory), join(outputDir, directory), { recursive: true });
 }
 
-console.log("Mobile web assets prepared in www/.");
+// Package native notifications into the offline web bundle. A dynamic import in
+// life-suite.js only loads this module when running inside a native Capacitor shell.
+const { build } = await import("esbuild");
+await build({
+  entryPoints: [join(projectRoot, "src/native-notifications-entry.js")],
+  bundle: true,
+  format: "esm",
+  platform: "browser",
+  target: ["es2022"],
+  outfile: join(outputDir, "src/native-notifications.bundle.js"),
+});
+console.log("Mobile web assets and native notification bridge prepared in www/.");
