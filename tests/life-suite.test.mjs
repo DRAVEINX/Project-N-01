@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+const appStyles = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 const appIcon = await readFile(new URL("../assets/app-icon.svg", import.meta.url), "utf8");
 const windowsIconScript = await readFile(new URL("../scripts/generate-windows-icon.mjs", import.meta.url), "utf8");
 const portal = await readFile(new URL("../src/account-portal.js", import.meta.url), "utf8");
@@ -340,4 +342,17 @@ test("data-protection documentation matches the encrypted Daily Life Suite imple
   assert.match(dataProtection, /original daily checklist\/routine progress and accessibility preferences remain outside this suite vault/i);
   assert.doesNotMatch(dataProtection, /Notes and drawings are currently temporary and are not persisted/);
   assert.match(dataProtection, /Profiles, consent and invite codes are currently \*\*local workflow scaffolding\*\*/);
+});
+
+
+test("NovaLife Personal Studio offers persistent accessible accent themes in Dutch and English", () => {
+  assert.match(html, /id="accent-theme"/);
+  for (const theme of ["lilac", "ocean", "rose", "emerald"]) assert.match(html, new RegExp('value="' + theme + '"'));
+  assert.match(app, /novalife-accent-theme-v1/);
+  assert.match(app, /function applyAccentTheme\(value, persist = false\)/);
+  assert.match(app, /accentTheme:"Kleurthema"/);
+  assert.match(app, /accentTheme:"Accent theme"/);
+  assert.match(appStyles, /body\[data-accent-theme="ocean"\]/);
+  assert.match(appStyles, /body\[data-accent-theme="rose"\]/);
+  assert.match(appStyles, /body\[data-accent-theme="emerald"\]/);
 });
