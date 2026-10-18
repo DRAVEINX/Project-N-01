@@ -118,7 +118,7 @@
   }
   function defaultState() {
     return {
-      schema:1, createdAt:new Date().toISOString(), currentProfileId:"self",
+      schema:1, createdAt:new Date().toISOString(), currentProfileId:"self", dailyProgress:null, appPreferences:{language:"nl",largeText:false,reducedMotion:false,quietView:false},
       profiles:[{id:"self",name:lang === "nl" ? "Mijn profiel" : "My profile",role:"self",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}],
       appointments:[], workers:[], shifts:[], weeklyPlans:[], goals:[], documents:[], moods:[], journal:[], drawings:[], guides:[], contacts:[], reminders:[], consents:[], invites:[], audit:[], notificationLog:[], preferences:{largeText:false,highContrast:false,reducedMotion:false,quietHoursStart:"22:00",quietHoursEnd:"07:00",showReminderDetails:false}
     };
@@ -129,6 +129,8 @@
     const arrKeys = ["profiles","appointments","workers","shifts","weeklyPlans","goals","documents","moods","journal","drawings","guides","contacts","reminders","consents","invites","audit","notificationLog"]
     arrKeys.forEach(key => { blank[key] = Array.isArray(raw[key]) ? raw[key].filter(x => x && typeof x === "object") : []; });
     blank.schema = 1;
+    blank.dailyProgress = raw.dailyProgress && typeof raw.dailyProgress === "object" ? raw.dailyProgress : null;
+    blank.appPreferences = Object.assign(blank.appPreferences,raw.appPreferences && typeof raw.appPreferences === "object" ? raw.appPreferences : {});
     blank.createdAt = typeof raw.createdAt === "string" ? raw.createdAt : blank.createdAt;
     blank.currentProfileId = typeof raw.currentProfileId === "string" ? raw.currentProfileId : "self";
     blank.preferences = Object.assign(blank.preferences, raw.preferences && typeof raw.preferences === "object" ? raw.preferences : {});
@@ -249,6 +251,7 @@
         await saveState(false);
         activeTab = "dashboard";
         renderApp();
+        window.dispatchEvent(new CustomEvent("project-n01-vault-unlocked"));
         startAutoLock();
         startReminderMonitor();
       } catch (error) {
@@ -890,7 +893,28 @@
     for(const item of events){lines.push("BEGIN:VEVENT","UID:"+escapeIcs(item.id)+"@project-n-01","DTSTAMP:"+stamp(item.updatedAt||item.createdAt||new Date().toISOString()));if(item.allDay){const d=dateAt(item.date);const end=new Date(d);end.setDate(end.getDate()+1);const token=x=>localDate(x).replace(/-/g,"");lines.push("DTSTART;VALUE=DATE:"+token(d),"DTEND;VALUE=DATE:"+token(end));}else{lines.push("DTSTART:"+stamp(item.date+"T"+item.start+":00"),"DTEND:"+stamp(item.date+"T"+item.end+":00");}lines.push("SUMMARY:"+escapeIcs(item.title));if(item.location)lines.push("LOCATION:"+escapeIcs(item.location));if(item.travelMinutes)lines.push("DESCRIPTION:"+escapeIcs("Reistijd: "+item.travelMinutes+" minuten"));lines.push("END:VEVENT");}
     lines.push("END:VCALENDAR");return lines.join("\r\n")+"\r\n";
   }
-  window.ProjectN01LifeSuite=Object.freeze({getWeeklyReport:weeklyReport,getCalendarIcs:calendarIcs,isUnlocked:()=>Boolean(state&&sessionKey)});
+  async function saveRoutineProgress(progress) {
+    if(!state||!sessionKey)throw new Error("Unlock the personal vault first.");
+    if(!progress||typeof progress!=="object"||typeof progress.date!=="string")throw new Error("Invalid routine progress.");
+    const tasks=Array.isArray(progress.tasks)?progress.tasks.slice(0,100).map(x=>x===true):[];
+    const routines={};
+    if(progress.routines&&typeof progress.routines==="object")for(const id of ["morning","afternoon","evening"]){const items=progress.routines[id];routines[id]=Array.isArray(items)?items.slice(0,100).map(x=>x===true):[];}
+    state.dailyProgress={date:progress.date,tasks,routines,updatedAt:new Date().toISOString()};
+    recordAudit("routine-progress-updated",progress.date);
+    return saveState(false);
+  }
+  function getRoutineProgress(){return state&&sessionKey&&state.dailyProgress?JSON.parse(JSON.stringify(state.dailyProgress)):null;}
+  async function saveAppPreferences(preferences) {
+    if(!state||!sessionKey)throw new Error("Unlock the personal vault first.");
+    const value=preferences&&typeof preferences==="object"?preferences:{};
+    state.appPreferences={language:value.language==="en"?"en":"nl",largeText:value.largeText===true,reducedMotion:value.reducedMotion===true,quietView:value.quietView===true};
+    state.preferences.largeText=state.appPreferences.largeText;
+    state.preferences.reducedMotion=state.appPreferences.reducedMotion;
+    recordAudit("accessibility-preferences-updated","");
+    return saveState(false);
+  }
+  function getAppPreferences(){return state&&sessionKey?JSON.parse(JSON.stringify(state.appPreferences||{})):null;}
+  window.ProjectN01LifeSuite=Object.freeze({getWeeklyReport:weeklyReport,getCalendarIcs:calendarIcs,isUnlocked:()=>Boolean(state&&sessionKey),getRoutineProgress,saveRoutineProgress,getAppPreferences,saveAppPreferences});
   if(!window.crypto||!crypto.subtle){renderLocked(true,t("unsupported"));return;}
   let hasVault=false;try{hasVault=localStorage.getItem(STORAGE_KEY)!==null;}catch{}
   renderLocked(!hasVault,"");
