@@ -149,3 +149,14 @@
 .ls-plan-progress::-webkit-progress-bar { background:var(--line); border-radius:999px; }
 .ls-plan-progress::-webkit-progress-value { background:var(--mint); border-radius:999px; }
 .ls-plan-progress::-moz-progress-bar { background:var(--mint); border-radius:999px; }
+
+.ls-timeline { position:relative; display:grid; gap:.8rem; margin-top:1rem; }
+.ls-timeline-item { position:relative; display:grid; grid-template-columns:1rem minmax(0,1fr); gap:.7rem; }
+.ls-timeline-item::before { content:""; position:absolute; left:.42rem; top:1.1rem; bottom:-.9rem; width:2px; background:var(--line); }
+.ls-timeline-item:last-child::before { display:none; }
+.ls-timeline-dot { position:relative; z-index:1; width:.9rem; height:.9rem; margin-top:.95rem; border-radius:50%; background:var(--mint); border:3px solid #1a1f30; box-shadow:0 0 0 1px var(--line); }
+.ls-timeline-card { min-width:0; padding:.85rem 1rem; border:1px solid var(--line); border-radius:13px; background:#ffffff04; overflow-wrap:anywhere; }
+.ls-timeline-card > strong { display:block; margin-top:.2rem; }
+.ls-timeline-card p { margin:.4rem 0 0; font-size:.84rem; line-height:1.5; }
+.ls-timeline-meta { display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem; color:var(--muted); font-size:.78rem; }
+.ls-timeline-type { color:var(--mint); font-size:.74rem !important; font-weight:750; }
