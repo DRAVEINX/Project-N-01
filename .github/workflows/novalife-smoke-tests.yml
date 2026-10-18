@@ -1,0 +1,27 @@
+name: NovaLife smoke tests
+
+on:
+  push:
+    branches:
+      - main
+      - feature/novalife-care-portals
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-tests:
+    name: Web and mobile asset checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run release smoke tests
+        run: npm test
