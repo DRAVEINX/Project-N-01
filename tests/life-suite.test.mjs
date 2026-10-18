@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const portal = await readFile(new URL("../src/account-portal.js", import.meta.url), "utf8");
+const history = await readFile(new URL("../src/version-history.js", import.meta.url), "utf8");
 const nativeBridge = await readFile(new URL("../src/native-notifications-entry.js", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/life-suite.js", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/life-suite.css", import.meta.url), "utf8");
@@ -176,4 +177,12 @@ test("account portal is wired and includes account recovery, MFA, sync and role 
   assert.match(portal, /Lokale gegevenscontrole/);
   assert.match(nativeBridge, /LocalNotifications\.schedule/);
   assert.match(nativeBridge, /quietStart/);
+});
+
+
+test("version history stores opaque ciphertext in IndexedDB rather than localStorage", () => {
+  assert.match(history, /indexedDB\.open/);
+  assert.match(history, /raw/);
+  assert.doesNotMatch(history, /decryptEnvelope|crypto\.subtle/);
+  assert.match(html, /src\/version-history\.js/);
 });
