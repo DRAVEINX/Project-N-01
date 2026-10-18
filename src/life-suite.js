@@ -142,6 +142,17 @@
   function currentProfile() {
     return state && state.profiles.find(p => p.id === state.currentProfileId) || (state && state.profiles[0]) || null;
   }
+  // UI-level role policy for the local prototype. Production permissions must
+  // also be enforced server-side; this helper is not an authentication boundary.
+  function roleCanAccessTab(tab, profile = currentProfile()) {
+    if (!profile) return false;
+    const role = profile.role || "self";
+    const isAdmin = role === "developer_admin" || role === "admin";
+    const isCaregiver = role === "caregiver" || role === "parent" || role === "guardian";
+    if (tab === "roles") return isAdmin;
+    if (tab === "care" || tab === "roster") return isAdmin || isCaregiver;
+    return ["dashboard","weekplan","agenda","mood","help","guides","reminders","data"].includes(tab) || isAdmin || isCaregiver;
+  }
   function scopeMatches(item) {
     return !item.profileId || item.profileId === state.currentProfileId;
   }
@@ -284,10 +295,11 @@
   }
   function topBar() {
     const p = currentProfile();
-    return '<div class="ls-app-head"><div><p class="ls-kicker">NOVALIFE</p><h3>' + esc(t("appTitle")) + '</h3><p>' + esc(t("appIntro")) + '</p></div><div class="ls-head-actions">' + select(t("activeProfile"), "active-profile", state.profiles.map(p => ({value:p.id,label:p.name + " · " + t(p.role)})), state.currentProfileId) + button(t("lock"), "lock", "secondary-button") + '</div></div>';
+    const profileControl = p && (p.role === "developer_admin" || p.role === "admin") ? select(t("activeProfile"), "active-profile", state.profiles.map(profile => ({value:profile.id,label:profile.name + " · " + t(profile.role)})), state.currentProfileId) : '<span class="ls-badge">' + esc(p ? t(p.role) : t("self")) + '</span>';
+    return '<div class="ls-app-head"><div><p class="ls-kicker">NOVALIFE</p><h3>' + esc(t("appTitle")) + '</h3><p>' + esc(t("appIntro")) + '</p></div><div class="ls-head-actions">' + profileControl + button(t("lock"), "lock", "secondary-button") + '</div></div>';
   }
   function tabBar() {
-    const tabs = [["dashboard","dashboard"],["weekplan","weekplan"],["agenda","agenda"],["roster","roster"],["mood","mood"],["care","care"],["roles","roles"],["help","help"],["guides","guides"],["reminders","reminders"],["data","data"]];
+    const tabs = [["dashboard","dashboard"],["weekplan","weekplan"],["agenda","agenda"],["roster","roster"],["mood","mood"],["care","care"],["roles","roles"],["help","help"],["guides","guides"],["reminders","reminders"],["data","data"]].filter(x => roleCanAccessTab(x[0]));
     return '<div class="ls-tabs" role="tablist" aria-label="' + esc(t("appTitle")) + '">' + tabs.map(x => tabButton(x[0], t(x[1]))).join("") + '</div>';
   }
   function visibleAppointmentList(date) {
@@ -376,12 +388,16 @@
     const editingDrawing = editingDrawingId ? state.drawings.find(d=>d.id===editingDrawingId) : null;
     const entries = visibleItems("journal","journal").slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,30);
     const drawings = visibleItems("drawings","journal").slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,30);
-    const moodHistory = visibleItems("moods","mood").slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
+    const moodHistory = visibleItems("moods","mood").filter(m=>!m.trafficLight).slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
+    const trafficReports = visibleItems("moods","mood").filter(m=>m.trafficLight).sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||"")).slice(0,20);
+    const trafficLabel = value => value === "green" ? "Groen · het gaat goed" : value === "orange" ? "Oranje · ik heb extra steun nodig" : "Rood · ik heb nu hulp nodig";
+    const trafficCards = trafficReports.length ? trafficReports.map(m=>'<article class="ls-item ls-traffic-item ls-traffic-' + esc(m.trafficLight) + '"><strong>' + esc(trafficLabel(m.trafficLight)) + '</strong><small>' + esc(new Date(m.createdAt).toLocaleString(lang==="nl"?"nl-NL":"en-GB")) + '</small><p>' + esc(m.trafficNote||"") + '</p></article>').join("") : '<p class="ls-empty">Nog geen groen/oranje/rood-meldingen.</p>';
     const entryCards = entries.length ? entries.map(e=>'<article class="ls-item"><div class="ls-item-top"><strong>' + esc(prettyDate(e.date) + " · " + e.title) + '</strong><div class="ls-actions">' + button(t("edit"),"edit-journal","secondary-button",'data-id="' + esc(e.id) + '"') + button(t("delete"),"delete-journal","secondary-button danger-button",'data-id="' + esc(e.id) + '"') + '</div></div><p>' + esc(e.text) + '</p>' + (e.audio ? '<audio controls preload="none" src="' + esc(e.audio) + '"></audio>' : "") + (e.drawing ? '<img class="ls-drawing-thumb" src="' + esc(e.drawing) + '" alt="' + esc(e.title) + '">' : "") + '</article>').join("") : '<p class="ls-empty">' + esc(t("noEntries")) + '</p>';
     const drawingCards = drawings.length ? drawings.map(d=>'<article class="ls-item"><div class="ls-item-top"><strong>' + esc(d.title) + '</strong><div class="ls-actions">' + button(t("edit"),"edit-drawing","secondary-button",'data-id="' + esc(d.id) + '"') + button(t("delete"),"delete-drawing","secondary-button danger-button",'data-id="' + esc(d.id) + '"') + '</div></div><img class="ls-drawing-thumb" src="' + esc(d.image) + '" alt="' + esc(d.title) + '"><small>' + esc(prettyDate(d.date)) + '</small></article>').join("") : '<p class="ls-empty">' + esc(t("noDrawings")) + '</p>';
     const activeMood = editingEntry ? state.moods.find(m=>m.journalId===editingEntry.id) : null;
     const moodPicker = moods.map(m=>'<label><input type="radio" name="mood" value="' + m.value + '"' + (activeMood&&activeMood.emoji===m.emoji?" checked":"") + '><span>' + m.label + '</span></label>').join("");
-    return panel(t("moodTitle"),'<div class="ls-mood-picker">' + moodPicker + '</div><form id="ls-journal-form" class="ls-form">' + field(t("title"),"title","text",editingEntry?editingEntry.title:"","maxlength='100'") + textarea(t("moodNote"),"text",editingEntry?editingEntry.text:"",4,"maxlength='4000'") + '<div class="ls-actions">' + button(t("audioRecord"),"record-journal","secondary-button") + button(t("stopRecord"),"stop-recording","secondary-button",'disabled') + (editingEntry?button(t("cancel"),"cancel-journal-edit","secondary-button"):"") + '</div><audio id="ls-journal-audio-preview" controls ' + ((draftJournalAudio||(editingEntry&&editingEntry.audio))?'':'hidden') + ' src="' + esc(draftJournalAudio||(editingEntry&&editingEntry.audio)||"") + '"></audio><p class="ls-muted" id="ls-audio-status" role="status" aria-live="polite"></p><button class="primary-button" type="submit">' + esc(editingEntry?t("edit"):t("saveEntry")) + '</button></form>') +
+    return panel("Mijn signaleringskleur",'<p class="ls-muted">Geef zelf aan hoe het met je gaat. Je kunt dit op ieder moment aanpassen.</p><form id="ls-traffic-report-form" class="ls-form"><label class="ls-field"><span>Hoe zit je er nu bij?</span><select name="trafficLight" required><option value="green">🟢 Groen — het gaat goed</option><option value="orange">🟠 Oranje — ik heb extra steun nodig</option><option value="red">🔴 Rood — ik heb nu hulp nodig</option></select></label>' + textarea("Wil je iets vertellen? (optioneel)","trafficNote","",3,"maxlength='1000'") + '<button class="primary-button" type="submit">Mijn gevoel doorgeven</button></form><div class="ls-card-list">' + trafficCards + '</div>') +
+      panel(t("moodTitle"),'<div class="ls-mood-picker">' + moodPicker + '</div><form id="ls-journal-form" class="ls-form">' + field(t("title"),"title","text",editingEntry?editingEntry.title:"","maxlength='100'") + textarea(t("moodNote"),"text",editingEntry?editingEntry.text:"",4,"maxlength='4000'") + '<div class="ls-actions">' + button(t("audioRecord"),"record-journal","secondary-button") + button(t("stopRecord"),"stop-recording","secondary-button",'disabled') + (editingEntry?button(t("cancel"),"cancel-journal-edit","secondary-button"):"") + '</div><audio id="ls-journal-audio-preview" controls ' + ((draftJournalAudio||(editingEntry&&editingEntry.audio))?'':'hidden') + ' src="' + esc(draftJournalAudio||(editingEntry&&editingEntry.audio)||"") + '"></audio><p class="ls-muted" id="ls-audio-status" role="status" aria-live="polite"></p><button class="primary-button" type="submit">' + esc(editingEntry?t("edit"):t("saveEntry")) + '</button></form>') +
       panel(t("drawingTitle"),field(t("drawingName"),"drawing-title","text",editingDrawing?editingDrawing.title:"","maxlength='100'") + '<canvas id="ls-drawing-canvas" width="900" height="500" aria-label="' + esc(t("drawingTitle")) + '" tabindex="0"></canvas><div class="ls-actions">' + button(t("clearCanvas"),"clear-canvas","secondary-button") + button(t("saveDrawing"),"save-drawing","primary-button") + (editingDrawing?button(t("cancel"),"cancel-drawing-edit","secondary-button"):"") + '</div>' + drawingCards) +
       panel(t("history"),'<div class="ls-card-list">' + entryCards + '</div>') +
       panel(t("history") + " · " + t("mood"),'<div class="ls-card-list">' + (moodHistory.length ? moodHistory.map(m=>'<article class="ls-item"><strong>' + esc(prettyDate(m.date)) + " " + esc(m.emoji) + '</strong><p>' + esc(m.note || "") + '</p></article>').join("") : '<p class="ls-empty">' + esc(t("noEntries")) + '</p>') + '</div>');
@@ -538,6 +554,7 @@
     function renderApp() {
     if (!state || !sessionKey) { renderLocked(localStorage.getItem(STORAGE_KEY) === null, ""); return; }
     lang = document.documentElement.lang === "en" ? "en" : "nl";
+    if (!roleCanAccessTab(activeTab)) activeTab = "dashboard";
     const content = activeTab === "weekplan" ? weekPlanView() : activeTab === "agenda" ? agendaView() : activeTab === "roster" ? rosterView() : activeTab === "mood" ? moodView() : activeTab === "care" ? careView() : activeTab === "roles" ? rolesView() : activeTab === "help" ? helpView() : activeTab === "guides" ? guidesView() : activeTab === "reminders" ? remindersView() : activeTab === "data" ? dataView() : dashboardView();
     root.innerHTML = topBar() + tabBar() + '<div class="ls-status-row"><p id="ls-status" role="status" aria-live="polite">' + esc(t("ready")) + '</p><p class="ls-network">' + esc(navigator.onLine ? t("online") : t("offline")) + '</p></div><div class="ls-content">' + content + '</div>';
     bindEvents();
@@ -609,7 +626,7 @@
     return result;
   }
     function bindEvents() {
-    $$("[data-ls-tab]").forEach(el=>el.addEventListener("click",()=>{activeTab=el.dataset.lsTab;renderApp();}));
+    $("[data-ls-tab]").forEach(el=>el.addEventListener("click",()=>{if(!roleCanAccessTab(el.dataset.lsTab)){activeTab="dashboard";renderApp();return;}activeTab=el.dataset.lsTab;renderApp();}));
     const profileSelect = $('select[name="active-profile"]');
     if (profileSelect) profileSelect.addEventListener("change",async()=>{state.currentProfileId=profileSelect.value;recordAudit("profile-switched",state.currentProfileId);await saveState(false);renderApp();});
     $$("[data-ls-action]").forEach(el=>el.addEventListener("click",()=>handleAction(el.dataset.lsAction,el.dataset.id,el)));
@@ -712,6 +729,16 @@
     });
         const shiftForm = $("#ls-shift-form");
     if (shiftForm) shiftForm.addEventListener("submit",async event=>{event.preventDefault();const v=formData(shiftForm);if(!v.workerId||!v.date||!v.start||!v.end||minutes(v.end)<=minutes(v.start)){setStatus(t("invalid"),true);return;}const editingId=shiftForm.dataset.editId;const old=editingId?state.shifts.find(s=>s.id===editingId):null;if(old&&!requireModify("roster",old))return;const item={id:editingId||uid("shift"),profileId:old?old.profileId:state.currentProfileId,workerId:v.workerId,date:v.date,start:v.start,end:v.end,createdAt:old?old.createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};state.shifts=state.shifts.filter(s=>s.id!==item.id);state.shifts.push(item);delete shiftForm.dataset.editId;recordAudit(old?"shift-updated":"shift-added",v.date);if(await saveState(false))renderApp();});
+    const trafficReportForm=$("#ls-traffic-report-form");
+    if(trafficReportForm) trafficReportForm.addEventListener("submit",async event=>{
+      event.preventDefault();
+      const values=formData(trafficReportForm);
+      if(!["green","orange","red"].includes(values.trafficLight)){setStatus(t("invalid"),true);return;}
+      const report={id:uid("mood"),profileId:state.currentProfileId,date:localDate(new Date()),trafficLight:values.trafficLight,trafficNote:(values.trafficNote||"").trim(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+      state.moods.push(report);
+      recordAudit("traffic-light-mood-reported",values.trafficLight);
+      if(await saveState(false))renderApp();
+    });
     const journalForm=$("#ls-journal-form");
     if(journalForm) journalForm.addEventListener("submit",async event=>{
       event.preventDefault();const v=formData(journalForm);const picked=$('input[name="mood"]:checked');
