@@ -196,7 +196,7 @@ test("professional workspace is integrated with encrypted vault, account API and
   assert.match(nativePermissionScript, /SCHEDULE_EXACT_ALARM/);
   assert.equal(packageConfig.dependencies["@capacitor/local-notifications"], "8.3.1");
   assert.match(androidWorkflow, /ensure-android-notification-permissions\.mjs/);
-  assert.match(js, /appointmentRescheduled/);
+  assert.match(js, /data-drop-date/);
   assert.match(js, /allDay:allDay/);
   assert.match(js, /travelMinutes/);
   assert.match(js, /excludedDates/);
