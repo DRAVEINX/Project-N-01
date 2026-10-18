@@ -62,9 +62,10 @@ function buildSchedule(items, quietStart = "22:00", quietEnd = "07:00", showDeta
 }
 async function schedule(items, preferences = {}) {
   if (!Capacitor.isNativePlatform()) return { native: false, count: 0 };
-  let permission = await LocalNotifications.checkPermissions();
-  if (permission.display !== "granted") permission = await LocalNotifications.requestPermissions();
-  if (permission.display !== "granted") return { native: true, permission: "denied", count: 0 };
+  const permission = await LocalNotifications.checkPermissions();
+  // Do not trigger the Android notification prompt during ordinary rendering/saving.
+  // The explicit "Allow notifications" action calls requestPermission() first.
+  if (permission.display !== "granted") return { native: true, permission: permission.display, count: 0 };
   const previous = (() => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); } catch { return []; } })();
   if (previous.length) await LocalNotifications.cancel({ notifications: previous.map(id=>({id})) }).catch(()=>{});
   const notifications = buildSchedule(items,preferences.quietHoursStart||"22:00",preferences.quietHoursEnd||"07:00",preferences.showReminderDetails===true);
