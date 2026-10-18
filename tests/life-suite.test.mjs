@@ -140,7 +140,7 @@ test("profiles, revocable consent and local invitation groundwork exist", () => 
 
 test("trusted contact safety card export and copy actions require explicit user interaction", () => {
   assert.match(js, /downloadSafetyCard/);
-  assert.match(js, /data-ls-action="download-safety-card"/);
+  assert.match(js, /button\(t\("downloadSafetyCard"\),"download-safety-card"/);
   assert.match(js, /safetyCardPrivacy/);
   assert.match(js, /safety-card-exported/);
   assert.match(js, /navigator\.clipboard\?\.writeText/);
