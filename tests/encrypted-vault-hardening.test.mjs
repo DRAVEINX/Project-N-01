@@ -290,3 +290,18 @@ test("save with passphrase rejects malformed stored JSON without changing vault 
   assert.equal(storage.getItem("test-vault"), "{malformed");
   assert.deepEqual(vault.read(), { current: "keep" });
 });
+
+
+test("passphrase save reports malformed stored JSON clearly", async () => {
+  const storage = new MemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { current: "keep" });
+  storage.setItem("test-vault", "{malformed");
+
+  await assert.rejects(
+    vault.saveWithPassphrase(passphrase, { current: "replace" }),
+    /Stored vault is invalid/
+  );
+  assert.equal(storage.getItem("test-vault"), "{malformed");
+  assert.deepEqual(vault.read(), { current: "keep" });
+});
