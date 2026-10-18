@@ -59,12 +59,11 @@ test("vault detects a concurrent storage change before saving", async () => {
   class ChangingStorage extends MemoryStorage {
     constructor() { super(); this.changeOnRead = false; this.readCount = 0; }
     getItem(key) {
-      const value = super.getItem(key);
       if (this.changeOnRead) {
         this.readCount += 1;
-        if (this.readCount === 2) super.setItem(key, '{"external":"change"}');
+        if (this.readCount === 1) super.setItem(key, '{"external":"change"}');
       }
-      return value;
+      return super.getItem(key);
     }
   }
 
