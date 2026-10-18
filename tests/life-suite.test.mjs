@@ -437,3 +437,22 @@ test("NovaLife My Life Timeline is wired in Dutch and English", () => {
   assert.match(css, /\.ls-timeline\s*\{/);
   assert.match(css, /\.ls-timeline-item:last-child::before/);
 });
+
+
+test("NovaLife Personal Studio persists four selectable color themes", () => {
+  assert.match(js, /personalStudio:"Personal Studio"/);
+  assert.match(js, /themeSetting:"Kleurthema"/);
+  assert.match(js, /themeNova:"Nova paars"/);
+  assert.match(js, /themeOcean:"Oceaanblauw"/);
+  assert.match(js, /themePink:"Roze"/);
+  assert.match(js, /themeEmerald:"Smaragdgroen"/);
+  assert.match(js, /id="ls-theme-form"/);
+  assert.match(js, /name="theme"/);
+  assert.match(js, /allowed=\["nova","ocean","pink","emerald"\]/);
+  assert.match(js, /state\.preferences\.theme=allowed\.includes\(selectedTheme\)\?selectedTheme:"nova"/);
+  assert.match(js, /recordAudit\("theme-changed"/);
+  assert.match(js, /ls-theme-" \+ theme/);
+  assert.match(css, /ls-theme-ocean \.ls-tab\.active/);
+  assert.match(css, /ls-theme-pink \.ls-tab\.active/);
+  assert.match(css, /ls-theme-emerald \.ls-tab\.active/);
+});
