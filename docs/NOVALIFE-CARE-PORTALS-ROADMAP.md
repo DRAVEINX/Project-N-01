@@ -72,3 +72,14 @@ NovaLife wordt een zelfstandig product met een eigen merk, interface, gegevensmo
 - Required roles: client, caregiver, and developer administrator. The client must only see their personal features and their own mood reports. Caregivers must be assigned to clients by an authorized administrator and get caregiver portal features only for assigned clients. Developer administrators need audited, least-privilege support access, not an unauthenticated client-side override.
 - Enforce permissions on every server/API operation, not just in the UI. Add secure account creation, role assignment, session expiry/revocation, audit trail, encrypted transport/storage, backups, and tests for cross-client access denial.
 - Keep the local vault unlocked across normal in-app navigation; prompt again only after explicit lock/logout, inactivity/session expiry, or a security-sensitive re-authentication requirement. Never store the password itself for convenience.
+
+
+## Role-based portal navigation prototype
+
+The local prototype now applies a role-based navigation policy: client/self profiles do not see the caregiver care/roster areas or profile/consent administration; caregiver/parent/guardian profiles can see care and roster; only a provisioned developer-admin role can see profile/consent administration and switch profiles. Direct tab attempts fall back to the dashboard.
+
+**Security boundary:** this is UI-level prototype gating only. The app still uses a single local encrypted vault, and profile records are not independently authenticated accounts. It does not yet provide secure multi-user accounts or server-side access enforcement. Do not store real care/client data in this prototype. Production completion requires backend identity, server-enforced roles, client assignment, audit logs, session revocation, secure hosting and independent privacy/security review. Never enable developer-admin by client-editable profile creation.
+
+## Session behavior
+
+The vault key stays in memory while the vault is unlocked; ordinary in-app navigation does not ask for the passphrase again. The passphrase is not stored in readable form. Explicit lock, inactivity timeout, or prolonged backgrounding returns to the unlock screen. If a user reports prompts on every feature despite staying active, treat that as a regression requiring device reproduction.
