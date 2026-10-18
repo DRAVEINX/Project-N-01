@@ -48,6 +48,19 @@ test("authenticated ciphertext containing valid UTF-8 but invalid JSON is reject
 });
 
 
+
+test("encrypted session rejects authenticated ciphertext containing invalid UTF-8", async () => {
+  const envelope = await envelopeForBytes(new Uint8Array([0xc3, 0x28]));
+  const { openEncryptedJsonSession } = await import("../src/secure-storage.js");
+  await assert.rejects(openEncryptedJsonSession(envelope, passphrase));
+});
+
+test("encrypted session rejects authenticated ciphertext containing invalid JSON", async () => {
+  const envelope = await envelopeForBytes(encoder.encode("{not-json"));
+  const { openEncryptedJsonSession } = await import("../src/secure-storage.js");
+  await assert.rejects(openEncryptedJsonSession(envelope, passphrase), SyntaxError);
+});
+
 test("oversized base64 ciphertext is rejected before decoding the payload", async () => {
   const envelope = await envelopeForBytes(encoder.encode("{}"));
   envelope.ciphertext = "A".repeat(1_333_360);
