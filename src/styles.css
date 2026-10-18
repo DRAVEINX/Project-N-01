@@ -131,3 +131,113 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 body[data-accent-theme="ocean"] { --lilac:#83caff; --mint:#7ce8dc; --pink:#b4c9ff; }
 body[data-accent-theme="rose"] { --lilac:#f3a8d0; --mint:#ffc6d8; --pink:#ffd1e8; }
 body[data-accent-theme="emerald"] { --lilac:#8ce0b2; --mint:#a5f0d2; --pink:#bce9ce; }
+
+
+/* NovaLife Personal Studio: apply the selected palette across the whole interface. */
+body[data-accent-theme="lilac"] {
+  --theme-primary: #b9a7ff;
+  --theme-secondary: #8de2cb;
+  --theme-rgb: 185 167 255;
+  --theme-secondary-rgb: 141 226 203;
+}
+body[data-accent-theme="ocean"] {
+  --theme-primary: #83caff;
+  --theme-secondary: #7ce8dc;
+  --theme-rgb: 131 202 255;
+  --theme-secondary-rgb: 124 232 220;
+}
+body[data-accent-theme="rose"] {
+  --theme-primary: #f3a8d0;
+  --theme-secondary: #ffc6d8;
+  --theme-rgb: 243 168 208;
+  --theme-secondary-rgb: 255 198 216;
+}
+body[data-accent-theme="emerald"] {
+  --theme-primary: #8ce0b2;
+  --theme-secondary: #a5f0d2;
+  --theme-rgb: 140 224 178;
+  --theme-secondary-rgb: 165 240 210;
+}
+body[data-accent-theme] {
+  --lilac: var(--theme-primary);
+  --mint: var(--theme-secondary);
+  --pink: color-mix(in srgb, var(--theme-primary) 62%, var(--theme-secondary));
+}
+body[data-accent-theme] .eyebrow,
+body[data-accent-theme] .quote-mark,
+body[data-accent-theme] .panel-symbol,
+body[data-accent-theme] .quote-spark,
+body[data-accent-theme] .nav-item.active,
+body[data-accent-theme] .ls-tab.active {
+  color: var(--theme-primary);
+}
+body[data-accent-theme] .nav-item:hover,
+body[data-accent-theme] .nav-item.active {
+  background: rgb(var(--theme-rgb) / 12%);
+}
+body[data-accent-theme] .nav-item.active {
+  box-shadow: inset 3px 0 var(--theme-primary);
+}
+body[data-accent-theme] .primary-button {
+  background: linear-gradient(115deg, var(--theme-primary), var(--theme-secondary));
+  border-color: color-mix(in srgb, var(--theme-primary) 45%, transparent);
+}
+body[data-accent-theme] .secondary-button:hover,
+body[data-accent-theme] .phrase-card:hover {
+  background: rgb(var(--theme-rgb) / 9%);
+  border-color: rgb(var(--theme-rgb) / 60%);
+}
+body[data-accent-theme] .welcome-panel {
+  border-color: rgb(var(--theme-rgb) / 25%);
+  background: linear-gradient(115deg, color-mix(in srgb, var(--theme-primary) 16%, #201f39), #191c2d 52%, color-mix(in srgb, var(--theme-secondary) 11%, #20243a));
+}
+body[data-accent-theme] .orb-halo,
+body[data-accent-theme] .calm-illustration {
+  background: radial-gradient(ellipse at 50% 65%, rgb(var(--theme-rgb) / 14%), transparent 65%);
+}
+body[data-accent-theme] .orb-ring {
+  border-color: rgb(var(--theme-rgb) / 45%);
+}
+body[data-accent-theme] .orb {
+  background: radial-gradient(circle at 32% 26%, #f1e6ff 0, var(--theme-primary) 20%, color-mix(in srgb, var(--theme-primary) 55%, #444f92) 58%, #24304a 100%);
+}
+body[data-accent-theme] .stat-icon.lilac,
+body[data-accent-theme] .routine-icon.evening,
+body[data-accent-theme] .avatar-button {
+  color: var(--theme-primary);
+  background-color: rgb(var(--theme-rgb) / 12%);
+  border-color: rgb(var(--theme-rgb) / 35%);
+}
+body[data-accent-theme] .stat-icon.mint,
+body[data-accent-theme] .privacy-dot,
+body[data-accent-theme] .inline-status,
+body[data-accent-theme] .ls-status-row #ls-status,
+body[data-accent-theme] .ls-badge {
+  color: var(--theme-secondary);
+}
+body[data-accent-theme] .progress-track span {
+  background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary));
+}
+body[data-accent-theme] input,
+body[data-accent-theme] select,
+body[data-accent-theme] textarea {
+  accent-color: var(--theme-primary);
+}
+body[data-accent-theme] button:focus-visible,
+body[data-accent-theme] a:focus-visible,
+body[data-accent-theme] input:focus-visible,
+body[data-accent-theme] select:focus-visible,
+body[data-accent-theme] textarea:focus-visible {
+  outline-color: var(--theme-secondary);
+}
+body[data-accent-theme] .ls-tab.active,
+body[data-accent-theme] .ls-calendar-day.selected,
+body[data-accent-theme] .ls-calendar-day:hover,
+body[data-accent-theme] .ls-mood-picker input:checked + span {
+  border-color: rgb(var(--theme-rgb) / 65%);
+  box-shadow: inset 0 -2px var(--theme-primary);
+  background-color: rgb(var(--theme-rgb) / 10%);
+}
+body[data-accent-theme] .ls-calendar-dot {
+  background: var(--theme-secondary);
+}
