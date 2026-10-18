@@ -46,3 +46,10 @@ test("authenticated ciphertext containing valid UTF-8 but invalid JSON is reject
   const envelope = await envelopeForBytes(encoder.encode("{not-json"));
   await assert.rejects(decryptJson(envelope, passphrase), SyntaxError);
 });
+
+
+test("oversized base64 ciphertext is rejected before decoding the payload", async () => {
+  const envelope = await envelopeForBytes(encoder.encode("{}"));
+  envelope.ciphertext = "A".repeat(1_333_360);
+  await assert.rejects(decryptJson(envelope, passphrase), /Invalid encrypted data format/);
+});
