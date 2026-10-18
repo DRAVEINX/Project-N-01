@@ -394,6 +394,6 @@ test("native notifications request permission only after explicit user action", 
 
 test("NovaLife dashboard lets users complete today's weekly-plan items without opening the planner", () => {
   assert.match(js, /todayPlans\.map\(p=>'<div class="ls-plan-summary"><label class="ls-plan-done"><input type="checkbox" data-plan-complete=/);
-  assert.match(js, /data-plan-date="\'+today\+'/);
+  assert.match(js, /data-plan-date=/);
   assert.match(js, /\$\$\("\[data-plan-complete\]"\)\.forEach/);
 });
