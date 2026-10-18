@@ -252,7 +252,7 @@ test("mobile-first accessible styling and offline cache include the new module",
   assert.match(css, /ls-high-contrast/);
   assert.match(css, /ls-large-text/);
   assert.match(css, /ls-reduced-motion/);
-  assert.match(serviceWorker, /project-n-01-prototype-v19/);
+  assert.match(serviceWorker, /project-n-01-prototype-v20/);
   assert.match(serviceWorker, /"\/src\/life-suite\.js"/);
   assert.match(serviceWorker, /"\/src\/life-suite\.css"/);
   assert.match(workflow, /node --check src\/life-suite\.js/);
@@ -355,4 +355,15 @@ test("NovaLife Personal Studio offers persistent accessible accent themes in Dut
   assert.match(appStyles, /body\[data-accent-theme="ocean"\]/);
   assert.match(appStyles, /body\[data-accent-theme="rose"\]/);
   assert.match(appStyles, /body\[data-accent-theme="emerald"\]/);
+});
+
+test("NovaLife accent themes update the shared design tokens and key interface elements", () => {
+  for (const theme of ["lilac", "ocean", "rose", "emerald"]) {
+    assert.match(appStyles, new RegExp('body\\[data-accent-theme="' + theme + '"\\]'));
+  }
+  assert.match(appStyles, /--theme-primary/);
+  assert.match(appStyles, /body\\[data-accent-theme\\] \\.primary-button/);
+  assert.match(appStyles, /body\\[data-accent-theme\\] \\.welcome-panel/);
+  assert.match(appStyles, /body\\[data-accent-theme\\] \\.ls-tab\\.active/);
+  assert.match(serviceWorker, /project-n-01-prototype-v20/);
 });
