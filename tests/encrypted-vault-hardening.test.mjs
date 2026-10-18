@@ -97,3 +97,48 @@ test("vault rejects invalid storage adapters and keys", () => {
   assert.throws(() => new EncryptedVault(new MemoryStorage(), ""), /Invalid vault storage key/);
   assert.throws(() => new EncryptedVault(new MemoryStorage(), "x".repeat(201)), /Invalid vault storage key/);
 });
+
+test("failed storage writes leave the current vault and in-memory data unchanged", async () => {
+  class FailingStorage extends MemoryStorage {
+    constructor() { super(); this.failWrites = false; }
+    setItem(key, value) {
+      if (this.failWrites) throw new Error("simulated storage quota failure");
+      super.setItem(key, value);
+    }
+  }
+
+  const storage = new FailingStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { current: "keep" });
+  const before = storage.getItem("test-vault");
+  storage.failWrites = true;
+
+  await assert.rejects(vault.save({ current: "new" }), /storage quota failure/);
+  assert.equal(storage.getItem("test-vault"), before);
+  assert.deepEqual(vault.read(), { current: "keep" });
+
+  await assert.rejects(vault.restoreEnvelope(passphrase, {
+    format: "project-n-01-encrypted-json", version: 1, kdf: "PBKDF2-SHA-256",
+    iterations: 310000, cipher: "AES-256-GCM", salt: "AAAAAAAAAAAAAAAAAAAAAA==",
+    iv: "AAAAAAAAAAAAAAAA", ciphertext: "AAAAAAAAAAAAAAAAAAAAAA=="
+  }), /storage quota failure|decrypt|operation/i);
+  assert.equal(storage.getItem("test-vault"), before);
+  assert.deepEqual(vault.read(), { current: "keep" });
+});
+
+test("tampered ciphertext cannot unlock a vault or expose plaintext", async () => {
+  const storage = new MemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { privateNote: "do not expose" });
+  const envelope = vault.exportEnvelope();
+  const ciphertext = envelope.ciphertext;
+  const first = ciphertext[0];
+  envelope.ciphertext = (first === "A" ? "B" : "A") + ciphertext.slice(1);
+  storage.setItem("test-vault", JSON.stringify(envelope));
+
+  const reopened = new EncryptedVault(storage, "test-vault");
+  await assert.rejects(reopened.unlock(passphrase));
+  assert.equal(reopened.isUnlocked, false);
+  assert.throws(() => reopened.read(), /Unlock the vault/);
+});
+
