@@ -69,10 +69,10 @@ function readDailyProgress() {
 function saveDailyProgress() {
   const progress = {
     date: localDateKey(),
-    tasks: $("#task-list [data-task]").map(input => input.checked),
+    tasks: $("[data-task]").map(input => input.checked),
     routines: Object.fromEntries(builtInRoutineIds.map(id => [
       id,
-      $("#routine-list [data-routine-step]").filter(input => input.dataset.routineStep === id).map(input => input.checked)
+      $("[data-routine-step]").filter(input => input.dataset.routineStep === id).map(input => input.checked)
     ]))
   };
   const secure = window.ProjectN01Vault;
