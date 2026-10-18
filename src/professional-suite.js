@@ -204,7 +204,7 @@
     const appointments=(s.appointments||[]).filter(a=>a.date);
     if(!appointments.length){status("Er zijn geen afspraken om te exporteren.");return;}
     const escIcs=v=>String(v||"").replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");
-    const datePart=(date,time)=>String(date||"").replace(/-/g,"")+"T"+String(time||"0000").replace(/:/g,"").padEnd(6,"0").slice(0,6)+"00";
+    const datePart=(date,time)=>String(date||"").replace(/-/g,"")+"T"+String(time||"0000").replace(/:/g,"").padEnd(6,"0").slice(0,6);
     const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Project N-01//NL","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
     appointments.forEach(a=>{
       const end=a.end || a.start || "0000";
@@ -229,8 +229,9 @@
     if(p.reportPreferences.includeRoutineProgress!==false)rows.push("<p>Geplande taken afgerond: "+plans.filter(x=>x.done===true||x.status==="done").length+" van "+plans.length+"</p>");
     if(p.reportPreferences.includeMood!==false)rows.push("<p>Stemmingsmomenten: "+moods.length+"</p>");
     rows.push("<p>Persoonlijke dagboektekst, spraakopnamen en noodplan zijn niet in dit rapport opgenomen.</p>");
-    const w=window.open("","_blank","noopener,noreferrer");
+    const w=window.open("","_blank");
     if(!w){status("Pop-up geblokkeerd. Sta afdrukken toe voor deze app.",true);return;}
+    w.opener=null;
     w.document.write("<!doctype html><html lang='nl'><meta charset='utf-8'><title>Weekrapport</title><style>body{font:16px system-ui;max-width:760px;margin:3rem auto;padding:0 1rem;line-height:1.6}h1{font-size:1.8rem}@media print{button{display:none}}</style><body>"+rows.join("")+"<button onclick='window.print()'>Afdrukken / PDF</button></body></html>");
     w.document.close();
   }
@@ -393,7 +394,7 @@
     if(action.startsWith("absence-delete:")){if(!window.confirm("Deze afwezigheid verwijderen?"))return;p.absences=p.absences.filter(a=>a.id!==action.slice(15));saveProfessional(p,"Afwezigheid verwijderd").then(()=>{activeTab="support";render();});return;}
     if(action.startsWith("document-delete:")){if(!window.confirm("Dit document en de eventuele bijlage verwijderen?"))return;p.documents=p.documents.filter(d=>d.id!==action.slice(16));saveProfessional(p,"Document verwijderd").then(()=>{activeTab="documents";render();});return;}
     if(action.startsWith("document-download:")){const doc=p.documents.find(d=>d.id===action.slice(18));if(!doc||!doc.dataUrl)return;const a=document.createElement("a");a.href=doc.dataUrl;a.download=doc.fileName||"project-n-01-document";a.click();status("Document geëxporteerd. Het gedownloade bestand staat buiten de beveiligde kluis.");return;}
-    if(action.startsWith("version-restore:")){const id=action.slice(15);if(!window.confirm("De extra persoonlijke gegevens herstellen naar deze eerdere versie? De huidige extra gegevens worden als nieuw herstelpunt bewaard."))return;vault().restoreVersion(id).then(ok=>{status(ok?"Eerdere versie hersteld.":"Herstellen is mislukt.",!ok);render();});return;}
+    if(action.startsWith("version-restore:")){const id=action.slice(16);if(!window.confirm("De extra persoonlijke gegevens herstellen naar deze eerdere versie? De huidige extra gegevens worden als nieuw herstelpunt bewaard."))return;vault().restoreVersion(id).then(ok=>{status(ok?"Eerdere versie hersteld.":"Herstellen is mislukt.",!ok);render();});return;}
     if(action==="read-emergency"){const e=p.emergencyPlan||{};readAloud("Mijn noodplan. "+(e.instructions||"Er zijn geen instructies opgeslagen.")+". Wat helpt mij rustig te worden: "+(e.supportNeeds||"Niet ingevuld")+". Eerste stap: "+(e.preferredHelp||"Niet ingevuld")+".");return;}
     if(action==="read-page"){readAloud(root.querySelector(".pn-content")?.innerText||"");return;}
     if(action==="dictate:note"){startDictation("note");return;}
