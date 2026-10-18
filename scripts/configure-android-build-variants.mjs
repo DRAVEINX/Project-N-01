@@ -46,17 +46,17 @@ const androidOpen = gradle.indexOf("{", androidStart);
 const androidClose = findMatchingBrace(gradle, androidOpen);
 const androidBlock = gradle.slice(androidOpen + 1, androidClose);
 
-const defaultConfigMatch = androidBlock.match(/\\bdefaultConfig\\s*\\{/);
+const defaultConfigMatch = androidBlock.match(/\bdefaultConfig\s*\{/);
 if (!defaultConfigMatch) throw new Error("The Android Gradle configuration has no defaultConfig { } block.");
 const defaultConfigOpen = gradle.indexOf("{", androidOpen + 1 + defaultConfigMatch.index);
 const defaultConfigClose = findMatchingBrace(gradle, defaultConfigOpen);
 const defaultConfig = gradle.slice(defaultConfigOpen + 1, defaultConfigClose);
-const targetSdkLine = /^([ \\t]*)targetSdk(?:Version)?\\s+.*$/m;
+const targetSdkLine = /^([ \t]*)targetSdk(?:Version)?\s+.*$/m;
 let updatedDefaultConfig;
 if (targetSdkLine.test(defaultConfig)) {
   updatedDefaultConfig = defaultConfig.replace(targetSdkLine, "$1targetSdkVersion 36");
 } else {
-  updatedDefaultConfig = "\\n        targetSdkVersion 36" + defaultConfig;
+  updatedDefaultConfig = "\n        targetSdkVersion 36" + defaultConfig;
 }
 if (updatedDefaultConfig !== defaultConfig) {
   const updatedGradle = gradle.slice(0, defaultConfigOpen + 1) + updatedDefaultConfig + gradle.slice(defaultConfigClose);
@@ -95,7 +95,7 @@ for (const [flavor, label] of labels) {
 }
 
 const finalGradle = await readFile(gradlePath, "utf8");
-const finalTargetSdk = finalGradle.match(/\\btargetSdk(?:Version)?\\s+(\\d+)/);
+const finalTargetSdk = finalGradle.match(/\btargetSdk(?:Version)?\s+(\d+)/);
 if (!finalTargetSdk || Number(finalTargetSdk[1]) < 36) {
   throw new Error("Google Play submission requires target API level 36 or higher.");
 }
