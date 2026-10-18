@@ -16,6 +16,7 @@ on:
       - "package.json"
       - "capacitor.config.json"
       - "scripts/prepare-mobile.mjs"
+      - "tests/**"
       - ".github/workflows/novalife-android-build.yml"
 
 permissions:
