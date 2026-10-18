@@ -23,11 +23,11 @@ npm run serve
 
 In a second terminal, start the API with a local-only secret of at least 32 characters:
 
-PROJECT_N01_SERVER_SECRET="local-only-secret-at-least-32-characters" PROJECT_N01_DB_PATH="$PWD/.private-dev/project-n-01-db.json" HOST=127.0.0.1 PORT=4180 npm run serve:api
+PROJECT_N01_SERVER_SECRET="local-only-secret-at-least-32-characters" PROJECT_N01_DB_PATH="$HOME/.project-n01-dev/project-n-01-db.json" HOST=127.0.0.1 PORT=4180 npm run serve:api
 
 If testing from the separate web preview at http://localhost:4173, set PROJECT_N01_CORS_ORIGINS=http://localhost:4173 before starting the API. Then set the project-n01-api-base meta element in index.html to http://localhost:4180/api for local testing only. Do not commit production secrets or public production endpoints to the source tree. For production, serve the web app and API behind HTTPS and set the API base to the deployed /api route.
 
-The database path should be a private location outside the web server's public static root. If using the default, data-private/project-n-01-db.json must remain outside any directory served to users. Keep a protected backup and rehearse restoration.
+The default database path is under the current operating-system user home directory in .project-n-01, outside the repository web root. Keep it private, never point it into a directory served to users, and keep a protected backup with rehearsed restoration.
 
 ## Required server configuration
 
