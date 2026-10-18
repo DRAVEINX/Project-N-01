@@ -18,6 +18,7 @@ const desktopPackage = JSON.parse(await readFile(new URL("../desktop/package.jso
 const windowsWorkflow = await readFile(new URL("../.github/workflows/windows.yml", import.meta.url), "utf8");
 const iosWorkflow = await readFile(new URL("../.github/workflows/ios.yml", import.meta.url), "utf8");
 const packageConfig = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+const dataProtection = await readFile(new URL("../docs/DATA-PROTECTION.md", import.meta.url), "utf8");
 
 test("life suite is wired into the existing app without replacing its core views", () => {
   assert.match(html, /data-view="life"/);
@@ -185,4 +186,13 @@ test("version history stores opaque ciphertext in IndexedDB rather than localSto
   assert.match(history, /raw/);
   assert.doesNotMatch(history, /decryptEnvelope|crypto\.subtle/);
   assert.match(html, /src\/version-history\.js/);
+});
+
+
+test("data-protection documentation matches the encrypted Daily Life Suite implementation", () => {
+  assert.match(dataProtection, /Daily Life Suite.*persists appointments, roster, mood check-ins, journal entries, drawings/i);
+  assert.match(dataProtection, /inside its local AES-GCM encrypted envelope/i);
+  assert.match(dataProtection, /original daily checklist\/routine progress and accessibility preferences remain outside this suite vault/i);
+  assert.doesNotMatch(dataProtection, /Notes and drawings are currently temporary and are not persisted/);
+  assert.match(dataProtection, /Profiles, consent and invite codes are currently \*\*local workflow scaffolding\*\*/);
 });
