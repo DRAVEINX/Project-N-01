@@ -117,11 +117,13 @@ test("failed storage writes leave the current vault and in-memory data unchanged
   assert.equal(storage.getItem("test-vault"), before);
   assert.deepEqual(vault.read(), { current: "keep" });
 
-  await assert.rejects(vault.restoreEnvelope(passphrase, {
-    format: "project-n-01-encrypted-json", version: 1, kdf: "PBKDF2-SHA-256",
-    iterations: 310000, cipher: "AES-256-GCM", salt: "AAAAAAAAAAAAAAAAAAAAAA==",
-    iv: "AAAAAAAAAAAAAAAA", ciphertext: "AAAAAAAAAAAAAAAAAAAAAA=="
-  }), /storage quota failure|decrypt|operation/i);
+  const backupStorage = new MemoryStorage();
+  const backupVault = new EncryptedVault(backupStorage, "backup-vault");
+  await backupVault.initialize(passphrase, { restored: "backup" });
+  await assert.rejects(
+    vault.restoreEnvelope(passphrase, backupVault.exportEnvelope()),
+    /storage quota failure/
+  );
   assert.equal(storage.getItem("test-vault"), before);
   assert.deepEqual(vault.read(), { current: "keep" });
 });
