@@ -261,7 +261,7 @@ test("mobile-first accessible styling and offline cache include the new module",
   assert.match(css, /ls-high-contrast/);
   assert.match(css, /ls-large-text/);
   assert.match(css, /ls-reduced-motion/);
-  assert.match(serviceWorker, /project-n-01-prototype-v20/);
+  assert.match(serviceWorker, /project-n-01-prototype-v21/);
   assert.match(serviceWorker, /"\/src\/life-suite\.js"/);
   assert.match(serviceWorker, /"\/src\/life-suite\.css"/);
   assert.match(workflow, /node --check src\/life-suite\.js/);
@@ -374,7 +374,7 @@ test("NovaLife accent themes update the shared design tokens and key interface e
   assert.ok(appStyles.includes("body[data-accent-theme] .primary-button"));
   assert.ok(appStyles.includes("body[data-accent-theme] .welcome-panel"));
   assert.ok(appStyles.includes("body[data-accent-theme] .ls-tab.active"));
-  assert.match(serviceWorker, /project-n-01-prototype-v20/);
+  assert.match(serviceWorker, /project-n-01-prototype-v21/);
 });
 
 
@@ -520,4 +520,27 @@ test("NovaLife Health Check reports observable local status without overstating 
   assert.match(js, /voert geen penetratietest uit/);
   assert.match(css, /\.ls-health-list\s*\{/);
   assert.match(css, /\.ls-health-item\s*\{/);
+});
+
+
+test("NovaFlow stores profile-scoped, opt-in manual shortcuts with enable/disable and audit", () => {
+  assert.match(js, /function novaFlowView\(\)/);
+  assert.match(js, /\[\["dashboard","dashboard"\],\["assistant","assistant"\],\["flow","novaFlow"\]/);
+  assert.match(js, /activeTab === "flow" \? novaFlowView\(\)/);
+  assert.match(js, /flowRules:\[\]/);
+  assert.match(js, /"flowRules"/);
+  assert.match(js, /id="ls-flow-form"/);
+  assert.match(js, /data-flow-enabled=/);
+  assert.match(js, /data-ls-action="flow-run"/);
+  assert.match(js, /data-ls-action="flow-delete"/);
+  assert.match(js, /flow-rule-created/);
+  assert.match(js, /flow-rule-enabled/);
+  assert.match(js, /flow-rule-disabled/);
+  assert.match(js, /flow-rule-run/);
+  assert.match(js, /flow-rule-deleted/);
+  assert.match(js, /const destinations=\{weekplan:"weekplan",agenda:"agenda",mood:"mood",assistant:"assistant"\}/);
+  assert.match(js, /No background rules, automatic messages, or data sent to a server/);
+  assert.match(js, /Geen achtergrondregels, geen automatische berichten/);
+  assert.match(css, /\.ls-flow-rule\s*\{/);
+  assert.match(css, /\.ls-flow-toggle\s*\{/);
 });
