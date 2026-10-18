@@ -16,6 +16,8 @@ on:
       - "package.json"
       - "capacitor.config.json"
       - "desktop/**"
+      - "tests/life-suite.test.mjs"
+      - ".github/workflows/ci.yml"
       - ".github/workflows/windows.yml"
   workflow_dispatch:
 
