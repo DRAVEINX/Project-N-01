@@ -94,6 +94,84 @@ for (const [flavor, label] of labels) {
   await writeFile(join(valuesDir, "strings.xml"), xml, "utf8");
 }
 
+
+const resourcesRoot = join(root, "android", "app", "src", "main", "res");
+const valuesDir = join(resourcesRoot, "values");
+const drawableDir = join(resourcesRoot, "drawable");
+const mipmapAnyDir = join(resourcesRoot, "mipmap-anydpi");
+const mipmapAdaptiveDir = join(resourcesRoot, "mipmap-anydpi-v26");
+await Promise.all([valuesDir, drawableDir, mipmapAnyDir, mipmapAdaptiveDir].map(dir => mkdir(dir, { recursive: true })));
+
+await writeFile(join(valuesDir, "novalife_colors.xml"), `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="novalife_splash_background">#07152F</color>
+    <color name="novalife_icon_background">#07152F</color>
+</resources>
+`, "utf8");
+
+const iconForeground = `<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="512" android:viewportHeight="512">
+    <path android:fillColor="#00000000" android:pathData="M0,0h512v512h-512z"/>
+    <path android:fillColor="#00000000" android:strokeColor="#36D9F4"
+        android:strokeWidth="52" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M146,358 V155 L360,359 V155"/>
+    <path android:fillColor="#43E2D0" android:pathData="M306,158 C310,103 360,72 419,79 C416,137 381,177 322,188 C315,179 310,169 306,158 Z"/>
+    <path android:fillColor="#00000000" android:strokeColor="#073C50" android:strokeWidth="8"
+        android:strokeLineCap="round" android:pathData="M321,172 L403,96"/>
+</vector>
+`;
+await writeFile(join(drawableDir, "novalife_icon_foreground.xml"), iconForeground, "utf8");
+await writeFile(join(drawableDir, "novalife_splash_mark.xml"), iconForeground, "utf8");
+
+const legacyIcon = `<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="512" android:viewportHeight="512">
+    <path android:fillColor="#07152F" android:pathData="M128,26 H384 A102,102 0 0 1 486,128 V384 A102,102 0 0 1 384,486 H128 A102,102 0 0 1 26,384 V128 A102,102 0 0 1 128,26 Z"/>
+    <path android:fillColor="#00000000" android:strokeColor="#36D9F4"
+        android:strokeWidth="52" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M146,358 V155 L360,359 V155"/>
+    <path android:fillColor="#43E2D0" android:pathData="M306,158 C310,103 360,72 419,79 C416,137 381,177 322,188 C315,179 310,169 306,158 Z"/>
+    <path android:fillColor="#00000000" android:strokeColor="#073C50" android:strokeWidth="8"
+        android:strokeLineCap="round" android:pathData="M321,172 L403,96"/>
+</vector>
+`;
+for (const name of ["ic_launcher.xml", "ic_launcher_round.xml"]) {
+  await writeFile(join(mipmapAnyDir, name), legacyIcon, "utf8");
+  await writeFile(join(mipmapAdaptiveDir, name), `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/novalife_icon_background"/>
+    <foreground android:drawable="@drawable/novalife_icon_foreground"/>
+</adaptive-icon>
+`, "utf8");
+}
+
+const splashBackground = `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/novalife_splash_background"/>
+    <item android:drawable="@drawable/novalife_splash_mark" android:gravity="center"/>
+</layer-list>
+`;
+await writeFile(join(drawableDir, "novalife_splash_background.xml"), splashBackground, "utf8");
+
+const stylesPath = join(valuesDir, "styles.xml");
+let stylesXml;
+try { stylesXml = await readFile(stylesPath, "utf8"); }
+catch { stylesXml = '<?xml version="1.0" encoding="utf-8"?>\\n<resources>\\n</resources>\\n'; }
+const launchStyle = `    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:windowBackground">@drawable/novalife_splash_background</item>
+        <item name="windowSplashScreenBackground">@color/novalife_splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/novalife_splash_mark</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+    </style>`;
+const launchPattern = /<style name="AppTheme\\.NoActionBarLaunch"[^>]*>[\\s\\S]*?<\\/style>/;
+if (launchPattern.test(stylesXml)) stylesXml = stylesXml.replace(launchPattern, launchStyle);
+else stylesXml = stylesXml.replace("</resources>", launchStyle + "\\n</resources>");
+await writeFile(stylesPath, stylesXml, "utf8");
+console.log("NovaLife branded Android launcher icons and native splash screen configured.");
+
 const finalGradle = await readFile(gradlePath, "utf8");
 const finalTargetSdk = finalGradle.match(/\btargetSdk(?:Version)?\s+(\d+)/);
 if (!finalTargetSdk || Number(finalTargetSdk[1]) < 36) {
