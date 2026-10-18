@@ -1,55 +1,60 @@
-# NovaLife care and staff portal expansion
+# NovaLife — eigen zorg- en leefplatform
 
-This specification is for the NovaLife expansion of Project N-01. It is inspired by publicly described workflows in Nedap Ons Medewerkerportaal and Caren; it is not a copy of their branding, source code, or proprietary interface.
+## Productbesluit
+NovaLife wordt een zelfstandig product met een eigen merk, interface, gegevensmodel en toekomstige backend. Caren en Nedap Ons zijn uitsluitend inspiratie voor functionele behoeften; ze zijn geen verplichte integraties en hun merken, schermen of code worden niet gekopieerd. NovaLife bevat geen knoppen die gebruikers naar die websites sturen als vervanging voor eigen functies.
 
-## Scope
+## Productgebieden
 
-### Staff portal
-- Personal start page with relevant notices and team updates.
-- Personal and team roster views (day/week), with change indicators.
-- Availability and absence requests with approval states.
-- Timesheet/work-state entry, review, correction history, and sign-off.
-- Staff directory with contact details, team, expertise, and optional profile photo.
-- One-to-one and group messaging, attachments, read/unread state, and notifications.
-- Central role/permission administration and account preferences.
+### Mijn NovaLife
+- Persoonlijke startpagina, agenda, routines, stemming, dagboek en tekeningen.
+- Persoonlijk verhaal met tekst en foto's.
+- Toegankelijke weergave met grotere tekst, toetsenbordbediening, schermlezerlabels, hoog contrast en minder beweging.
 
-### Client and care-network portal
-- Client-controlled care page and personal story (text and photos).
-- Appointment calendar combining client-created and organization-shared appointments, clearly labelled by source.
-- Shared care plan, dossier entries, measurements and care reports only when the organization explicitly enables each category.
-- Messages with care professionals and approved network members.
-- Task/appointment coordination for family and caregivers.
-- Invite/remove network members, individual accounts, delegated administrators, and granular view/edit permissions.
-- Clear consent screen showing what is shared, with whom, and the ability to revoke future access.
-- Strong authentication and step-up verification for sensitive records.
+### Mijn zorg
+- Persoonlijk zorgplan, doelen, acties, evaluaties en voortgang.
+- Zorgnotities, dagrapportages, incidentregistratie en overdracht.
+- Documentenregister en later beveiligde bestandsopslag.
+- Medicatieoverzicht als ondersteunend overzicht; pas na aparte validatie eventueel een formele medicatiewerklijst.
+- Afspraken en relevante meldingen, met duidelijke status en herkomst.
 
-### Accessibility and user experience
-- Dutch-first interface, adjustable text size, keyboard navigation, screen-reader labels, high contrast, and reduced motion.
-- Clear role-specific home screens; simple language and confirmation before sensitive or destructive actions.
-- Responsive phone, tablet, and desktop layouts.
+### Mijn netwerk
+- Cliënt bepaalt welke bevoegde personen betrokken zijn.
+- Eigen contacten, rollen en uitnodigingen.
+- Granulaire toestemming per gegevenstype, met overzicht van verleende en ingetrokken toegang.
+- Berichten, leesstatus en bijlagen als backendfunctionaliteit beschikbaar is; lokale notities worden niet gepresenteerd als verzonden berichten.
 
-## Implementation and safety requirements
-1. Preserve existing routines, daily checklist, mood/journal/drawing features, encrypted local vault, and separate Android phone/tablet build flavors.
-2. Build reusable modules with explicit data models, validation, empty/loading/error states, and automated tests.
-3. Do not present local profile records as real authenticated accounts. Real invitations, messaging, organization connections, and cross-device access require a trusted backend, authenticated identity, server-side authorization, audit logs, and revocation.
-4. Keep care/health information private by default. Enforce least privilege server-side, encrypt transport and storage, minimize data, and record access to sensitive records.
-5. Do not claim a direct Nedap Ons or Caren integration unless an authorized, documented API/partner connection is actually available and tested. Import/export or manual entry must be clearly distinguished from live synchronization.
-6. No claim of MedMij compliance, government acceptance, clinical suitability, or production readiness without the applicable formal assessment and independent review.
-7. Never place credentials, production health data, or signing secrets in source control.
+### Planning
+- Dag- en weekrooster voor cliënt en bevoegde medewerkers.
+- Beschikbaarheid, afwezigheid, taken en toewijzing.
+- Wijzigingshistorie, status en bevestiging waar nodig.
 
-## Delivery sequence
-- Phase A: inspect current Daily Life Suite and map existing components to this scope; record gaps without removing existing functionality.
-- Phase B: implement local-first staff portal UI and data models, then tests.
-- Phase C: implement client care-network UI, consent/permissions UX, and tests.
-- Phase D: design and implement secure backend identity, invitation, authorization, audit, and sync before enabling remote sharing.
-- Phase E: run CI, verify Android phone and tablet separately, then Windows; verify iOS separately if targeted. Test accessibility, backup/restore, migration, and privacy before release.
+### Organisatie en medewerkers
+- Eigen medewerkersprofielen, teamoverzicht, meldingen en werkafspraken.
+- Rollen en rechten met minimale toegang.
+- Goedkeuringsstappen en auditgeschiedenis voor gevoelige acties.
 
-## Acceptance checklist
-- Existing app features remain available.
-- Every role sees only the features and records it is authorized to access.
-- Staff can create/edit a roster and timesheet with visible status and audit history.
-- Clients can manage appointments, story, messages, and network permissions.
-- Disabled sharing means no care data is transmitted.
-- Revoked access takes effect server-side.
-- Automated tests cover permissions, consent, validation, import/export, and regressions.
-- CI passes; real-device tests and security/accessibility reviews are documented.
+## Architectuur en veiligheid
+1. Behoud bestaande routines, agenda, stemming, dagboek, tekeningen, versleutelde lokale kluis en aparte Android-telefoon/tablet-builds.
+2. Bouw NovaLife-functies met eigen UI, eigen datamodellen, validatie, fout-/laad-/lege toestanden en geautomatiseerde tests.
+3. De huidige browsermodule is een lokale prototype-kluis, geen multi-user accountsysteem. Noem lokale profielen geen geverifieerde accounts.
+4. Echte accounts, rollen, uitnodigingen, berichten, gedeelde dossiers en synchronisatie vereisen een vertrouwde backend, server-side autorisatie, versleuteld transport en opslag, auditlogs, back-up/herstel en intrekbare toegang.
+5. Zorggegevens zijn standaard privé. Controleer rechten op elke serveraanvraag; verberg functies niet alleen in de interface.
+6. Implementeer geen directe Caren- of Nedap Ons-koppeling als vereiste. Een toekomstige export/import is een afzonderlijke keuze, met toestemming en expliciete herkomstlabels.
+7. Geen claims over MedMij, wettelijke conformiteit, overheidserkenning, klinische geschiktheid of productierijpheid zonder formele toetsing.
+
+## Leveringsvolgorde
+- Fase A: bestaande functies inventariseren en behouden; NovaLife-merk en navigatie eenduidig maken.
+- Fase B: lokale zorg-, documenten- en rapportagefuncties afronden met profielscheiding en tests.
+- Fase C: eigen cliënt-/netwerk-/medewerkersrollen en toestemmingsmodel ontwerpen.
+- Fase D: beveiligde backend, accounts, autorisatie, berichten en synchronisatie bouwen voordat gegevens op afstand worden gedeeld.
+- Fase E: regressie-, beveiligings-, privacy- en toegankelijkheidstests; Android-telefoon en tablet apart testen; Windows/iOS apart valideren.
+
+## Acceptatiecriteria
+- De interface gebruikt NovaLife als productnaam en eigen vormgeving.
+- Geen externe portaal-knoppen dienen als vervanging voor eigen functies.
+- Bestaande appfuncties en gegevens blijven behouden.
+- Iedere rol krijgt uitsluitend toegestane functies en gegevens.
+- Geen gegevens worden gedeeld wanneer delen uitstaat.
+- Intrekken van toegang werkt ook server-side.
+- Tests dekken autorisatie, profielisolatie, toestemming, validatie, export en regressies.
+- Builds en tests worden pas als groen gemeld na daadwerkelijke CI- en apparaattests.
