@@ -59,3 +59,12 @@ test("application JavaScript parses without syntax errors", async () => {
     );
   }
 });
+
+test("mobile build script creates a complete www bundle", async () => {
+  execFileSync(process.execPath, ["scripts/prepare-mobile.mjs"], { cwd: root, stdio: "pipe" });
+  for (const file of ["index.html", "offline.html", "manifest.webmanifest", "service-worker.js", "src/app.js", "src/life-suite.js", "src/styles.css", "src/life-suite.css", "assets/app-icon.svg"]) {
+    await assert.doesNotReject(() => access(resolve(root, "www", file)), undefined, "Mobile build is missing " + file);
+  }
+  const bundledHtml = await read("www/index.html");
+  assert.match(bundledHtml, /NovaLife/);
+});
