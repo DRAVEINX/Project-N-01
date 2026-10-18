@@ -166,9 +166,14 @@ const launchStyle = `    <style name="AppTheme.NoActionBarLaunch" parent="Theme.
         <item name="windowSplashScreenAnimatedIcon">@drawable/novalife_splash_mark</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>`;
-const launchPattern = /<style name="AppTheme\\.NoActionBarLaunch"[^>]*>[\\s\\S]*?<\\/style>/;
-if (launchPattern.test(stylesXml)) stylesXml = stylesXml.replace(launchPattern, launchStyle);
-else stylesXml = stylesXml.replace("</resources>", launchStyle + "\\n</resources>");
+const launchStart = stylesXml.indexOf('<style name="AppTheme.NoActionBarLaunch"');
+if (launchStart >= 0) {
+  const launchEnd = stylesXml.indexOf("</style>", launchStart);
+  if (launchEnd < 0) throw new Error("The generated Android launch theme is not closed.");
+  stylesXml = stylesXml.slice(0, launchStart) + launchStyle + stylesXml.slice(launchEnd + "</style>".length);
+} else {
+  stylesXml = stylesXml.replace("</resources>", launchStyle + "\n</resources>");
+}
 await writeFile(stylesPath, stylesXml, "utf8");
 console.log("NovaLife branded Android launcher icons and native splash screen configured.");
 
