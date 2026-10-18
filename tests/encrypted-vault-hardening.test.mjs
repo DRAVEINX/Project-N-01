@@ -200,3 +200,42 @@ test("malformed stored JSON cannot unlock or replace vault data", async () => {
   assert.equal(storage.getItem("test-vault"), "{malformed");
 });
 
+test("oversized vault save leaves persisted and in-memory data unchanged", async () => {
+  const storage = new MemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { current: "keep" });
+  const before = storage.getItem("test-vault");
+
+  await assert.rejects(
+    vault.save({ payload: "x".repeat(1_000_100) }),
+    /exceeds the 1 MB limit/
+  );
+  assert.equal(storage.getItem("test-vault"), before);
+  assert.deepEqual(vault.read(), { current: "keep" });
+});
+
+test("save refuses to write if the stored vault disappears during the operation", async () => {
+  class DisappearingStorage extends MemoryStorage {
+    constructor() { super(); this.disappearOnRead = false; }
+    getItem(key) {
+      if (this.disappearOnRead) {
+        this.disappearOnRead = false;
+        super.removeItem(key);
+      }
+      return super.getItem(key);
+    }
+  }
+
+  const storage = new DisappearingStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { current: "keep" });
+  storage.disappearOnRead = true;
+
+  await assert.rejects(
+    vault.save({ current: "replace" }),
+    /changed in another session/
+  );
+  assert.equal(storage.getItem("test-vault"), null);
+  assert.deepEqual(vault.read(), { current: "keep" });
+});
+
