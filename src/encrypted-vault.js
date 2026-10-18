@@ -116,8 +116,12 @@ export class EncryptedVault {
   }
 
   async restoreEnvelope(passphrase, envelope) {
+    const expectedRaw = this.storage.getItem(this.storageKey);
     const session = await openEncryptedJsonSession(envelope, passphrase);
     const restored = cloneJson(session.value);
+    if (this.storage.getItem(this.storageKey) !== expectedRaw) {
+      throw new Error("Vault changed in another session; reload before restoring a backup.");
+    }
     const raw = JSON.stringify(envelope);
     this.storage.setItem(this.storageKey, raw);
     this.persistedRaw = raw;
