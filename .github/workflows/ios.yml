@@ -1,8 +1,8 @@
-name: Project N-01 iOS archive
+name: NovaLife iOS archive
 
 on:
   push:
-    branches: [main, "feature/professional-suite-priority-1"]
+    branches: [main, "feature/professional-suite-priority-1", "feature/novalife-rebrand"]
     paths:
       - "index.html"
       - "offline.html"
@@ -61,18 +61,18 @@ jobs:
             -sdk iphoneos \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath "$PWD/build/Project-N-01.xcarchive" \
+            -archivePath "$PWD/build/NovaLife.xcarchive" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             archive
 
       - name: Package archive for download
-        run: ditto -c -k --sequesterRsrc --keepParent build/Project-N-01.xcarchive build/Project-N-01-iOS-unsigned-archive.zip
+        run: ditto -c -k --sequesterRsrc --keepParent build/Project-N-01.xcarchive build/NovaLife-iOS-unsigned-archive.zip
 
       - name: Upload unsigned iOS archive
         uses: actions/upload-artifact@v4
         with:
-          name: project-n-01-ios-unsigned-archive
+          name: novalife-ios-unsigned-archive
           path: build/Project-N-01-iOS-unsigned-archive.zip
           if-no-files-found: error
           retention-days: 30
