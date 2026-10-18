@@ -118,7 +118,7 @@
     return {
       schema:1, createdAt:new Date().toISOString(), currentProfileId:"self",
       profiles:[{id:"self",name:lang === "nl" ? "Mijn profiel" : "My profile",role:"self",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}],
-      appointments:[], workers:[], shifts:[], weeklyPlans:[], moods:[], journal:[], drawings:[], guides:[], contacts:[], reminders:[], consents:[], invites:[], audit:[], notificationLog:[], preferences:{largeText:false,highContrast:false,reducedMotion:false}, professional:{goals:[],documents:[],versions:[],handovers:[],absences:[],dailyProgress:null,emergencyPlan:{instructions:"",supportNeeds:"",preferredHelp:"",updatedAt:""},reportPreferences:{includeMood:true,includeRoutineProgress:true,includeAppointments:true}}
+      appointments:[], workers:[], shifts:[], weeklyPlans:[], moods:[], journal:[], drawings:[], guides:[], contacts:[], reminders:[], consents:[], invites:[], audit:[], notificationLog:[], preferences:{largeText:false,highContrast:false,reducedMotion:false}, professional:{goals:[],documents:[],versions:[],handovers:[],absences:[],dailyProgress:null,accessibility:{largeText:false,reducedMotion:false,quietView:false,language:"nl"},emergencyPlan:{instructions:"",supportNeeds:"",preferredHelp:"",updatedAt:""},reportPreferences:{includeMood:true,includeRoutineProgress:true,includeAppointments:true}}
     };
   }
   function normalizeState(raw) {
@@ -138,6 +138,7 @@
       handovers:Array.isArray(p.handovers)?p.handovers.filter(x=>x&&typeof x==="object").slice(-200):[],
       absences:Array.isArray(p.absences)?p.absences.filter(x=>x&&typeof x==="object").slice(-200):[],
       dailyProgress:p.dailyProgress&&typeof p.dailyProgress==="object"?p.dailyProgress:null,
+      accessibility:Object.assign(blank.professional.accessibility,p.accessibility&&typeof p.accessibility==="object"?p.accessibility:{}),
       emergencyPlan:Object.assign(blank.professional.emergencyPlan,p.emergencyPlan&&typeof p.emergencyPlan==="object"?p.emergencyPlan:{}),
       reportPreferences:Object.assign(blank.professional.reportPreferences,p.reportPreferences&&typeof p.reportPreferences==="object"?p.reportPreferences:{})
     };
@@ -856,7 +857,7 @@
   window.addEventListener("offline",()=>{const n=$("#ls-connectivity");if(n)n.textContent=t("offline");});
 
   function professionalBlank() {
-    return {goals:[],documents:[],versions:[],handovers:[],absences:[],dailyProgress:null,
+    return {goals:[],documents:[],versions:[],handovers:[],absences:[],dailyProgress:null,accessibility:{largeText:false,reducedMotion:false,quietView:false,language:"nl"},
       emergencyPlan:{instructions:"",supportNeeds:"",preferredHelp:"",updatedAt:""},
       reportPreferences:{includeMood:true,includeRoutineProgress:true,includeAppointments:true}};
   }
@@ -911,6 +912,27 @@
       if(!state||!sessionKey||!state.professional||!state.professional.dailyProgress) return null;
       const value=state.professional.dailyProgress;
       return value.date===date?JSON.parse(JSON.stringify(value)):null;
+    },
+    importLegacyDailyProgress:async(progress)=>{
+      if(!state||!sessionKey||!progress||typeof progress!=="object")return false;
+      state.professional=Object.assign(professionalBlank(),state.professional||{});
+      if(!state.professional.dailyProgress)state.professional.dailyProgress=JSON.parse(JSON.stringify(progress));
+      const saved=await saveState(false);if(saved)localStorage.removeItem("project-n-01-daily-progress-v1");return saved;
+    },
+    getAppPreferences:()=>state&&sessionKey?JSON.parse(JSON.stringify((state.professional&&state.professional.accessibility)||professionalBlank().accessibility)):null,
+    saveAppPreferences:async(value)=>{
+      if(!state||!sessionKey)return false;
+      state.professional=Object.assign(professionalBlank(),state.professional||{});
+      state.professional.accessibility=Object.assign(professionalBlank().accessibility,value&&typeof value==="object"?value:{});
+      recordAudit("accessibility-preferences-saved","Encrypted in personal vault");
+      const saved=await saveState(false);if(saved)localStorage.removeItem("project-n-01-preferences-v1");return saved;
+    },
+    importLegacyAppPreferences:async(value)=>{
+      if(!state||!sessionKey||!value||typeof value!=="object")return false;
+      state.professional=Object.assign(professionalBlank(),state.professional||{});
+      const current=state.professional.accessibility||professionalBlank().accessibility;
+      state.professional.accessibility=Object.assign({},value,current);
+      const saved=await saveState(false);if(saved)localStorage.removeItem("project-n-01-preferences-v1");return saved;
     },
     exportEncryptedEnvelope:async()=>{
       if(!state||!sessionKey||!saltB64) return null;
