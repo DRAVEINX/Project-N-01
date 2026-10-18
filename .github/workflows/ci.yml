@@ -38,6 +38,11 @@ jobs:
           test -f src/app.js
           test -f src/life-suite.js
           test -f src/life-suite.css
+          test -f src/platform-services.js
+          test -f src/platform-services.css
+          test -f src/native-notifications-entry.js
+          test -f supabase/migrations/20261018090000_project_n01_cloud.sql
+          test -f docs/PLATFORM-ENHANCEMENTS.md
           test -f src/secure-storage.js
           test -f src/encrypted-vault.js
           test -f src/routine-migration.js
