@@ -12,6 +12,8 @@
   const PBKDF2_ITERATIONS = 310000;
   const MAX_PLAINTEXT_BYTES = 2500000;
   const AUTO_LOCK_MS = 5 * 60 * 1000;
+  // Give short app switches and system dialogs a grace period before locking.
+  const BACKGROUND_LOCK_GRACE_MS = 60 * 1000;
   const $ = (s, r = root) => r.querySelector(s);
   const $$ = (s, r = root) => Array.from(r.querySelectorAll(s));
   let lang = document.documentElement.lang === "en" ? "en" : "nl";
@@ -19,6 +21,7 @@
   let sessionKey = null;
   let saltB64 = null;
   let lockTimer = null;
+  let backgroundLockTimer = null;
   let activeTab = "dashboard";
   let editingAppointmentId = "";
   let editingJournalId = "";
@@ -204,6 +207,8 @@
   }
   function lockVault(showMessage) {
     stopAutoLock();
+    if (backgroundLockTimer) clearTimeout(backgroundLockTimer);
+    backgroundLockTimer = null;
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
       try { mediaRecorder.stop(); } catch {}
     }
@@ -243,7 +248,7 @@
         if (confirm) confirm.value = "";
         recordAudit(createMode ? "vault-created" : "vault-unlocked", "");
         await saveState(false);
-        activeTab = "dashboard";
+        // Keep the last selected section when re-unlocking after an automatic lock.
         renderApp();
         startAutoLock();
         startReminderMonitor();
@@ -974,8 +979,20 @@
   });
   ["pointerdown","keydown","touchstart","scroll"].forEach(eventName=>document.addEventListener(eventName,()=>{if(sessionKey)startAutoLock();},{passive:true}));
   document.addEventListener("visibilitychange",()=>{
-    if(document.visibilityState==="hidden"&&sessionKey&&!filePickerPending)lockVault(true);
-    if(document.visibilityState==="visible")filePickerPending=false;
+    if(document.visibilityState==="hidden"&&sessionKey&&!filePickerPending){
+      // Do not force a passphrase prompt for a brief app switch or system dialog.
+      if(backgroundLockTimer)clearTimeout(backgroundLockTimer);
+      backgroundLockTimer=window.setTimeout(()=>{
+        backgroundLockTimer=null;
+        if(document.visibilityState==="hidden"&&sessionKey&&!filePickerPending)lockVault(true);
+      },BACKGROUND_LOCK_GRACE_MS);
+    }
+    if(document.visibilityState==="visible"){
+      filePickerPending=false;
+      if(backgroundLockTimer)clearTimeout(backgroundLockTimer);
+      backgroundLockTimer=null;
+      if(sessionKey)startAutoLock();
+    }
   });
   window.addEventListener("pagehide",()=>{stopAutoLock();if(reminderTimer)clearInterval(reminderTimer);if(mediaRecorder&&mediaRecorder.state!=="inactive")try{mediaRecorder.stop();}catch{};});
   window.addEventListener("online",()=>{const n=$("#ls-connectivity");if(n)n.textContent=t("online");});
