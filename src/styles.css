@@ -106,3 +106,22 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .main-content { min-width:0; }
   .routine-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
+
+/* NovaLife branded startup splash: shared by web and Android WebView. */
+.startup-splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 38%,#0c3d76 0%,#071b3b 37%,#050d20 78%);color:#f6fbff;opacity:1;visibility:visible;transition:opacity .42s ease,visibility .42s ease}
+.startup-splash::before,.startup-splash::after{content:"";position:absolute;pointer-events:none;width:85vw;height:34vh;border-radius:50%;filter:blur(44px);opacity:.24;transform:rotate(-14deg)}
+.startup-splash::before{background:linear-gradient(90deg,#164dff,#14d8dd);left:-18vw;bottom:-14vh}
+.startup-splash::after{background:linear-gradient(90deg,#1b79ff,#00e1a3);right:-22vw;bottom:-18vh}
+.startup-splash.is-leaving{opacity:0;visibility:hidden;pointer-events:none}
+.startup-splash__content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px}
+.startup-splash__icon{width:clamp(88px,19vw,116px);height:auto;filter:drop-shadow(0 14px 35px #168bff35);animation:splash-rise .7s cubic-bezier(.2,.8,.2,1) both}
+.startup-splash__wordmark{margin-top:22px;font-size:clamp(2.1rem,7vw,3.2rem);font-weight:760;letter-spacing:-.065em;line-height:1.1}
+.startup-splash__wordmark span{color:#43e2d0}
+.startup-splash__tagline{margin:12px 0 0;color:#c2d7f4;font-size:.92rem;letter-spacing:.11em}
+.startup-splash__loader{width:110px;height:3px;margin-top:32px;border-radius:99px;background:#ffffff20;overflow:hidden}
+.startup-splash__loader span{display:block;width:38%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#2bbdff,#43f0c6);animation:splash-progress 1.15s ease-in-out infinite}
+.startup-splash__footnote{position:absolute;z-index:1;bottom:max(26px,env(safe-area-inset-bottom));font-size:.62rem;font-weight:700;letter-spacing:.22em;color:#8eaed7}
+.startup-splash__footnote i{font-style:normal;color:#43e2d0;padding:0 .3em}
+@keyframes splash-rise{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes splash-progress{0%{transform:translateX(-110%)}100%{transform:translateX(300%)}}
+@media(prefers-reduced-motion:reduce){.startup-splash,.startup-splash__icon{animation:none;transition:none}.startup-splash__loader span{animation:none;width:65%}}
