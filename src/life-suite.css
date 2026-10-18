@@ -207,3 +207,15 @@
 .ls-check-label { display:flex; align-items:flex-start; gap:.6rem; line-height:1.5; }
 .ls-check-label input { margin-top:.3rem; }
 @media (max-width:760px) { .ls-insights-grid { grid-template-columns:minmax(0,1fr); } }
+
+
+/* Health Check: readable status rows, wrapping safely on narrow screens. */
+.ls-health-list { display:grid; gap:.75rem; margin-top:1rem; }
+.ls-health-item { display:grid; grid-template-columns:2.1rem minmax(0,1fr); align-items:start; gap:.75rem; padding:.85rem; border:1px solid var(--line); border-radius:13px; background:#ffffff04; }
+.ls-health-item strong { display:block; }
+.ls-health-item p { margin:.25rem 0 0; color:var(--muted); line-height:1.5; overflow-wrap:anywhere; }
+.ls-health-status { display:grid; place-items:center; width:1.9rem; height:1.9rem; border-radius:50%; font-weight:800; border:1px solid var(--line); }
+.ls-health-ok { color:var(--mint); }
+.ls-health-warn { color:#dca85d; }
+.ls-health-info { color:var(--text); }
+.ls-health-disclaimer { margin-top:1rem; }
