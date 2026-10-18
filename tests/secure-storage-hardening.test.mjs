@@ -51,5 +51,13 @@ test("authenticated ciphertext containing valid UTF-8 but invalid JSON is reject
 test("oversized base64 ciphertext is rejected before decoding the payload", async () => {
   const envelope = await envelopeForBytes(encoder.encode("{}"));
   envelope.ciphertext = "A".repeat(1_333_360);
-  await assert.rejects(decryptJson(envelope, passphrase), /Invalid encrypted data format/);
+  await assert.rejects(decryptJson(envelope, passphrase), /1 MB limit/);
+});
+
+
+test("encrypted session rejects oversized base64 ciphertext before decoding", async () => {
+  const envelope = await envelopeForBytes(encoder.encode("{}"));
+  envelope.ciphertext = "A".repeat(1_333_360);
+  const { openEncryptedJsonSession } = await import("../src/secure-storage.js");
+  await assert.rejects(openEncryptedJsonSession(envelope, passphrase), /1 MB limit/);
 });
