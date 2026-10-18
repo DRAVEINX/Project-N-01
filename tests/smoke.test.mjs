@@ -4,18 +4,18 @@ import { readFile } from "node:fs/promises";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+const lifeSuite = await readFile(new URL("../src/life-suite.js", import.meta.url), "utf8");
+const portal = await readFile(new URL("../src/account-portal.js", import.meta.url), "utf8");
 
 
-test("daily task and built-in routine progress persists locally for the current day", () => {
-  assert.match(js, /const dailyProgressKey = "project-n-01-daily-progress-v1"/);
-  assert.match(js, /function localDateKey\(date = new Date\(\)\)/);
-  assert.match(js, /if \(!parsed \|\| parsed\.date !== localDateKey\(\)\) return null/);
-  assert.match(js, /localStorage\.setItem\(dailyProgressKey, JSON\.stringify\(progress\)\)/);
-  assert.match(js, /function restoreDailyProgress\(\)/);
-  assert.match(js, /saveDailyProgress\(\);/);
-  assert.match(js, /encryptedVaultStorageKey, dailyProgressKey/);
-  assert.match(js, /Today’s progress and accessibility preferences are stored unencrypted/);
-  assert.match(js, /De voortgang van vandaag en toegankelijkheidsvoorkeuren worden onversleuteld/);
+test("daily task and built-in routine progress is stored in the encrypted personal vault", () => {
+  assert.match(js, /ProjectN01LifeSuite/);
+  assert.match(js, /getRoutineProgress/);
+  assert.match(js, /saveRoutineProgress/);
+  assert.match(lifeSuite, /state\.dailyProgress=\{date:progress\.date,tasks,routines,updatedAt:new Date\(\)\.toISOString\(\)\}/);
+  assert.match(lifeSuite, /function getRoutineProgress\(\)/);
+  assert.match(lifeSuite, /return saveState\(false\)/);
+  assert.match(lifeSuite, /localStorage\.setItem\(STORAGE_KEY, raw\)/);
 });
 
 test("PWA manifest is valid and points to the cached app icon", async () => {
@@ -197,15 +197,13 @@ test("service worker limits caching to same-origin GET requests", () => {
   assert.match(serviceWorker, /caches\.match\("\/index\.html"\)/);
 });
 
-test("preferences persist locally without persisting private notes", () => {
-  assert.match(js, /project-n-01-preferences-v1/);
-  assert.match(js, /localStorage\.setItem\(preferenceKey/);
-  assert.ok(js.includes('largeText: $("#large-text").checked'));
-  assert.ok(js.includes('reducedMotion: $("#less-motion").checked'));
-  assert.ok(js.includes('quietView: $("#quiet-view").checked'));
-  assert.match(html, /voorkeuren worden lokaal in deze browser bewaard/i);
-  assert.match(html, /notities worden niet opgeslagen/i);
-  assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
+test("accessibility preferences are persisted in the encrypted personal vault", () => {
+  assert.match(js, /getAppPreferences/);
+  assert.match(js, /saveAppPreferences/);
+  assert.match(lifeSuite, /state\.appPreferences=\{language:value\.language==="en"\?"en":"nl",largeText:value\.largeText===true,reducedMotion:value\.reducedMotion===true,quietView:value\.quietView===true\}/);
+  assert.match(lifeSuite, /recordAudit\("accessibility-preferences-updated"/);
+  assert.match(lifeSuite, /return saveState\(false\)/);
+  assert.doesNotMatch(lifeSuite, /localStorage\.setItem\([^\n]*note/i);
 });
 
 test("drawing pad provides a bilingual PNG export without storing the drawing", () => {
@@ -333,18 +331,14 @@ test("custom routines can be cleared with a confirmation and bilingual accessibl
   assert.equal((html.match(/id="import-custom-routines"/g) || []).length, 1);
 });
 
-test("privacy panel explains unencrypted local data and offers confirmed deletion", () => {
-  assert.match(html, /id="clear-local-app-data"/);
+test("privacy panel explains vault deletion and requires confirmation", () => {
   assert.match(html, /data-i18n="privacyDetails"/);
-  assert.match(js, /window\.confirm\(t\("clearLocalDataConfirm"\)\)/);
-  assert.match(js, /localStorage\.removeItem\(customRoutineStorageKey\)/);
-  assert.match(js, /for \(const key of \[customRoutineStorageKey, preferenceKey, encryptedVaultStorageKey, dailyProgressKey\]\)/);
-  assert.match(js, /clearLocalData:"Wis lokale appgegevens"/);
-  assert.match(js, /clearLocalData:"Clear local app data"/);
-  assert.match(js, /localDataClearError/);
-  assert.match(js, /for \(const key of \[customRoutineStorageKey, preferenceKey, encryptedVaultStorageKey, dailyProgressKey\]\)/);
-  assert.match(js, /encryptedVaultExists = localStorage\.getItem\(encryptedVaultStorageKey\) !== null/);
-  assert.match(js, /t\(allRemoved \? "localDataCleared" : "localDataClearError"\)/);
+  assert.match(lifeSuite, /function clearLocalVault\(\)/);
+  assert.match(lifeSuite, /localStorage\.removeItem\(STORAGE_KEY\)/);
+  assert.match(lifeSuite, /deleteConfirm/);
+  assert.match(lifeSuite, /if\(!window\.confirm\(t\("deleteConfirm"\)\)\)return/);
+  assert.match(lifeSuite, /renderLocked\(true,t\("deleted"\)\)/);
+  assert.match(portal, /function setStatus/);
 });
 
 test("new encrypted vault creation requires a matching confirmation passphrase", () => {
@@ -860,16 +854,13 @@ test("view navigation moves keyboard focus to the destination heading", async ()
   assert.match(handler, /if \(isCurrent\) button\.setAttribute\("aria-current", "page"\);\s*else button\.removeAttribute\("aria-current"\);/);
 });
 
-test("daily progress safely ignores corrupt or outdated local data", async () => {
-  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
-  const start = app.indexOf("function readDailyProgress() {");
-  const end = app.indexOf("\n}", start);
-  assert.notEqual(start, -1);
-  assert.notEqual(end, -1);
-  const reader = app.slice(start, end);
-  assert.match(reader, /const parsed = JSON\.parse\(raw\);\s*if \(!parsed \|\| parsed\.date !== localDateKey\(\)\) return null;\s*return parsed;/);
-  assert.match(reader, /catch \{\s*return null;\s*\}/);
-  assert.match(app, /function restoreDailyProgress\(\) \{\s*const progress = readDailyProgress\(\);\s*if \(!progress\) return;/);
+test("daily progress is exposed only while the encrypted life vault is unlocked", async () => {
+  const life = await readFile(new URL("../src/life-suite.js", import.meta.url), "utf8");
+  assert.match(life, /function getRoutineProgress\(\)\{return state&&sessionKey&&state\.dailyProgress\?JSON\.parse\(JSON\.stringify\(state\.dailyProgress\)\):null;\}/);
+  assert.match(life, /async function saveRoutineProgress\(progress\)/);
+  assert.match(life, /if\(!state\|\|!sessionKey\)throw new Error\("Unlock the personal vault first\."\)/);
+  assert.match(life, /typeof progress\.date!=="string"/);
+  assert.match(life, /return saveState\(false\)/);
 });
 
 test("daily progress restoration accepts only explicit completed booleans", async () => {
