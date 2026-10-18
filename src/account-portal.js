@@ -177,8 +177,18 @@
     try{
       if(!window.ProjectN01LifeSuite||!window.ProjectN01LifeSuite.getWeeklyReport){box.textContent="Ontgrendel eerst de kluis in Mijn leven om het weekoverzicht lokaal samen te stellen.";return;}
       const report=window.ProjectN01LifeSuite.getWeeklyReport();
-      box.innerHTML='<div class="ap-report-grid">'+report.items.map(x=>'<div class="ap-report-stat"><strong>'+esc(x.value)+'</strong><span>'+esc(x.label)+'</span></div>').join("")+'</div><p class="ap-muted">Deze samenvatting blijft op dit apparaat. Dagboektekst wordt niet getoond of automatisch gedeeld.</p>';
+      box.innerHTML='<div class="ap-report-grid">'+report.items.map(x=>'<div class="ap-report-stat"><strong>'+esc(x.value)+'</strong><span>'+esc(x.label)+'</span></div>').join("")+'</div><p class="ap-muted">Deze cijfers worden alleen op dit apparaat gemaakt. Er wordt niets automatisch gedeeld.</p>';
     }catch{box.textContent="Ontgrendel de persoonlijke kluis om de samenvatting te maken.";}
+  }
+  function exportWeeklyReport(){
+    if(!window.ProjectN01LifeSuite||!window.ProjectN01LifeSuite.getWeeklyReport)throw new Error("Ontgrendel eerst de persoonlijke kluis.");
+    const selected=Array.from(root.querySelectorAll('input[name="reportSection"]:checked')).map(x=>x.value);
+    if(!selected.length)throw new Error("Kies zelf minstens één onderdeel voor het weekrapport.");
+    const report=window.ProjectN01LifeSuite.getWeeklyReport();
+    const rows=report.items.filter(x=>selected.includes(x.key)).map(x=>x.label+": "+x.value);
+    const content=["Project N-01 — weekoverzicht",report.start+" t/m "+report.end,"",...rows,"","Alleen geselecteerde totalen. Dagboektekst, geluidsopnames en stemmingsnotities zijn niet opgenomen."].join("\r\n");
+    downloadText(content,"text/plain;charset=utf-8","project-n-01-weekoverzicht.txt");
+    setStatus("Weekrapport geëxporteerd. Controleer het bestand voordat je het eventueel deelt.");
   }
   function downloadText(content,type,name){const blob=new Blob([content],{type});const href=URL.createObjectURL(blob);const a=document.createElement("a");a.href=href;a.download=name;a.hidden=true;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),1500);}
   function resetIdle(){clearTimeout(idleTimer);if(token)idleTimer=setTimeout(()=>logout(true),15*60*1000);}
