@@ -724,6 +724,10 @@
         if(await saveState(false)){importForm.reset();renderApp();setStatus(t("importDone"));}
       }catch{setStatus(t("badPass"),true);}
     });
+    const goalForm=$("#ls-goal-form");
+    if(goalForm) goalForm.addEventListener("submit",async event=>{event.preventDefault();const v=formData(goalForm);if(!v.title.trim()){setStatus(t("invalid"),true);return;}if(v.targetDate&&v.targetDate<v.startDate){setStatus("De streefdatum mag niet vóór de startdatum liggen.",true);return;}const item={id:uid("goal"),profileId:state.currentProfileId,title:v.title.trim(),startDate:v.startDate,targetDate:v.targetDate||"",progress:Math.max(0,Math.min(100,Number(v.progress)||0)),notes:v.notes.trim(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};state.goals.push(item);recordAudit("goal-created",item.title);if(await saveState(false))renderApp();});
+    const documentForm=$("#ls-document-form");
+    if(documentForm) documentForm.addEventListener("submit",async event=>{event.preventDefault();const v=formData(documentForm);const f=documentForm.elements.file.files[0];if(!v.name.trim()||!f){setStatus(t("invalid"),true);return;}if(f.size>1572864){setStatus("Dit bestand is groter dan 1,5 MB.",true);return;}if(!/^(application\/pdf|image\/(png|jpeg|webp)|text\/plain)$/.test(f.type)){setStatus("Dit bestandstype wordt niet ondersteund.",true);return;}try{const dataUrl=await readFileData(f,1572864);state.documents.push({id:uid("document"),profileId:state.currentProfileId,name:v.name.trim(),description:v.description.trim(),fileName:f.name,mime:f.type,size:f.size,dataUrl,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});recordAudit("document-added",v.name.trim());if(await saveState(false))renderApp();}catch{setStatus("Document bewaren is niet gelukt. Controleer de opslagruimte.",true);}});
     updateDrawingCanvas();
   }
 
