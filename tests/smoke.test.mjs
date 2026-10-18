@@ -160,7 +160,7 @@ test("routine checkbox and completion listeners use the shared query helper", ()
 
 test("document title follows the active view and updates when language changes", () => {
   assert.match(js, /function updateDocumentTitle\(\)/);
-  assert.match(js, /document\.title = pageName \? `\$\{pageName\} · Project N-01` : "Project N-01"/);
+  assert.match(js, /document\.title = pageName \? `\$\{pageName\} · Project N-01` : "NovaLife"/);
   assert.match(js, /updateDocumentTitle\(\);/);
 });
 
@@ -184,7 +184,7 @@ test("prototype does not depend on external runtime scripts or styles", () => {
 
 test("install metadata and offline assets are present", () => {
   const parsed = JSON.parse(manifest);
-  assert.equal(parsed.name.startsWith("Project N-01"), true);
+  assert.equal(parsed.name.startsWith("NovaLife"), true);
   assert.equal(parsed.display, "standalone");
   assert.ok(parsed.icons.some(icon => icon.src === "/assets/app-icon.svg"));
   for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/offline.html"]) {
