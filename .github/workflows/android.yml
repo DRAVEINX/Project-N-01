@@ -11,6 +11,7 @@ on:
       - "src/**"
       - "assets/**"
       - "scripts/prepare-mobile.mjs"
+      - "scripts/build-native-notifications.mjs"
       - "scripts/ensure-android-microphone-permission.mjs"
       - "scripts/configure-android-signing.mjs"
       - "scripts/configure-android-build-variants.mjs"
