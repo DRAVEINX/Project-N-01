@@ -1005,7 +1005,7 @@
       if(!state||!sessionKey||!value||typeof value!=="object")return false;
       state.professional=Object.assign(professionalBlank(),state.professional||{});
       const current=state.professional.accessibility||professionalBlank().accessibility;
-      state.professional.accessibility=Object.assign({},value,current);
+      state.professional.accessibility=Object.assign({},current,value);
       const saved=await saveState(false);if(saved)localStorage.removeItem("project-n-01-preferences-v1");return saved;
     },
     exportEncryptedEnvelope:async()=>{
