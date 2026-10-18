@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const appIcon = await readFile(new URL("../assets/app-icon.svg", import.meta.url), "utf8");
+const windowsIconScript = await readFile(new URL("../scripts/generate-windows-icon.mjs", import.meta.url), "utf8");
 const portal = await readFile(new URL("../src/account-portal.js", import.meta.url), "utf8");
 const history = await readFile(new URL("../src/version-history.js", import.meta.url), "utf8");
 const nativeBridge = await readFile(new URL("../src/native-notifications-entry.js", import.meta.url), "utf8");
@@ -314,6 +316,23 @@ test("version history stores opaque ciphertext in IndexedDB rather than localSto
   assert.match(html, /src\/version-history\.js/);
 });
 
+
+
+test("NovaLife branded splash and professional app icon are wired for web, Android and Windows", () => {
+  assert.match(html, /id="novalife-splash"/);
+  assert.match(html, /startup-splash__icon/);
+  assert.match(html, /window\.setTimeout\(dismiss, 820\)/);
+  assert.match(appIcon, /linearGradient id="ribbon"/);
+  assert.match(appIcon, /linearGradient id="leaf"/);
+  assert.match(androidVariantScript, /novalife_splash_mark\.xml/);
+  assert.match(androidVariantScript, /windowSplashScreenAnimatedIcon/);
+  assert.match(androidVariantScript, /mipmap-anydpi-v26/);
+  assert.match(desktopMain, /splashMarkup/);
+  assert.match(desktopMain, /splashWindow = new BrowserWindow/);
+  assert.match(desktopMain, /icon: fs\.existsSync\(ICON_PATH\)/);
+  assert.match(windowsIconScript, /paintLine\(77, 184, 77, 75/);
+  assert.match(windowsIconScript, /fillPolygon/);
+});
 
 test("data-protection documentation matches the encrypted Daily Life Suite implementation", () => {
   assert.match(dataProtection, /Daily Life Suite.*persists appointments, roster, mood check-ins, journal entries, drawings/i);
