@@ -868,8 +868,11 @@ test("daily progress safely ignores corrupt or outdated local data", async () =>
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
   const reader = app.slice(start, end);
-  assert.match(reader, /const parsed = JSON\.parse\(raw\);\s*if \(!parsed \|\| parsed\.date !== localDateKey\(\)\) return null;\s*return parsed;/);
-  assert.match(reader, /catch \{\s*return null;\s*\}/);
+  assert.match(reader, /window\.ProjectN01Vault/);
+  assert.match(reader, /secure\.isUnlocked\(\)/);
+  assert.match(reader, /secure\.getDailyProgress\(localDateKey\(\)\)/);
+  assert.doesNotMatch(reader, /localStorage/);
+  assert.match(app, /function migrateLegacyDataIntoVault\(\)/);
   assert.match(app, /function restoreDailyProgress\(\) \{\s*const progress = readDailyProgress\(\);\s*if \(!progress\) return;/);
 });
 
