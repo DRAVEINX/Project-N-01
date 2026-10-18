@@ -120,7 +120,7 @@ test("mobile-first accessible styling and offline cache include the new module",
   assert.match(css, /ls-high-contrast/);
   assert.match(css, /ls-large-text/);
   assert.match(css, /ls-reduced-motion/);
-  assert.match(serviceWorker, /project-n-01-prototype-v15/);
+  assert.match(serviceWorker, /project-n-01-prototype-v16/);
   assert.match(serviceWorker, /"\/src\/life-suite\.js"/);
   assert.match(serviceWorker, /"\/src\/life-suite\.css"/);
   assert.match(workflow, /node --check src\/life-suite\.js/);
@@ -131,6 +131,17 @@ test("sensitive module never writes readable personal records as standalone loca
   assert.doesNotMatch(js, /localStorage\.setItem\(["'](?:project-n-01-(?:journal|mood|appointments|contacts))/);
   assert.match(js, /lockVault/);
   assert.match(js, /AUTO_LOCK_MS = 5 \* 60 \* 1000/);
+});
+
+
+test("vault does not relock immediately on a brief background switch and keeps the selected section", () => {
+  assert.match(js, /const BACKGROUND_LOCK_GRACE_MS = 60 \* 1000/);
+  assert.match(js, /backgroundLockTimer=window\.setTimeout/);
+  assert.match(js, /if\(document\.visibilityState==="hidden"&&sessionKey&&!filePickerPending\)lockVault\(true\)/);
+  assert.match(js, /if\(backgroundLockTimer\)clearTimeout\(backgroundLockTimer\)/);
+  assert.doesNotMatch(js, /if\(document\.visibilityState==="hidden"&&sessionKey&&!filePickerPending\)lockVault\(true\);/);
+  assert.match(js, /Keep the last selected section when re-unlocking after an automatic lock/);
+  assert.doesNotMatch(js, /activeTab = "dashboard";\s*renderApp\(\);/);
 });
 
 test("Android phone and tablet have separate installable build variants and responsive tablet layout", () => {
