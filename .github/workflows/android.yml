@@ -2,7 +2,7 @@ name: Project N-01 Android build
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feature/professional-suite-priority-1"]
     paths:
       - "index.html"
       - "offline.html"
