@@ -24,7 +24,7 @@ function updateDocumentTitle() {
   const activeView = $(".view.active");
   const heading = activeView?.querySelector("h2");
   const pageName = heading?.textContent?.trim();
-  document.title = pageName ? `${pageName} · Project N-01` : "Project N-01";
+  document.title = pageName ? `${pageName} · NovaLife` : "NovaLife";
 }
 function setView(view) {
   // Stop the breathing timer when leaving its view so it cannot run invisibly in the background.
