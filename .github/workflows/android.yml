@@ -79,6 +79,15 @@ jobs:
       - name: Configure separate phone and tablet variants
         run: node scripts/configure-android-build-variants.mjs
 
+      - name: Verify generated phone and tablet variants
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'applicationIdSuffix ".phone"' android/app/build.gradle
+          grep -F 'applicationIdSuffix ".tablet"' android/app/build.gradle
+          test -s android/app/src/phone/res/values/strings.xml
+          test -s android/app/src/tablet/res/values/strings.xml
+
       - name: Build phone and tablet debug APKs
         run: cd android && ./gradlew --no-daemon --stacktrace assemblePhoneDebug assembleTabletDebug
 
