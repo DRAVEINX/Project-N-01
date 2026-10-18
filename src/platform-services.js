@@ -195,6 +195,7 @@
     if(!data?.access_token || !data?.user)throw new Error("Inloggen is niet voltooid. Controleer of je e-mailadres is bevestigd.");
     saveSession(data);
     await loadProfile();
+    await loadCareLinks();
     scheduleAutomaticSync();
     await refreshRemoteStatus({quiet:true});
     setStatus("Je bent ingelogd.");
@@ -204,6 +205,7 @@
     if(data?.access_token && data?.user) {
       saveSession(data);
       await loadProfile();
+      await loadCareLinks();
       scheduleAutomaticSync();
       setStatus("Account aangemaakt. Controleer of je e-mailbevestiging nog nodig is.");
     } else {
@@ -257,7 +259,13 @@
     setStatus("De authenticatorcode is geverifieerd.");
   }
   async function loadCareLinks() {
-    return await api("/rest/v1/care_links?select=id,owner_id,caregiver_id,invite_email,role,read_scopes,write_scopes,status,created_at,expires_at&order=created_at.desc&limit=50");
+    careLinks = await api("/rest/v1/care_links?select=id,owner_id,caregiver_id,invite_email,role,read_scopes,write_scopes,status,created_at,revoked_at&order=created_at.desc&limit=50");
+    return careLinks;
+  }
+  async function revokeCareLink(id) {
+    await api("/rest/v1/care_links?id=eq."+encodeURIComponent(id),{method:"PATCH",body:{status:"revoked",revoked_at:new Date().toISOString()},prefer:"return=minimal"});
+    await loadCareLinks();
+    setStatus("De toegang is ingetrokken. Deze koppeling deelt nog geen versleutelde dagboekinhoud.");
   }
   async function createCareInvite(form) {
     const email=String(form.elements.email.value||"").trim().toLowerCase();
@@ -344,7 +352,8 @@
   }
   function renderCare() {
     if(!session)return '<p>Log in om beveiligde uitnodigingen te beheren.</p>';
-    return '<form id="ps-invite-form" class="ps-form"><h4>Nieuwe uitnodiging</h4><label>E-mailadres van de persoon<input name="email" type="email" required autocomplete="email"></label><label>Rol<select name="role"><option value="caregiver">Begeleider</option><option value="parent">Ouder</option><option value="guardian">Voogd</option></select></label>'+scopesForm()+'<button class="primary-button" type="submit">Beveiligde uitnodigingscode maken</button><p class="ps-note">De code is eenmalig en verloopt na 7 dagen. De app mailt deze niet automatisch; deel hem alleen met de bedoelde persoon.</p></form><form id="ps-redeem-form" class="ps-form"><h4>Uitnodiging accepteren</h4><label>Uitnodigingscode<input name="code" type="password" minlength="32" required autocomplete="off"></label><button class="primary-button" type="submit">Uitnodiging accepteren</button></form>'+ (secretCode?'<div class="ps-secret"><strong>Eenmalige code — kopieer en deel beveiligd</strong><code>'+esc(secretCode)+'</code>'+button("Code kopiëren","copy-code")+'</div>':"")+'<p class="ps-note">Een uitnodiging geeft alleen de op de server ingestelde categorieën en wijzigrechten. De huidige versleutelde hoofdkluis blijft alleen leesbaar met de kluis-wachtzin; de code deelt die wachtzin niet.</p>';
+    const links=careLinks.map(link=>'<article class="ps-item"><strong>'+esc(link.invite_email)+' · '+esc(link.role)+'</strong><p>Status: '+esc(link.status)+'</p><p>Lezen: '+esc((link.read_scopes||[]).join(", "))+'</p><p>Wijzigen: '+esc((link.write_scopes||[]).join(", ")||"geen")+'</p>'+(link.owner_id===session.user.id&&link.status==="active"?button("Toegang intrekken","revoke-link","danger-button",'data-id="'+esc(link.id)+'"'):"")+'</article>').join("")||'<p>Nog geen toegangs-koppelingen.</p>';
+    return '<div class="ps-care-links"><h4>Toegangsrechten</h4>'+links+'</div><form id="ps-invite-form" class="ps-form"><h4>Nieuwe uitnodiging</h4><label>E-mailadres van de persoon<input name="email" type="email" required autocomplete="email"></label><label>Rol<select name="role"><option value="caregiver">Begeleider</option><option value="parent">Ouder</option><option value="guardian">Voogd</option></select></label>'+scopesForm()+'<button class="primary-button" type="submit">Beveiligde uitnodigingscode maken</button><p class="ps-note">De code is eenmalig en verloopt na 7 dagen. De app mailt deze niet automatisch; deel hem alleen met de bedoelde persoon.</p></form><form id="ps-redeem-form" class="ps-form"><h4>Uitnodiging accepteren</h4><label>Uitnodigingscode<input name="code" type="password" minlength="32" required autocomplete="off"></label><button class="primary-button" type="submit">Uitnodiging accepteren</button></form>'+ (secretCode?'<div class="ps-secret"><strong>Eenmalige code — kopieer en deel beveiligd</strong><code>'+esc(secretCode)+'</code>'+button("Code kopiëren","copy-code")+'</div>':"")+'<p class="ps-note">Een uitnodiging geeft alleen de op de server ingestelde categorieën en wijzigrechten. De huidige versleutelde hoofdkluis blijft alleen leesbaar met de kluis-wachtzin; de code deelt die wachtzin niet.</p>';
   }
   function render() {
     if(!root.isConnected)return;
@@ -352,7 +361,7 @@
     root.querySelectorAll("form").forEach(form=>form.addEventListener("submit",handleSubmit));
     root.querySelectorAll("[data-ps-action]").forEach(el=>el.addEventListener("click",()=>handleAction(el.dataset.psAction)));
   }
-  async function handleAction(action) {
+  async function handleAction(action,actionId) {
     try {
       if(action==="edit-config"){config={url:"",anonKey:""};mode="signin";saveSession(null);stopAutomaticSync();render();return;}
       if(action==="signin"){mode="signin";render();return;}
@@ -365,6 +374,7 @@
       if(action==="upload-sync"){if(syncConflict&&!window.confirm("Er is een andere cloudversie. Uploaden maakt een extra versie maar overschrijft niets. Doorgaan?"))return;setBusy(true);await uploadSnapshot();return;}
       if(action==="restore-sync"){setBusy(true);await refreshRemoteStatus({quiet:true});if(!latestRemote?.encrypted_snapshot)throw new Error("Er is nog geen cloudversie.");await restoreLatestSnapshot();return;}
       if(action==="show-invites"){root.querySelector(".ps-panel:nth-child(3)")?.scrollIntoView({behavior:"smooth",block:"start"});root.querySelector('#ps-invite-form input[name="email"]')?.focus();return;}
+      if(action==="revoke-link"){if(!window.confirm("Deze toegangslink intrekken?"))return;setBusy(true);await revokeCareLink(actionId);render();return;}
       if(action==="copy-code"){await navigator.clipboard.writeText(secretCode);setStatus("Code gekopieerd.");return;}
     } catch(error) {setStatus(error.message||"De actie is mislukt.",true);}
     finally {setBusy(false);}
@@ -376,6 +386,7 @@
         const current=await api("/auth/v1/user");
         if(current?.id)session.user=current;
         saveSession(session);
+        await loadCareLinks();
         await refreshRemoteStatus({quiet:true});
         scheduleAutomaticSync();
       } catch { saveSession(null); }
