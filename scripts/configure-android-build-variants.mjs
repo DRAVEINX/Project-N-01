@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 const root = process.cwd();
 const gradlePath = join(root, "android", "app", "build.gradle");
-const gradle = await readFile(gradlePath, "utf8");
+let gradle = await readFile(gradlePath, "utf8");
 
 function findMatchingBrace(source, openIndex) {
   let depth = 0;
@@ -61,6 +61,7 @@ if (targetSdkLine.test(defaultConfig)) {
 if (updatedDefaultConfig !== defaultConfig) {
   const updatedGradle = gradle.slice(0, defaultConfigOpen + 1) + updatedDefaultConfig + gradle.slice(defaultConfigClose);
   await writeFile(gradlePath, updatedGradle, "utf8");
+  gradle = updatedGradle;
 }
 if (!androidBlock.includes('applicationIdSuffix ".phone"') || !androidBlock.includes('applicationIdSuffix ".tablet"')) {
   const flavors = "\n    // Keep phone and tablet packages installable side-by-side.\n" +
