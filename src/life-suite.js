@@ -301,11 +301,29 @@
     return visibleItems("appointments", "calendar").filter(a => a.date === date).sort((a,b) => a.start.localeCompare(b.start));
   }
   function appointmentCard(a) {
-    return '<article class="ls-item"><div class="ls-item-top"><div><strong>' + esc(a.start + "–" + a.end + " · " + a.title) + '</strong><p>' + esc((a.location || "") + (a.location && a.preparation ? " · " : "") + (a.preparation || "")) + '</p></div><div class="ls-actions">' + button(t("edit"), "edit-appointment", "secondary-button", 'data-id="' + esc(a.id) + '"') + button(t("delete"), "delete-appointment", "secondary-button danger-button", 'data-id="' + esc(a.id) + '"') + '</div></div>' + (a.notes ? '<p class="ls-muted">' + esc(a.notes) + '</p>' : "") + '<small>' + esc(prettyDate(a.date)) + (a.reminderMins ? " · " + esc(a.reminderMins) + " min" : "") + (a.repeat && a.repeat !== "none" ? " · " + esc(t(a.repeat)) : "") + '</small></article>';
+    const timeLabel = a.allDay ? (lang === "nl" ? "Hele dag" : "All day") : (a.start + "–" + a.end);
+    const travel = Number(a.travelMinutes) > 0 ? " · " + (lang === "nl" ? "reistijd" : "travel") + " " + esc(a.travelMinutes) + " min" : "";
+    return '<article class="ls-item" draggable="true" data-appointment-drag="' + esc(a.id) + '"><div class="ls-item-top"><div><strong>' + esc(timeLabel + " · " + a.title) + '</strong><p>' + esc((a.location || "") + (a.location && a.preparation ? " · " : "") + (a.preparation || "")) + '</p></div><div class="ls-actions">' + button(t("edit"), "edit-appointment", "secondary-button", 'data-id="' + esc(a.id) + '"') + button(t("delete"), "delete-appointment", "secondary-button danger-button", 'data-id="' + esc(a.id) + '"') + '</div></div>' + (a.notes ? '<p class="ls-muted">' + esc(a.notes) + '</p>' : "") + '<small>' + esc(prettyDate(a.date)) + (a.reminderMins ? " · " + esc(a.reminderMins) + " min" : "") + travel + (a.repeat && a.repeat !== "none" ? " · " + esc(t(a.repeat)) : "") + '</small></article>';
   }
   function appointmentForm(a) {
     a = a || {};
-    return '<form id="ls-appointment-form" class="ls-form ls-grid">' + field(t("title"),"title","text",a.title,"required maxlength='120'") + field(t("date"),"date","date",a.date || selectedDate,"required") + field(t("start"),"start","time",a.start || "09:00","required") + field(t("end"),"end","time",a.end || "09:30","required") + field(t("location"),"location","text",a.location,"maxlength='160'") + select(t("reminder"),"reminderMins",[{value:"0",label:t("none")},{value:"5",label:t("fiveMin")},{value:"10",label:t("tenMin")},{value:"30",label:t("thirtyMin")},{value:"60",label:t("oneHour")}],a.reminderMins || "10") + select(t("repeat"),"repeat",[{value:"none",label:t("noRepeat")},{value:"weekly",label:t("weekly")}],a.repeat || "none") + textarea(t("preparation"),"preparation",a.preparation,2,"maxlength='1200'") + textarea(t("notes"),"notes",a.notes,2,"maxlength='2000'") + '<input type="hidden" name="id" value="' + esc(a.id || "") + '"><div class="ls-form-actions"><button class="primary-button" type="submit">' + esc(t("save")) + '</button>' + (a.id ? button(t("cancel"),"cancel-edit","secondary-button") : "") + '</div><p class="ls-status" id="ls-appointment-status" role="status" aria-live="polite"></p></form>';
+    const allDay = a.allDay === true;
+    const startAttrs = allDay ? "disabled" : "required";
+    const excluded = Array.isArray(a.excludedDates) ? a.excludedDates.join(", ") : (a.excludedDates || "");
+    return '<form id="ls-appointment-form" class="ls-form ls-grid">' +
+      field(t("title"),"title","text",a.title,"required maxlength='120'") +
+      field(t("date"),"date","date",a.date || selectedDate,"required") +
+      '<label class="ls-field ls-check-field"><input type="checkbox" name="allDay" value="on" ' + (allDay ? "checked" : "") + '><span>' + (lang === "nl" ? "Hele dag" : "All day") + '</span></label>' +
+      field(t("start"),"start","time",allDay ? "" : (a.start || "09:00"),startAttrs) +
+      field(t("end"),"end","time",allDay ? "" : (a.end || "09:30"),startAttrs) +
+      field(t("location"),"location","text",a.location,"maxlength='160'") +
+      field(lang === "nl" ? "Reistijd (minuten)" : "Travel time (minutes)","travelMinutes","number",String(a.travelMinutes || 0),"min='0' max='240' step='5'") +
+      select(t("reminder"),"reminderMins",[{value:"0",label:t("none")},{value:"5",label:t("fiveMin")},{value:"10",label:t("tenMin")},{value:"30",label:t("thirtyMin")},{value:"60",label:t("oneHour")}],a.reminderMins || "10") +
+      select(t("repeat"),"repeat",[{value:"none",label:t("noRepeat")},{value:"weekly",label:t("weekly")}],a.repeat || "none") +
+      field(lang === "nl" ? "Uitzonderingsdatums (YYYY-MM-DD, komma's)" : "Excluded dates (YYYY-MM-DD, commas)","excludedDates","text",excluded,"maxlength='300'") +
+      textarea(t("preparation"),"preparation",a.preparation,2,"maxlength='1200'") +
+      textarea(t("notes"),"notes",a.notes,2,"maxlength='2000'") +
+      '<input type="hidden" name="id" value="' + esc(a.id || "") + '"><div class="ls-form-actions"><button class="primary-button" type="submit">' + esc(t("save")) + '</button>' + (a.id ? button(t("cancel"),"cancel-edit","secondary-button") : "") + '</div><p class="ls-status" id="ls-appointment-status" role="status" aria-live="polite"></p></form>';
   }
   function monthCalendar() {
     const first = dateAt(selectedDate);
@@ -491,7 +509,9 @@
     return (parts[0] || 0) * 60 + (parts[1] || 0);
   }
   function overlap(a,b) {
-    return a.date === b.date && minutes(a.start) < minutes(b.end) && minutes(b.start) < minutes(a.end);
+    if(a.date !== b.date) return false;
+    if(a.allDay === true || b.allDay === true) return true;
+    return minutes(a.start) < minutes(b.end) && minutes(b.start) < minutes(a.end);
   }
   function appointmentConflict(candidate, pool) {
     const candidates = Array.isArray(pool) ? pool : visibleItems("appointments","calendar");
@@ -513,15 +533,13 @@
     if (seriesId) base.seriesId = seriesId;
     const result = [base];
     if (appt.repeat === "weekly") {
-      // Keep a bounded eight-occurrence preview series; copies do not themselves recur.
+      const excluded=new Set(Array.isArray(appt.excludedDates)?appt.excludedDates:[]);
       for (let i=1;i<8;i++) {
+        const date=shiftDate(appt.date,i*7);
+        if(excluded.has(date)) continue;
         result.push(Object.assign({}, appt, {
-          id:uid("appointment"),
-          seriesId:seriesId,
-          repeat:"none",
-          date:shiftDate(appt.date,i*7),
-          createdAt:new Date().toISOString(),
-          updatedAt:new Date().toISOString()
+          id:uid("appointment"), seriesId:seriesId, repeat:"none", date:date,
+          createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
         }));
       }
     }
@@ -537,17 +555,26 @@
     if (selected) selected.addEventListener("change",()=>{selectedDate=selected.value || localDate(new Date());renderApp();});
     $$("[data-ls-date]").forEach(el=>el.addEventListener("click",()=>{selectedDate=el.dataset.lsDate;calendarMode="day";renderApp();}));
     const appointmentFormEl = $("#ls-appointment-form");
-    if (appointmentFormEl) appointmentFormEl.addEventListener("submit", async event=>{
+    if (appointmentFormEl) {
+      const allDayToggle=appointmentFormEl.elements.allDay;
+      const startInput=appointmentFormEl.elements.start;
+      const endInput=appointmentFormEl.elements.end;
+      const syncAllDayFields=()=>{const disabled=allDayToggle.checked;startInput.disabled=disabled;endInput.disabled=disabled;startInput.required=!disabled;endInput.required=!disabled;};
+      allDayToggle.addEventListener("change",syncAllDayFields);
+      syncAllDayFields();
+      appointmentFormEl.addEventListener("submit", async event=>{
       event.preventDefault();
       const v = formData(appointmentFormEl);
-      if (!v.title.trim() || !v.date || !v.start || !v.end || minutes(v.end)<=minutes(v.start)) {setStatus(t("invalid"),true);return;}
+      const allDay=v.allDay==="on";
+      if (!v.title.trim() || !v.date || (!allDay && (!v.start || !v.end || minutes(v.end)<=minutes(v.start)))) {setStatus(t("invalid"),true);return;}
       const existing = v.id ? state.appointments.find(a=>a.id===v.id) : null;
       if(existing && !requireModify("calendar",existing)) return;
       const now = new Date().toISOString();
       const oldSeries = existing ? (existing.seriesId || (existing.repeat==="weekly" ? existing.id : "")) : "";
       const id = v.id || uid("appointment");
       const repeat = v.repeat || "none";
-      const a = {id:id,profileId:existing?existing.profileId:state.currentProfileId,title:v.title.trim(),date:v.date,start:v.start,end:v.end,location:v.location.trim(),notes:v.notes.trim(),preparation:v.preparation.trim(),reminderMins:Number(v.reminderMins)||0,repeat:repeat,createdAt:existing?existing.createdAt:now,updatedAt:now};
+      const excludedDates=String(v.excludedDates||"").split(/[;,\s]+/).filter(date=>/^\d{4}-\d{2}-\d{2}$/.test(date));
+      const a = {id:id,profileId:existing?existing.profileId:state.currentProfileId,title:v.title.trim(),date:v.date,start:allDay?"":v.start,end:allDay?"":v.end,allDay:allDay,travelMinutes:Math.max(0,Math.min(240,Number(v.travelMinutes)||0)),excludedDates:excludedDates,location:(v.location||"").trim(),notes:(v.notes||"").trim(),preparation:(v.preparation||"").trim(),reminderMins:Number(v.reminderMins)||0,repeat:repeat,createdAt:existing?existing.createdAt:now,updatedAt:now};
       if(repeat==="weekly") {
         const editingSeriesRoot=existing && existing.repeat==="weekly" && (!existing.seriesId || existing.seriesId===existing.id);
         a.seriesId=editingSeriesRoot ? (oldSeries || id) : id;
@@ -575,7 +602,8 @@
       recordAudit(existing?"appointment-updated":"appointment-created",a.title);
       const ok=await saveState(false);if(ok){selectedDate=a.date;renderApp();setStatus(t("saved"));}
     });
-        const workerForm = $("#ls-worker-form");
+    }
+    const workerForm = $("#ls-worker-form");
     if (workerForm) workerForm.addEventListener("submit",async event=>{
       event.preventDefault();const v=formData(workerForm);if(!v.name.trim()){setStatus(t("invalid"),true);return;}
       try {
