@@ -506,3 +506,18 @@ test("NovaInsights is opt-in, local-only, and summarizes counts without journal 
   assert.match(css, /\.ls-insights-grid\s*\{/);
   assert.match(css, /@media \(max-width:760px\) \{ \.ls-insights-grid/);
 });
+
+
+test("NovaLife Health Check reports observable local status without overstating security", () => {
+  assert.match(js, /function healthCheckView\(\)/);
+  assert.match(js, /\["health","healthCheck"\]/);
+  assert.match(js, /activeTab === "health" \? healthCheckView\(\)/);
+  assert.match(js, /window\.localStorage\.getItem\(STORAGE_KEY\)/);
+  assert.match(js, /navigator\.onLine/);
+  assert.match(js, /typeof window\.Notification !== "undefined"/);
+  assert.match(js, /account-linked sync is not configured yet/);
+  assert.match(js, /does not run a penetration test/);
+  assert.match(js, /voert geen penetratietest uit/);
+  assert.match(css, /\.ls-health-list\s*\{/);
+  assert.match(css, /\.ls-health-item\s*\{/);
+});
