@@ -47,9 +47,15 @@ export function verifyToken(token, secret) {
     if (typeof token !== "string" || token.length > 8192) return null;
     const parts = token.split(".");
     if (parts.length !== 3) return null;
+    if (typeof secret !== "string" || Buffer.byteLength(secret) < 32) return null;
     const header = dec(parts[0]);
     const payload = dec(parts[1]);
-    if (header.alg !== "HS256" || header.typ !== "JWT" || !Number.isInteger(payload.exp) || payload.exp <= Math.floor(Date.now()/1000)) return null;
+    const now = Math.floor(Date.now() / 1000);
+    if (!header || typeof header !== "object" || Array.isArray(header) ||
+        !payload || typeof payload !== "object" || Array.isArray(payload) ||
+        header.alg !== "HS256" || header.typ !== "JWT" ||
+        !Number.isInteger(payload.iat) || !Number.isInteger(payload.exp) ||
+        payload.iat > now + 60 || payload.exp <= now || payload.exp <= payload.iat) return null;
     const expected = createHmac("sha256", secret).update(parts[0]+"."+parts[1]).digest();
     const actual = Buffer.from(parts[2], "base64url");
     if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
