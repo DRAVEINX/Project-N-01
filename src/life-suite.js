@@ -184,6 +184,7 @@
       envelope = await encryptState(state, sessionKey, b64ToBytes(saltB64));
       const raw = JSON.stringify(envelope);
       localStorage.setItem(STORAGE_KEY, raw);
+      scheduleNativeNotifications().catch(()=>{});
       if (message !== false) setStatus(message || t("saved"));
       startAutoLock();
       return true;
@@ -825,7 +826,7 @@
     if(action==="contact-help"){const contact=visibleItems("contacts","help")[0];if(!contact){setStatus(t("noContact"),true);return;}if(!contact.phone){setStatus(t("noPhone"),true);return;}if(window.confirm(t("callConfirm")))window.location.href="tel:"+contact.phone.replace(/[^\d+]/g,"");return;}
     if(action==="call-contact"){const c=state.contacts.find(x=>x.id===id)||visibleItems("contacts","help")[0];if(!c||!c.phone){setStatus(t("noPhone"),true);return;}if(window.confirm(t("callConfirm")))window.location.href="tel:"+c.phone.replace(/[^\d+]/g,"");return;}
     if(action==="sms-contact"){const c=state.contacts.find(x=>x.id===id)||visibleItems("contacts","help")[0];if(!c||!c.phone){setStatus(t("noPhone"),true);return;}if(window.confirm(t("smsConfirm")))window.location.href="sms:"+c.phone.replace(/[^\d+]/g,"");return;}
-    if(action==="notification-permission"){if(!("Notification" in window)){setStatus(t("noNotification"),true);return;}const permission=await Notification.requestPermission();setStatus(permission==="granted"?t("permissionGranted"):t("permissionNeeded"),permission!=="granted");if(permission==="granted")await scheduleNativeNotifications();return;}
+    if(action==="notification-permission"){const bridge=await loadNativeNotificationPlugin();if(bridge){const result=await bridge.requestPermissions();const granted=result?.display==="granted";setStatus(granted?t("permissionGranted"):t("permissionNeeded"),!granted);if(granted)await scheduleNativeNotifications();return;}if(!("Notification" in window)){setStatus(t("noNotification"),true);return;}const permission=await Notification.requestPermission();setStatus(permission==="granted"?t("permissionGranted"):t("permissionNeeded"),permission!=="granted");return;}
     if(action==="create-checkpoint"){if(currentProfile()?.role!=="self"){setStatus(t("noPermission"),true);return;}const snapshot=JSON.parse(JSON.stringify(state));snapshot.checkpoints=[];snapshot.audit=[];const checkpoint={id:uid("checkpoint"),at:new Date().toISOString(),label:"Herstelpunt "+new Date().toLocaleString(),snapshot};state.checkpoints=(state.checkpoints||[]).concat(checkpoint).slice(-3);recordAudit("checkpoint-created",checkpoint.label);if(await saveState(false))renderApp();return;}
     if(action==="restore-checkpoint"){if(currentProfile()?.role!=="self"){setStatus(t("noPermission"),true);return;}const checkpoint=state.checkpoints.find(c=>c.id===id);if(!checkpoint?.snapshot||!window.confirm("Dit vervangt de huidige gegevens door het herstelpunt. Maak eerst een back-up als je huidige wijzigingen wilt behouden. Doorgaan?"))return;const checkpoints=state.checkpoints;const restored=normalizeState(checkpoint.snapshot);Object.assign(state,restored);state.checkpoints=checkpoints;recordAudit("checkpoint-restored",checkpoint.label);if(await saveState(false))renderApp();return;}
     if(action==="speak-page"){if(!window.speechSynthesis||!window.SpeechSynthesisUtterance){setStatus("Voorlezen wordt door dit apparaat niet ondersteund.",true);return;}window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance($("#life-suite-root .ls-content")?.innerText?.slice(0,12000)||"");utterance.lang=lang==="nl"?"nl-NL":"en-GB";window.speechSynthesis.speak(utterance);return;}
@@ -838,6 +839,57 @@
     if(action==="delete-all-data"){if(currentProfile()?.role!=="self"){setStatus(t("noPermission"),true);return;}if(!window.confirm(t("deleteConfirm")))return;stopAutoLock();localStorage.removeItem(STORAGE_KEY);state=null;sessionKey=null;saltB64=null;renderLocked(true,t("deleted"));return;}
     if(action==="create-invite"){if(currentProfile()?.role!=="self"){setStatus(t("noPermission"),true);return;}const random=crypto.getRandomValues(new Uint8Array(10));pendingInviteCode=Array.from(random).map(b=>("0"+b.toString(16)).slice(-2)).join("").toUpperCase();state.invites.push({id:uid("invite"),ownerId:state.currentProfileId,code:pendingInviteCode,role:"caregiver",status:"pending",createdAt:new Date().toISOString()});await saveState(false);renderApp();return;}
     if(action==="copy-invite"){try{await navigator.clipboard.writeText(pendingInviteCode);setStatus(t("saved"));}catch{setStatus(pendingInviteCode);}return;}
+  }
+  let nativePluginLoad = null;
+  async function loadNativeNotificationPlugin() {
+    if(!window.Capacitor?.isNativePlatform?.())return null;
+    if(window.ProjectN01NativeNotifications)return window.ProjectN01NativeNotifications;
+    if(!nativePluginLoad)nativePluginLoad=import("./native-notifications.bundle.js").then(()=>window.ProjectN01NativeNotifications||null).catch(()=>null);
+    return nativePluginLoad;
+  }
+  function stableNotificationId(value) {
+    let hash=2166136261;
+    for(let i=0;i<value.length;i++){hash^=value.charCodeAt(i);hash=Math.imul(hash,16777619);}
+    return (hash>>>0)%2147483647;
+  }
+  function deferQuietTime(epochMs) {
+    if(!Number.isFinite(epochMs)||!state)return epochMs;
+    const start=state.preferences.quietStart||"21:00",end=state.preferences.quietEnd||"08:00";
+    if(start===end)return epochMs;
+    const due=new Date(epochMs),hm=due.getHours()*60+due.getMinutes(),st=minutes(start),en=minutes(end);
+    const quiet=st<en?(hm>=st&&hm<en):(hm>=st||hm<en);
+    if(!quiet)return epochMs;
+    const target=new Date(due),parts=end.split(":").map(Number);
+    target.setHours(parts[0]||0,parts[1]||0,0,0);
+    if(target.getTime()<=epochMs)target.setDate(target.getDate()+1);
+    return target.getTime();
+  }
+  async function scheduleNativeNotifications() {
+    if(!state||!sessionKey)return;
+    const bridge=await loadNativeNotificationPlugin();
+    if(!bridge||typeof bridge.schedule!=="function")return;
+    try {
+      const permission=await bridge.checkPermissions();
+      if(permission?.display!=="granted")return;
+      const now=Date.now(),limit=now+30*24*60*60*1000,scheduled=[];
+      for(const a of state.appointments||[]) {
+        if(a.status==="cancelled"||!(Number(a.reminderMins)>0))continue;
+        const due=new Date(a.date+"T"+(a.start||"09:00")+":00").getTime()-(Number(a.reminderMins)||0)*60000;
+        const at=deferQuietTime(due);
+        if(at>now&&at<limit)scheduled.push({id:stableNotificationId("appointment:"+a.id),title:"Project N-01 · afspraak",body:a.title,schedule:{at:new Date(at),allowWhileIdle:true},extra:{kind:"appointment",recordId:a.id}});
+      }
+      for(const r of state.reminders||[]) {
+        if(r.notifiedAt)continue;
+        const at=deferQuietTime(new Date(r.when).getTime());
+        if(Number.isFinite(at)&&at>now&&at<limit)scheduled.push({id:stableNotificationId("reminder:"+r.id),title:"Project N-01 · herinnering",body:r.title,schedule:{at:new Date(at),allowWhileIdle:true},extra:{kind:"reminder",recordId:r.id}});
+      }
+      const pending=typeof bridge.getPending==="function"?await bridge.getPending():{notifications:[]};
+      const oldIds=(pending?.notifications||[]).map(n=>({id:n.id}));
+      if(oldIds.length&&typeof bridge.cancel==="function")await bridge.cancel({notifications:oldIds});
+      if(scheduled.length)await bridge.schedule({notifications:scheduled.slice(0,60)});
+    } catch {
+      // Native scheduler errors are reported on demand so normal local saving is not interrupted.
+    }
   }
   function startReminderMonitor() {
     if(reminderTimer)clearInterval(reminderTimer);
