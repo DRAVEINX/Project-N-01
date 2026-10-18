@@ -1,4 +1,5 @@
 import test from "node:test";
+import vm from "node:vm";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
@@ -40,6 +41,58 @@ test("calendar validates times, blocks exact duplicates and asks before overlaps
   assert.match(js, /mode-week/);
   assert.match(js, /edit-appointment/);
 });
+
+
+test("calendar conflict logic blocks same-start duplicates for the same profile", () => {
+  const helpers = getCalendarHelpers();
+  const existing = { id: "a", profileId: "self", date: "2026-10-20", start: "10:00", end: "10:30" };
+  const candidate = { id: "b", profileId: "self", date: "2026-10-20", start: "10:00", end: "11:00" };
+  assert.equal(helpers.appointmentConflict(candidate, [existing]).id, "a");
+});
+
+test("calendar conflict logic ignores the edited appointment and other profiles", () => {
+  const helpers = getCalendarHelpers();
+  const existing = { id: "a", profileId: "self", date: "2026-10-20", start: "10:00", end: "10:30" };
+  assert.equal(helpers.appointmentConflict({ ...existing }, [existing]), null);
+  assert.equal(
+    helpers.appointmentConflict({ ...existing, id: "b", profileId: "profile-2" }, [existing]),
+    null,
+  );
+});
+
+test("calendar conflict logic detects partial overlaps but permits back-to-back appointments", () => {
+  const helpers = getCalendarHelpers();
+  const existing = { id: "a", profileId: "self", date: "2026-10-20", start: "10:00", end: "10:30" };
+  assert.equal(
+    helpers.appointmentConflict({ id: "b", profileId: "self", date: existing.date, start: "10:20", end: "10:45" }, [existing]).id,
+    "a",
+  );
+  assert.equal(
+    helpers.appointmentConflict({ id: "c", profileId: "self", date: existing.date, start: "10:30", end: "11:00" }, [existing]),
+    null,
+  );
+});
+
+test("calendar conflict logic treats all-day appointments as conflicts", () => {
+  const helpers = getCalendarHelpers();
+  const existing = { id: "a", profileId: "self", date: "2026-10-20", start: "00:00", end: "23:59", allDay: true };
+  assert.equal(
+    helpers.appointmentConflict({ id: "b", profileId: "self", date: existing.date, start: "13:00", end: "14:00" }, [existing]).id,
+    "a",
+  );
+});
+
+function getCalendarHelpers() {
+  const start = js.indexOf("  function minutes(value) {");
+  const end = js.indexOf("  function formData(form)", start);
+  assert.notEqual(start, -1, "calendar time helper should exist");
+  assert.notEqual(end, -1, "calendar helper boundary should exist");
+  const source = js.slice(start, end);
+  return vm.runInNewContext(`${source}; ({ minutes, overlap, appointmentConflict });`, {
+    state: { currentProfileId: "self" },
+    visibleItems: () => [],
+  });
+}
 
 test("roster includes support-worker photos and editable dated shifts", () => {
   assert.match(js, /function rosterView\(\)/);
