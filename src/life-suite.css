@@ -182,3 +182,14 @@
 .ls-timeline-card p { margin:.4rem 0 0; font-size:.84rem; line-height:1.5; }
 .ls-timeline-meta { display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem; color:var(--muted); font-size:.78rem; }
 .ls-timeline-type { color:var(--mint); font-size:.74rem !important; font-weight:750; }
+
+/* Goal milestones remain readable and easy to check on narrow screens. */
+.ls-goal-card { display:grid; gap:.85rem; }
+.ls-milestone-section { display:grid; gap:.7rem; padding-top:.8rem; border-top:1px solid var(--line); }
+.ls-milestone-list { display:grid; gap:.45rem; }
+.ls-milestone { display:grid; grid-template-columns:1.15rem minmax(0,1fr) auto; align-items:center; gap:.65rem; padding:.65rem .75rem; border:1px solid var(--line); border-radius:10px; background:#ffffff04; font-size:.86rem; }
+.ls-milestone input { width:1.1rem; height:1.1rem; accent-color:var(--mint); }
+.ls-milestone small { color:var(--muted); font-size:.72rem; }
+.ls-milestone-form { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.6rem; align-items:end; }
+.ls-milestone-form .ls-field { min-width:0; }
+@media(max-width:520px) { .ls-milestone-form { grid-template-columns:1fr; } .ls-milestone { grid-template-columns:1.15rem minmax(0,1fr); } .ls-milestone small { grid-column:2; } }
