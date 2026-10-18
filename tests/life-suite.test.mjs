@@ -367,3 +367,17 @@ test("NovaLife accent themes update the shared design tokens and key interface e
   assert.ok(appStyles.includes("body[data-accent-theme] .ls-tab.active"));
   assert.match(serviceWorker, /project-n-01-prototype-v20/);
 });
+
+
+test("native notifications request permission only after explicit user action", () => {
+  const scheduleStart = nativeBridge.indexOf("async function schedule(");
+  const permissionActionStart = nativeBridge.indexOf('requestPermission: async () =>');
+  assert.notEqual(scheduleStart, -1);
+  assert.notEqual(permissionActionStart, -1);
+  const scheduleSource = nativeBridge.slice(scheduleStart, permissionActionStart);
+  const explicitPermissionSource = nativeBridge.slice(permissionActionStart);
+  assert.match(scheduleSource, /LocalNotifications\.checkPermissions\(\)/);
+  assert.doesNotMatch(scheduleSource, /LocalNotifications\.requestPermissions\(\)/);
+  assert.match(scheduleSource, /permission\.display !== "granted"\) return \{ native: true, permission: permission\.display, count: 0 \}/);
+  assert.match(explicitPermissionSource, /LocalNotifications\.requestPermissions\(\)/);
+});
