@@ -118,18 +118,19 @@
     return {
       schema:1, createdAt:new Date().toISOString(), currentProfileId:"self",
       profiles:[{id:"self",name:lang === "nl" ? "Mijn profiel" : "My profile",role:"self",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}],
-      appointments:[], workers:[], shifts:[], weeklyPlans:[], moods:[], journal:[], drawings:[], guides:[], contacts:[], reminders:[], consents:[], invites:[], audit:[], notificationLog:[], preferences:{largeText:false,highContrast:false,reducedMotion:false}
+      appointments:[], workers:[], shifts:[], weeklyPlans:[], moods:[], journal:[], drawings:[], guides:[], contacts:[], reminders:[], goals:[], documents:[], handoverNotes:[], absences:[], appointmentHistory:[], checkpoints:[], consents:[], invites:[], audit:[], notificationLog:[], emergencyPlan:{summary:"",steps:"",location:"",medicalNotes:"",lastUpdated:""}, preferences:{largeText:false,highContrast:false,reducedMotion:false,simpleMode:false,readAloud:false,quietStart:"21:00",quietEnd:"08:00"}
     };
   }
   function normalizeState(raw) {
     const blank = defaultState();
     if (!raw || typeof raw !== "object") return blank;
-    const arrKeys = ["profiles","appointments","workers","shifts","weeklyPlans","moods","journal","drawings","guides","contacts","reminders","consents","invites","audit","notificationLog"];
+    const arrKeys = ["profiles","appointments","workers","shifts","weeklyPlans","moods","journal","drawings","guides","contacts","reminders","goals","documents","handoverNotes","absences","appointmentHistory","checkpoints","consents","invites","audit","notificationLog"];
     arrKeys.forEach(key => { blank[key] = Array.isArray(raw[key]) ? raw[key].filter(x => x && typeof x === "object") : []; });
     blank.schema = 1;
     blank.createdAt = typeof raw.createdAt === "string" ? raw.createdAt : blank.createdAt;
     blank.currentProfileId = typeof raw.currentProfileId === "string" ? raw.currentProfileId : "self";
     blank.preferences = Object.assign(blank.preferences, raw.preferences && typeof raw.preferences === "object" ? raw.preferences : {});
+    blank.emergencyPlan = Object.assign(blank.emergencyPlan, raw.emergencyPlan && typeof raw.emergencyPlan === "object" ? raw.emergencyPlan : {});
     if (!blank.profiles.length) blank.profiles.push({id:"self",name:"My profile",role:"self",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
     if (!blank.profiles.some(p => p.id === blank.currentProfileId)) blank.currentProfileId = blank.profiles[0].id;
     return blank;
@@ -280,20 +281,36 @@
     return '<div class="ls-app-head"><div><p class="ls-kicker">PROJECT N-01</p><h3>' + esc(t("appTitle")) + '</h3><p>' + esc(t("appIntro")) + '</p></div><div class="ls-head-actions">' + select(t("activeProfile"), "active-profile", state.profiles.map(p => ({value:p.id,label:p.name + " · " + t(p.role)})), state.currentProfileId) + button(t("lock"), "lock", "secondary-button") + '</div></div>';
   }
   function tabBar() {
-    const tabs = [["dashboard","dashboard"],["weekplan","weekplan"],["agenda","agenda"],["roster","roster"],["mood","mood"],["roles","roles"],["help","help"],["guides","guides"],["reminders","reminders"],["data","data"]];
+    const tabs = [["dashboard","dashboard"],["weekplan","weekplan"],["agenda","agenda"],["roster","roster"],["mood","mood"],["roles","roles"],["help","help"],["guides","guides"],["reminders","reminders"],["data","data"],["extras","extras"]];
     return '<div class="ls-tabs" role="tablist" aria-label="' + esc(t("appTitle")) + '">' + tabs.map(x => tabButton(x[0], t(x[1]))).join("") + '</div>';
   }
   function visibleAppointmentList(date) {
     return visibleItems("appointments", "calendar").filter(a => a.date === date).sort((a,b) => a.start.localeCompare(b.start));
   }
   function appointmentCard(a) {
-    return '<article class="ls-item"><div class="ls-item-top"><div><strong>' + esc(a.start + "–" + a.end + " · " + a.title) + '</strong><p>' + esc((a.location || "") + (a.location && a.preparation ? " · " : "") + (a.preparation || "")) + '</p></div><div class="ls-actions">' + button(t("edit"), "edit-appointment", "secondary-button", 'data-id="' + esc(a.id) + '"') + button(t("delete"), "delete-appointment", "secondary-button danger-button", 'data-id="' + esc(a.id) + '"') + '</div></div>' + (a.notes ? '<p class="ls-muted">' + esc(a.notes) + '</p>' : "") + '<small>' + esc(prettyDate(a.date)) + (a.reminderMins ? " · " + esc(a.reminderMins) + " min" : "") + (a.repeat && a.repeat !== "none" ? " · " + esc(t(a.repeat)) : "") + '</small></article>';
+    const time=a.allDay?"Hele dag":a.start+"–"+a.end;
+    const status=a.status==="cancelled"?' <span class="ls-cancelled">· geannuleerd</span>':"";
+    const travel=Number(a.travelMinutes)>0?" · reistijd "+Number(a.travelMinutes)+" min":"";
+    return '<article class="ls-item" draggable="true" data-appointment-drag="'+esc(a.id)+'"><div class="ls-item-top"><div><strong>'+esc(time+" · "+a.title)+status+'</strong><p>'+esc((a.location||"")+(a.location&&a.preparation?" · ":"")+(a.preparation||""))+'</p></div><div class="ls-actions">'+button(t("edit"),"edit-appointment","secondary-button",'data-id="'+esc(a.id)+'"')+button(t("delete"),"delete-appointment","secondary-button danger-button",'data-id="'+esc(a.id)+'"')+'</div></div>'+(a.notes?'<p class="ls-muted">'+esc(a.notes)+'</p>':"")+'<small>'+esc(prettyDate(a.date))+travel+(a.reminderMins?" · "+esc(a.reminderMins)+" min":"")+(a.repeat&&a.repeat!=="none"?" · "+esc(t(a.repeat)):"")+'</small></article>';
   }
   function appointmentForm(a) {
     a = a || {};
-    return '<form id="ls-appointment-form" class="ls-form ls-grid">' + field(t("title"),"title","text",a.title,"required maxlength='120'") + field(t("date"),"date","date",a.date || selectedDate,"required") + field(t("start"),"start","time",a.start || "09:00","required") + field(t("end"),"end","time",a.end || "09:30","required") + field(t("location"),"location","text",a.location,"maxlength='160'") + select(t("reminder"),"reminderMins",[{value:"0",label:t("none")},{value:"5",label:t("fiveMin")},{value:"10",label:t("tenMin")},{value:"30",label:t("thirtyMin")},{value:"60",label:t("oneHour")}],a.reminderMins || "10") + select(t("repeat"),"repeat",[{value:"none",label:t("noRepeat")},{value:"weekly",label:t("weekly")}],a.repeat || "none") + textarea(t("preparation"),"preparation",a.preparation,2,"maxlength='1200'") + textarea(t("notes"),"notes",a.notes,2,"maxlength='2000'") + '<input type="hidden" name="id" value="' + esc(a.id || "") + '"><div class="ls-form-actions"><button class="primary-button" type="submit">' + esc(t("save")) + '</button>' + (a.id ? button(t("cancel"),"cancel-edit","secondary-button") : "") + '</div><p class="ls-status" id="ls-appointment-status" role="status" aria-live="polite"></p></form>';
+    return '<form id="ls-appointment-form" class="ls-form ls-grid">' +
+      field(t("title"),"title","text",a.title,"required maxlength='120'") +
+      field(t("date"),"date","date",a.date||selectedDate,"required") +
+      '<label class="ls-field"><span>Hele dag</span><input type="checkbox" name="allDay" '+(a.allDay?"checked":"")+'></label>' +
+      field(t("start"),"start","time",a.start||"09:00","") +
+      field(t("end"),"end","time",a.end||"09:30","") +
+      field(t("location"),"location","text",a.location,"maxlength='160'") +
+      field("Reistijd (minuten)","travelMinutes","number",Number(a.travelMinutes)||0,"min='0' max='1440'") +
+      select("Afspraakstatus","status",[{value:"planned",label:"Gepland"},{value:"cancelled",label:"Geannuleerd"}],a.status||"planned") +
+      select(t("reminder"),"reminderMins",[{value:"0",label:t("none")},{value:"5",label:t("fiveMin")},{value:"10",label:t("tenMin")},{value:"30",label:t("thirtyMin")},{value:"60",label:t("oneHour")}],a.reminderMins||"10") +
+      select(t("repeat"),"repeat",[{value:"none",label:t("noRepeat")},{value:"weekly",label:t("weekly")}],a.repeat||"none") +
+      textarea(t("preparation"),"preparation",a.preparation,2,"maxlength='1200'") +
+      textarea(t("notes"),"notes",a.notes,2,"maxlength='2000'") +
+      '<input type="hidden" name="id" value="'+esc(a.id||"")+'"><div class="ls-form-actions"><button class="primary-button" type="submit">'+esc(t("save"))+'</button>'+(a.id?button(t("cancel"),"cancel-edit","secondary-button"):"")+'</div><p class="ls-status" id="ls-appointment-status" role="status" aria-live="polite"></p></form>';
   }
-  function monthCalendar() {
+    function monthCalendar() {
     const first = dateAt(selectedDate);
     first.setDate(1);
     const startOffset = (first.getDay() + 6) % 7;
@@ -487,7 +504,9 @@
       const candidateSeries = candidate.seriesId || (candidate.repeat === "weekly" ? candidate.id : "");
       const otherSeries = a.seriesId || (a.repeat === "weekly" ? a.id : "");
       if (candidateSeries && otherSeries && candidateSeries === otherSeries) return false;
-      return a.date === candidate.date && (a.start === candidate.start || overlap(a,candidate));
+      if(a.date!==candidate.date)return false;
+      if(a.allDay||candidate.allDay)return true;
+      return a.start === candidate.start || overlap(a,candidate);
     });
     return conflicting.find(a => a.start === candidate.start) || conflicting[0] || null;
   }
@@ -525,14 +544,15 @@
     if (appointmentFormEl) appointmentFormEl.addEventListener("submit", async event=>{
       event.preventDefault();
       const v = formData(appointmentFormEl);
-      if (!v.title.trim() || !v.date || !v.start || !v.end || minutes(v.end)<=minutes(v.start)) {setStatus(t("invalid"),true);return;}
+      const allDay=v.allDay==="on";
+      if (!v.title.trim() || !v.date || (!allDay && (!v.start || !v.end || minutes(v.end)<=minutes(v.start)))) {setStatus(t("invalid"),true);return;}
       const existing = v.id ? state.appointments.find(a=>a.id===v.id) : null;
       if(existing && !requireModify("calendar",existing)) return;
       const now = new Date().toISOString();
       const oldSeries = existing ? (existing.seriesId || (existing.repeat==="weekly" ? existing.id : "")) : "";
       const id = v.id || uid("appointment");
       const repeat = v.repeat || "none";
-      const a = {id:id,profileId:existing?existing.profileId:state.currentProfileId,title:v.title.trim(),date:v.date,start:v.start,end:v.end,location:v.location.trim(),notes:v.notes.trim(),preparation:v.preparation.trim(),reminderMins:Number(v.reminderMins)||0,repeat:repeat,createdAt:existing?existing.createdAt:now,updatedAt:now};
+      const a = {id:id,profileId:existing?existing.profileId:state.currentProfileId,title:v.title.trim(),date:v.date,start:allDay?"00:00":v.start,end:allDay?"23:59":v.end,allDay:allDay,travelMinutes:Math.max(0,Math.min(1440,Number(v.travelMinutes)||0)),status:v.status==="cancelled"?"cancelled":"planned",location:v.location.trim(),notes:v.notes.trim(),preparation:v.preparation.trim(),reminderMins:Number(v.reminderMins)||0,repeat:repeat,createdAt:existing?existing.createdAt:now,updatedAt:now};
       if(repeat==="weekly") {
         const editingSeriesRoot=existing && existing.repeat==="weekly" && (!existing.seriesId || existing.seriesId===existing.id);
         a.seriesId=editingSeriesRoot ? (oldSeries || id) : id;
@@ -555,6 +575,8 @@
         return;
       }
       if(foundConflicts.length && !window.confirm(t("overlap")+" "+t("overlapInfo"))) return;
+      if(existing)state.appointmentHistory.unshift({id:uid("appointment-history"),profileId:existing.profileId||state.currentProfileId,appointmentId:existing.id,at:now,action:a.status==="cancelled"?"cancelled":"updated",before:{title:existing.title,date:existing.date,start:existing.start,end:existing.end,status:existing.status||"planned"},after:{title:a.title,date:a.date,start:a.start,end:a.end,status:a.status}});
+      state.appointmentHistory=state.appointmentHistory.slice(0,200);
       state.appointments = pool.concat(generated);
       editingAppointmentId = "";
       recordAudit(existing?"appointment-updated":"appointment-created",a.title);
@@ -682,7 +704,7 @@
 
   function mergeStates(current, incoming) {
     const merged = Object.assign({}, current);
-    const keys = ["profiles","appointments","workers","shifts","weeklyPlans","moods","journal","drawings","guides","contacts","reminders","consents","invites","audit","notificationLog"];
+    const keys = ["profiles","appointments","workers","shifts","weeklyPlans","moods","journal","drawings","guides","contacts","reminders","goals","documents","handoverNotes","absences","appointmentHistory","checkpoints","consents","invites","audit","notificationLog"];
     lastConflictReport = [];
     keys.forEach(key=>{
       const byId = new Map();
@@ -706,6 +728,7 @@
     });
     lastConflictReport=lastConflictReport.slice(0,100);
     merged.preferences=Object.assign({},incoming.preferences||{},current.preferences||{});
+    merged.emergencyPlan=Object.assign({},incoming.emergencyPlan||{},current.emergencyPlan||{});
     if(!merged.profiles.some(p=>p.id===merged.currentProfileId))merged.currentProfileId=merged.profiles[0]?.id||"self";
     return normalizeState(merged);
   }
