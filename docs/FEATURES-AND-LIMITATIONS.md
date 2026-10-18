@@ -1,41 +1,47 @@
 # Daily Life Suite: feature status and limitations
 
-## Implemented in the browser prototype
+## Implemented in the current development branch
 
-- **Calendar and appointments:** day, week and month views; add, edit and delete appointments; date/time validation; exact same-start collision is blocked; partial time overlaps ask for confirmation; preparation notes, location, reminders and a weekly-repeat option are provided.
-- **Support roster:** support-worker names, roles and resized profile photos; dated shifts; day/week views; add, edit and delete shifts.
-- **Mood, journal and drawings:** five-step emoji mood check-in, saved entries and audio attachments, a keyboard/pointer drawing canvas, saved drawings, review and delete.
-- **Step-by-step guides:** create instructions with steps, a resized photo and an audio attachment; mark steps complete and retain progress.
-- **Trusted contacts:** store a contact and emergency notes; a prominent help action opens the device dialer or messaging app only after user confirmation.
-- **Profiles and consent:** local user/support-worker/parent/guardian profiles, per-category consent records, consent revocation and a local invitation-code placeholder. Sharing defaults to off.
-- **Reminders:** appointment reminders and one-off/daily/weekly reminders; avoid duplicate reminder records; snooze a reminder; request browser notification permission.
-- **Search and data controls:** search stored records; encrypted backup export; backup import with merge/replace choice; a separate encrypted recovery file protected by a randomly generated recovery code that is shown once; confirm-before-delete data control; audit events for important local changes.
-- **Accessibility:** responsive layouts, labeled fields, keyboard-focus styles, larger-text/high-contrast/reduced-motion modes, semantic status areas and large touch controls.
+- **Calendar:** day, week and month views; appointments can be created, edited and deleted; all-day records, travel-time field, weekly preview entries, excluded weekly dates, duplicate blocking, overlap confirmation, drag-and-drop rescheduling of individual entries and an appointment change log. The recurrence engine is still finite: a weekly template expands to up to eight entries, not an unlimited recurrence rule. Dragging the root of a weekly series is intentionally blocked; edit the series instead.
+- **Support roster:** local names, roles, profile photos, dates and shift editing. The extra portal stores local absence notes and handover entries inside the vault, but it is not a shared multi-account staff portal.
+- **Mood, journal and drawings:** mood check-in, journal text/audio attachments, drawing canvas, saved entries, review and deletion.
+- **Step-by-step guides:** instructions with steps, photos and audio; progress per guide.
+- **Trusted contacts and personal emergency plan:** contact actions require confirmation; the emergency plan can be read aloud. The app does not automatically call emergency services or confirm a message was sent.
+- **Goals and activities:** add goals, percentages, due dates, next steps, completion/reopen and delete.
+- **Personal documents:** local note/file attachments up to 512 KiB per document, encrypted with the personal vault, plus controlled download.
+- **Weekly reports:** counts of appointments, planned tasks and mood entries for the recent week. Reports do not include journal text, audio, emergency-plan contents or contacts. The user can choose which counts to print.
+- **Calendar export:** create an iCalendar (.ics) file. The downloaded file is outside the encrypted vault; check it before sharing.
+- **Encrypted local records:** the Life Suite uses PBKDF2-SHA-256 and AES-256-GCM in a local envelope. Its derived key is held in memory and the vault auto-locks after five minutes and when the page becomes hidden. Extra goals, documents, preferences, reports settings, daily progress, handover notes and emergency plan are stored inside that envelope.
+- **Legacy migration:** when the vault is unlocked, old daily progress and accessibility preference keys are imported into the encrypted vault and removed only after a successful save. If the vault is never created/unlocked or migration fails, old plaintext values may remain; they are not magically encrypted retroactively.
+- **Accessibility:** semantic buttons/status, keyboard focus, larger text, high contrast, reduced motion, speech synthesis, optional Web Speech speech-to-text, simple mode and larger controls. Browser speech recognition can send audio to the browser vendor/service depending on platform settings.
+- **Native reminder bridge:** the branch includes a Capacitor local-notifications integration for future scheduled alerts, Android notification/exact-alarm manifest permissions, quiet-hour handling, private-by-default notification text, duplicate ID handling, repeated reminders and a 10-minute snooze action. It schedules a rolling subset of the next 30 days. Permissions, operating-system background policies, reboot behavior and actual reminder delivery still require physical-device tests.
+- **Accounts API foundation:** registration, scrypt password hashes, expiring bearer sessions, TOTP authenticator setup, reset-token workflow, account deletion, scoped invitation metadata and revision-based encrypted vault upload/download are implemented in server/api.mjs. The API is optional and must be deployed/configured separately; the web UI defaults to /api.
+- **Cross-device sync foundation:** the API accepts only the versioned encrypted AES-GCM vault envelope and uses optimistic revision checking. Conflicts return a 409 response and are not silently overwritten. Devices with an already-populated cloud vault must manually choose how to proceed. Local offline changes stay on the device until a safe upload can be made.
+- **Version history:** the last ten snapshots of the additional professional-workspace data can be restored. This does not restore the entire agenda, journal and all app records.
 
-## Security behavior
+## Account, synchronization and sharing limits
 
-The Daily Life Suite puts its app records inside a local encrypted envelope using PBKDF2-SHA-256 and AES-256-GCM. A passphrase of at least 12 characters is required to create or unlock the vault. Plain text app records are not written as standalone local-storage entries by this module. The derived key exists only in the active page session; it is discarded on lock, after five minutes of inactivity, and when the page becomes hidden. Browser storage is still subject to device compromise, malicious extensions and unlocked-session access. Local storage quota may limit the number/size of attached photos and audio files.
+- This API uses a local JSON database and in-process rate limits. It is a single-instance prototype, not a scalable production account service. Do not run multiple API processes against the same JSON file.
+- Password reset is sent only when the deployment has a trusted delivery webhook and public app URL configured. Resetting the account password does not reset the separate local vault passphrase.
+- Two-factor setup needs a private server secret of at least 32 characters. Use a secret manager rather than committing one into source code.
+- Team invitations store roles/scopes and can be accepted after email delivery is configured. **Encrypted workspace content is not yet shared with invitees.** Local profiles and consent labels are not security boundaries and do not constitute real caregiver/guardian authorization.
+- The API currently has no managed transactional database, KMS/key rotation, distributed rate limiter, production monitoring or independently reviewed threat model. Do not use it for real sensitive information until those gaps are assessed and resolved.
+- Cross-device sync currently transfers an entire encrypted vault envelope, not individual records. There is no item-by-item device conflict merge yet. Use backups and explicit review before replacing a local vault with a cloud copy.
+- Native Android Keystore and Apple's appropriate secure key storage have not been integrated into the local web vault. Web encryption protects stored records, but not a compromised device, malicious browser extension/injected script, or an unlocked app session.
+- Reminder accuracy is still subject to Android/iOS permissions, power management, manufacturer battery restrictions and timezone/clock conditions. Exact alarms can require user authorization. The app never guarantees that a notification will appear on time.
+- Phone/tablet layouts and iOS archive/Windows MSI builds need installation checks on real hardware. Current installers/archives from previous builds may be unsigned candidates. Green automated builds are not proof of a production-ready signed release.
+- TalkBack, keyboard-only, magnification, high-contrast, privacy notice, restore/deletion flows and user experience need human testing. There has been no independent security/privacy assessment in this branch.
 
-The suite's encryption does **not** cover existing routine progress or accessibility preferences in the original prototype; those remain unencrypted until their storage model is upgraded. Keep the security limitations in DATA-PROTECTION.md in scope.
+## Environment/setup
 
-## Important limitations—not production-ready
+See [ACCOUNT-SYNC-SETUP.md](ACCOUNT-SYNC-SETUP.md) for API configuration, webhook expectations, CORS/HTTPS requirements, sync testing and production migration checklist.
 
-- **No authenticated remote accounts:** local profiles help organize data but are not separate security principals. All local suite records use the same vault passphrase.
-- **No real remote invitations yet:** generated invitation codes are local records only. Do not use them to grant real-world access; securely accepting an invitation on another device needs a server-side identity and authorization service.
-- **No live cross-device sync yet:** encrypted export/import is a manual transfer workflow. Merge shows a content-free conflict report and automatically keeps the latest updated version for matching IDs; the user cannot yet choose the winning version item by item.
-- **Background notifications are not guaranteed:** reminders are evaluated while the page is visible and unlocked. Closing, locking or backgrounding the page stops reminder processing. Native Android scheduling and server/push support remain future platform work.
-- **Weekly appointment repeat is currently expanded to a finite set of future entries:** review generated entries and recurrence behavior before release.
-- **Separate Android phone/tablet variants are now configured:** they use distinct package IDs and labels, with individual debug APKs and release APK/AAB candidates produced by GitHub Actions. The tablet web layout now uses a narrower navigation rail in portrait-size tablet widths. These artifacts still need installation and usability checks on actual phone and tablet hardware. Windows MSI and iOS archives also need real-device/installer verification; unsigned candidates are not production releases.
-- **No independent security assessment:** the encryption design and data flows need review before storing real health, journal, voice or caregiver information.
-- **No emergency dispatch:** the help button only opens the device's phone or messaging app. It does not call emergency services by itself and does not confirm that a message was sent.
-- **Accessibility needs hands-on validation:** automated checks do not replace TalkBack, keyboard-only, magnification, high-contrast, and user testing on actual devices.
+## Recommended acceptance checks
 
-## Recommended release acceptance checks
-
-1. Run npm test and JavaScript syntax checks; fix all red CI checks.
-2. Test encrypted vault creation/unlock, wrong passphrase rejection, lock behavior, export/import, merge/replace and deletion on a real device.
-3. Test exact duplicate and overlapping appointments, daylight-saving/timezone changes, repeat schedules and reminders.
-4. Test photo/audio sizes near limits and failure handling when local storage is full.
-5. Validate consent filtering and confirm profiles do not imply real authentication.
-6. Test Android phone and tablet layout, offline startup, TalkBack and touch target sizes.
-7. Complete threat-model, privacy and independent security review before production use.
+1. Run npm test, syntax checks and all CI checks.
+2. Install the new phone/tablet debug packages; test lock/unlock, encrypted migration, wrong passphrase, recovery, deletion, offline use and data-full failures.
+3. Test all-day and timed appointment conflict behavior, exception dates, repeated series editing, drag/drop, calendar timezone/DST changes and .ics export/import.
+4. Grant/deny notifications, enable/disable exact alarms, close the app, restart the device, trigger quiet hours and test snooze/repeated notifications on current Android and iOS devices.
+5. Validate password reset, 2FA recovery planning, session revocation, invitation delivery and account deletion against a deployed test server.
+6. Verify that no invitee can read another user's vault unless a later explicit secure sharing design is implemented and tested.
+7. Complete independent security, privacy and accessibility review before any production release or real sensitive data use.
