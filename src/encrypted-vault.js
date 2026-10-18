@@ -83,7 +83,13 @@ export class EncryptedVault {
     if (!this.unlocked) throw new Error("Unlock the vault before saving.");
     const currentRaw = this.storage.getItem(this.storageKey);
     if (currentRaw === null) throw new Error("Vault does not exist.");
-    const verifiedSession = await openEncryptedJsonSession(JSON.parse(currentRaw), passphrase);
+    let currentEnvelope;
+    try {
+      currentEnvelope = JSON.parse(currentRaw);
+    } catch {
+      throw new Error("Stored vault is invalid.");
+    }
+    const verifiedSession = await openEncryptedJsonSession(currentEnvelope, passphrase);
     const safeValue = cloneJson(value);
     const envelope = await verifiedSession.encrypt(safeValue);
     if (this.storage.getItem(this.storageKey) !== currentRaw) {
