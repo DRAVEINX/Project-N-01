@@ -55,3 +55,14 @@ This repository is separate from MoodPress, KlaarKompas, and CreatorNexus. Do no
 - iOS: [iOS archive workflow](.github/workflows/ios.yml). It produces an unsigned Xcode archive, not a signed IPA and not an App Store release.
 
 These workflows still need to complete successfully for the current source revision, and generated packages must be installed and tested on real devices. A successful build is not the same as a production-ready, signed release.
+
+
+## Priority 1: accounts and secure cloud sync
+
+A new `server/` directory contains the PostgreSQL schema, account API, email-verification/password-reset routes, optional authenticator TOTP, household roles/consent records, and versioned storage for the opaque client-encrypted vault. See [server setup and limitations](server/README.md). This is source code only until it is deployed with a real PostgreSQL database, HTTPS and verified email sender.
+
+The `Account & apparaten` view provides account registration/login, account recovery, MFA setup, manual encrypted vault sync, conflict/version review, household invitations, consent records and a local-data inventory. The server is configured from the UI only by its HTTPS base URL; secrets belong in hosting environment variables. Category consent is tracked, but per-category end-to-end sharing is not enabled until the content encryption/sharing protocol has received a separate design review.
+
+Android/iOS builds now bundle the Capacitor local-notifications plugin for on-device scheduled reminders, where a permission is granted. Real devices must be tested for reboot behavior, time-zone/DST rules and OEM battery restrictions. Generic notification text is used by default so sensitive appointment titles are not displayed on a lock screen.
+
+The app also supports encrypted local version history and a local summary/calendar-export bridge when the personal vault is unlocked. The core daily progress and accessibility preferences still use the pre-existing local storage model; full at-rest protection for those fields and platform-native keystore integration remain explicit release blockers until migrated, tested and independently reviewed. Do not use the app for sensitive real-world records until hosting, security, privacy and usability acceptance checks have passed.
