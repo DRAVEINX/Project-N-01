@@ -1,6 +1,6 @@
 # Project N-01 — account, sync and platform enhancements
 
-This change adds the client integration and a Supabase migration. It does **not** create a hosted Supabase project, enable e-mail delivery, configure DNS, or provide a signing certificate. Accounts and cloud sync become available only after an operator applies the migration and enters their own project URL plus the public anon/publishable key in the app.
+This change adds the client integration and a Supabase migration. It does not create a hosted Supabase project, enable e-mail delivery, configure DNS, or provide a signing certificate. Accounts and cloud sync become available only after an operator applies the migration and enters their own project URL plus the public anon/publishable key in the app.
 
 ## Account setup
 1. Create a Supabase project and review its authentication settings.
