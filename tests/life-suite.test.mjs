@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const portal = await readFile(new URL("../src/account-portal.js", import.meta.url), "utf8");
+const nativeBridge = await readFile(new URL("../src/native-notifications-entry.js", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/life-suite.js", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/life-suite.css", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
@@ -159,4 +161,19 @@ test("Windows desktop MSI and iOS archive pipelines are configured separately", 
   assert.match(iosWorkflow, /CODE_SIGNING_ALLOWED=NO/);
   assert.match(iosWorkflow, /project-n-01-ios-unsigned-archive/);
   assert.equal(packageConfig.devDependencies["@capacitor/ios"], "8.5.3");
+});
+
+
+test("account portal is wired and includes account recovery, MFA, sync and role consent", () => {
+  assert.match(html, /data-view="account"/);
+  assert.match(html, /id="view-account"/);
+  assert.match(html, /src\/account-portal\.js/);
+  assert.match(portal, /\/v1\/auth\/register/);
+  assert.match(portal, /\/v1\/auth\/forgot-password/);
+  assert.match(portal, /\/v1\/auth\/mfa\/setup/);
+  assert.match(portal, /\/v1\/sync\/vault/);
+  assert.match(portal, /\/v1\/households/);
+  assert.match(portal, /Lokale gegevenscontrole/);
+  assert.match(nativeBridge, /LocalNotifications\.schedule/);
+  assert.match(nativeBridge, /quietStart/);
 });
