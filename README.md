@@ -50,7 +50,7 @@ This repository is separate from MoodPress, KlaarKompas, and CreatorNexus. Do no
 
 
 ## Platform build workflows
-- Android test APK and release candidates: [Android build](.github/workflows/android.yml).
+- Android phone and tablet builds are produced as separate installable app flavors, with different package IDs and labels; the responsive tablet layout uses the wider workspace. Debug APKs and release APK/AAB candidates: [Android build](.github/workflows/android.yml).
 - Windows MSI: [Windows workflow](.github/workflows/windows.yml). The generated MSI is an unsigned test installer unless a signing certificate is configured separately.
 - iOS: [iOS archive workflow](.github/workflows/ios.yml). It produces an unsigned Xcode archive, not a signed IPA and not an App Store release.
 
