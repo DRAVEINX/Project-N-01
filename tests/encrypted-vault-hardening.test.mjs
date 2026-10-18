@@ -174,3 +174,29 @@ test("vault restore refuses to overwrite a concurrent storage change", async () 
   assert.deepEqual(vault.read(), { current: "original" });
 });
 
+test("save with a wrong passphrase cannot replace a valid encrypted vault", async () => {
+  const storage = new MemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { current: "keep" });
+  const before = storage.getItem("test-vault");
+
+  await assert.rejects(
+    vault.saveWithPassphrase("incorrect-passphrase-456", { current: "replace" })
+  );
+  assert.equal(storage.getItem("test-vault"), before);
+  assert.deepEqual(vault.read(), { current: "keep" });
+});
+
+test("malformed stored JSON cannot unlock or replace vault data", async () => {
+  const storage = new MemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { private: "keep" });
+  storage.setItem("test-vault", "{malformed");
+  const reopened = new EncryptedVault(storage, "test-vault");
+
+  await assert.rejects(reopened.unlock(passphrase), /Stored vault is invalid/);
+  assert.equal(reopened.isUnlocked, false);
+  assert.throws(() => reopened.read(), /Unlock the vault/);
+  assert.equal(storage.getItem("test-vault"), "{malformed");
+});
+
