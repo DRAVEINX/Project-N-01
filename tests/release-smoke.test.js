@@ -18,7 +18,7 @@ test("web entry point references existing local assets", async () => {
     "assets/app-icon.svg",
   ];
   for (const asset of localAssets) {
-    await assert.doesNotReject(() => access(resolve(root, asset)), `Missing local asset: ${asset}`);
+    await assert.doesNotReject(() => access(resolve(root, asset)), undefined, `Missing local asset: ${asset}`);
     assert.ok(html.includes(asset), `index.html should reference ${asset}`);
   }
   assert.match(html, /<html lang="(nl|en)">/);
