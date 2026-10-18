@@ -23,7 +23,7 @@
     try {
       return await new Promise((resolve,reject)=>{
         const tx=db.transaction(STORE,"readonly"),store=tx.objectStore(STORE),req=store.getAll();
-        req.onsuccess=()=>resolve(req.result.filter(x=>x.vaultKey===vaultKey).sort((a,b)=>b.id-a.id).slice(0,MAX_VERSIONS).map(({id,savedAt,bytes})=>({id,savedAt,bytes})));
+        req.onsuccess=()=>resolve(req.result.filter(x=>x.vaultKey===vaultKey).sort((a,b)=>b.id-a.id).map(({id,savedAt,bytes})=>({id,savedAt,bytes})));
         req.onerror=()=>reject(req.error||new Error("Could not list versions"));
       });
     } finally {db.close();}
