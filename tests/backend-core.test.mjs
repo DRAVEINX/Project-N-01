@@ -37,7 +37,7 @@ test("MFA secrets are authenticated when encrypted at rest", () => {
   assert.throws(()=>decryptMfaSecret(ciphertext,"another-key-at-least-32-characters"), /Unsupported state|auth|decrypt/i);
 });
 test("server accepts only supported encrypted AES-GCM envelopes", () => {
-  const valid = {format:"project-n-01-life-v1",version:1,kdf:"PBKDF2-SHA-256",iterations:310000,cipher:"AES-256-GCM",salt:"AA==",iv:"AA==",ciphertext:"AA=="};
+  const valid = {format:"project-n-01-life-v1",version:1,kdf:"PBKDF2-SHA-256",iterations:310000,cipher:"AES-256-GCM",salt:Buffer.alloc(16,1).toString("base64"),iv:Buffer.alloc(12,2).toString("base64"),ciphertext:Buffer.alloc(16,3).toString("base64")};
   assert.equal(validateEncryptedEnvelope(valid),true);
   assert.equal(validateEncryptedEnvelope({...valid,cipher:"none"}),false);
   assert.equal(validateEncryptedEnvelope({...valid,format:"unknown"}),false);
