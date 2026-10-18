@@ -15,6 +15,9 @@ const desktopPackage = JSON.parse(await readFile(new URL("../desktop/package.jso
 const windowsWorkflow = await readFile(new URL("../.github/workflows/windows.yml", import.meta.url), "utf8");
 const iosWorkflow = await readFile(new URL("../.github/workflows/ios.yml", import.meta.url), "utf8");
 const packageConfig = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+const nativeBridge = await readFile(new URL("../src/native-bridge-entry.js", import.meta.url), "utf8");
+const nativeLoader = await readFile(new URL("../src/native-notifications-loader.js", import.meta.url), "utf8");
+const nativePermissionScript = await readFile(new URL("../scripts/ensure-android-notification-permissions.mjs", import.meta.url), "utf8");
 
 test("life suite is wired into the existing app without replacing its core views", () => {
   assert.match(html, /data-view="life"/);
@@ -120,7 +123,7 @@ test("mobile-first accessible styling and offline cache include the new module",
   assert.match(css, /ls-high-contrast/);
   assert.match(css, /ls-large-text/);
   assert.match(css, /ls-reduced-motion/);
-  assert.match(serviceWorker, /project-n-01-prototype-v16/);
+  assert.match(serviceWorker, /project-n-01-prototype-v17/);
   assert.match(serviceWorker, /"\/src\/life-suite\.js"/);
   assert.match(serviceWorker, /"\/src\/life-suite\.css"/);
   assert.match(workflow, /node --check src\/life-suite\.js/);
@@ -168,7 +171,7 @@ test("professional workspace is integrated with encrypted vault, account API and
   assert.match(html, /id="professional-suite-root"/);
   assert.match(html, /src\/professional-suite\.js/);
   assert.match(html, /src\/professional-suite\.css/);
-  assert.match(serviceWorker, /project-n-01-prototype-v16/);
+  assert.match(serviceWorker, /project-n-01-prototype-v17/);
   assert.match(serviceWorker, /"\/src\/professional-suite\.js"/);
   for (const feature of ["goalsView", "emergencyView", "supportView", "documentsView", "reportsView", "accessibilityView", "versionsView", "accountsView"]) {
     assert.match(professional, new RegExp("function " + feature + "\\("));
