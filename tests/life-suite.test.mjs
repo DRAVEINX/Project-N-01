@@ -261,7 +261,7 @@ test("mobile-first accessible styling and offline cache include the new module",
   assert.match(css, /ls-high-contrast/);
   assert.match(css, /ls-large-text/);
   assert.match(css, /ls-reduced-motion/);
-  assert.match(serviceWorker, /project-n-01-prototype-v21/);
+  assert.match(serviceWorker, /project-n-01-prototype-v22/);
   assert.match(serviceWorker, /"\/src\/life-suite\.js"/);
   assert.match(serviceWorker, /"\/src\/life-suite\.css"/);
   assert.match(workflow, /node --check src\/life-suite\.js/);
@@ -374,7 +374,7 @@ test("NovaLife accent themes update the shared design tokens and key interface e
   assert.ok(appStyles.includes("body[data-accent-theme] .primary-button"));
   assert.ok(appStyles.includes("body[data-accent-theme] .welcome-panel"));
   assert.ok(appStyles.includes("body[data-accent-theme] .ls-tab.active"));
-  assert.match(serviceWorker, /project-n-01-prototype-v21/);
+  assert.match(serviceWorker, /project-n-01-prototype-v22/);
 });
 
 
@@ -531,6 +531,9 @@ test("NovaFlow stores profile-scoped, opt-in manual shortcuts with enable/disabl
   assert.match(js, /"flowRules"/);
   assert.match(js, /id="ls-flow-form"/);
   assert.match(js, /data-flow-enabled=/);
+  assert.match(js, /flowDisableAction/);
+  assert.match(js, /flowEnableAction/);
+  assert.match(js, /aria-label=.*flowDisableAction/);
   assert.match(js, /data-ls-action="flow-run"/);
   assert.match(js, /data-ls-action="flow-delete"/);
   assert.match(js, /flow-rule-created/);
