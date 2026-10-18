@@ -406,3 +406,11 @@ test("browser reminder notifications hide private titles unless the user explici
   assert.match(js, /reminderPrivate:"Je hebt een herinnering\."/);
   assert.match(js, /showReminderDetails:false/);
 });
+
+
+test("NovaLife dashboard summarizes completion progress for today's weekly plan", () => {
+  assert.match(js, /const completedTodayPlans = todayPlans\\.filter/);
+  assert.match(js, /class="ls-plan-progress-wrap"/);
+  assert.match(js, /<progress class="ls-plan-progress" max=/);
+  assert.match(js, /aria-label=.*dayPlanner/);
+});
