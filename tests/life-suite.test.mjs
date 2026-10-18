@@ -579,7 +579,7 @@ test("My Life Timeline exports visible filtered events to a safe local CSV", () 
   assert.match(js, /timelineExport:"Zichtbare gebeurtenissen exporteren \(CSV\)"/);
   assert.match(js, /timelineExport:"Export visible events \(CSV\)"/);
   assert.match(js, /URL\.createObjectURL\(new Blob\(\[csv\],\{type:"text\/csv;charset=utf-8"\}\)\)/);
-  assert.match(js, /textValue\\.replace/);
+  assert.match(js, /textValue\.replace/);
   assert.match(js, /link\.download="novalife-tijdlijn-/);
   assert.match(js, /recordAudit\("timeline-exported"/);
 });
