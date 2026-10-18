@@ -193,3 +193,17 @@
 .ls-milestone-form { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.6rem; align-items:end; }
 .ls-milestone-form .ls-field { min-width:0; }
 @media(max-width:520px) { .ls-milestone-form { grid-template-columns:1fr; } .ls-milestone { grid-template-columns:1.15rem minmax(0,1fr); } .ls-milestone small { grid-column:2; } }
+
+
+/* NovaInsights: compact, private summaries with no journal-content display. */
+.ls-insights-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.85rem; margin-top:1rem; }
+.ls-insight-card { min-width:0; padding:1rem; border:1px solid var(--line); border-radius:14px; background:#ffffff04; }
+.ls-insight-card h4 { margin:0 0 .7rem; }
+.ls-insight-number { display:block; font-size:1.8rem; line-height:1.3; font-variant-numeric:tabular-nums; }
+.ls-insight-mood-list { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.7rem; }
+.ls-insight-chip { display:inline-flex; align-items:center; gap:.35rem; padding:.3rem .55rem; border:1px solid var(--line); border-radius:999px; }
+.ls-insight-progress { width:100%; margin-top:.8rem; accent-color:var(--mint); }
+.ls-insights-privacy { margin-top:1rem; }
+.ls-check-label { display:flex; align-items:flex-start; gap:.6rem; line-height:1.5; }
+.ls-check-label input { margin-top:.3rem; }
+@media (max-width:760px) { .ls-insights-grid { grid-template-columns:minmax(0,1fr); } }
