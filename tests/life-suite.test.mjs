@@ -281,8 +281,8 @@ test("Windows desktop MSI and iOS archive pipelines are configured separately", 
   assert.match(desktopMain, /filename.startsWith\(WEB_ROOT \+ path.sep\)/);
   assert.equal(desktopPackage.build.win.target[0].target, "msi");
   assert.equal(desktopPackage.build.win.icon, "build/icon.ico");
-  assert.match(windowsWorkflow, /generate-windows-icon\\.mjs/);
-  assert.match(windowsWorkflow, /desktop\\/build\\/icon\\.ico/);
+  assert.ok(windowsWorkflow.includes("generate-windows-icon.mjs"));
+  assert.ok(windowsWorkflow.includes("desktop/build/icon.ico"));
   assert.match(windowsWorkflow, /windows-latest/);
   assert.match(windowsWorkflow, /project-n-01-windows-msi-unsigned/);
   assert.match(iosWorkflow, /macos-26/);
