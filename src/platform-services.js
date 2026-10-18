@@ -185,7 +185,8 @@
     const source=target.encrypted_snapshot;
     if(!source || typeof source!=="object" || !source.ciphertext || !source.iv || !source.salt)throw new Error("De online snapshot heeft geen herkend versleuteld formaat.");
     localStorage.setItem(VAULT_KEY,JSON.stringify(source));
-    localStorage.setItem(LAST_HASH_KEY+":"+session.user.id,target.snapshot_hash||await hashText(JSON.stringify(source)));
+    // Publish the restored snapshot after the safety copy so "latest" remains the selected version.
+    await uploadSnapshot({quiet:true});
     setStatus("De lokale kluis is vervangen. De app wordt opnieuw geladen; ontgrendel daarna met de oorspronkelijke kluis-wachtzin.");
     window.setTimeout(()=>location.reload(),700);
   }
