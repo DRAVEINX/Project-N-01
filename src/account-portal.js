@@ -108,6 +108,7 @@
     if(formName==="forgot"){const r=await request("/v1/auth/forgot-password",{method:"POST",body:body({email:data.email})});setStatus(r.message);return;}
     if(formName==="resend"){const r=await request("/v1/auth/resend-verification",{method:"POST",body:body({email:data.email})});setStatus(r.message);return;}
     if(formName==="reset"){const params=new URLSearchParams(location.search);if(data.password!==data.confirmPassword)throw new Error("De wachtwoorden komen niet overeen.");const r=await request("/v1/auth/reset-password",{method:"POST",body:body({token:params.get("resetPassword"),password:data.password})});history.replaceState(null,"",location.pathname);setStatus(r.message);render();return;}
+    if(formName==="delete-account"){if(data.confirmation!=="DELETE")throw new Error("Typ DELETE precies over om het verwijderen te bevestigen.");if(!confirm("Laatste controle: je online account en de cloudkluis worden verwijderd. Lokale kluizen en gedownloade back-ups blijven op je apparaten totdat je die apart wist. Doorgaan?"))return;const r=await request("/v1/account",{method:"DELETE",body:body({password:data.password,totp:data.totp,confirmation:data.confirmation})});token="";user=null;cloudVersion=null;cloudEnvelope=null;householdMembers=[];localStorage.removeItem(VERSION_KEY);statusText=r.message||"Account verwijderd.";statusError=false;history.replaceState(null,"",location.pathname);render();return;}
     if(formName==="mfa-enable"){const r=await request("/v1/auth/mfa/enable",{method:"POST",body:body({totp:data.totp})});setStatus(r.success?"Tweestapsverificatie is ingeschakeld.": "Instellen mislukt.");user.mfaEnabled=r.mfaEnabled;render();return;}
     if(formName==="mfa-disable"){const r=await request("/v1/auth/mfa/disable",{method:"POST",body:body({totp:data.totp})});user.mfaEnabled=r.mfaEnabled;setStatus("Tweestapsverificatie is uitgeschakeld.");render();return;}
     if(formName==="household"){const r=await request("/v1/households",{method:"POST",body:body({name:data.name})});activeHousehold=r.household.id;setStatus("Huishouden aangemaakt.");await updateHouseholds();return;}
@@ -223,6 +224,7 @@
       if(action==="revoke-consent"){const id=el.dataset.consentId;const household=el.dataset.householdId;if(!id||!household)throw new Error("Toestemming kon niet worden geselecteerd.");if(!confirm("Deze toestemming intrekken?"))return;await request("/v1/households/"+encodeURIComponent(household)+"/consents/"+encodeURIComponent(id),{method:"DELETE"});setStatus("Toestemming ingetrokken.");await loadConsents(household);return;}
       if(action==="export-calendar"){if(!window.ProjectN01LifeSuite?.getCalendarIcs)throw new Error("Ontgrendel de persoonlijke kluis in Mijn leven om je agenda veilig te exporteren.");downloadText(window.ProjectN01LifeSuite.getCalendarIcs(),"text/calendar;charset=utf-8","project-n-01-agenda.ics");setStatus("Agenda geëxporteerd. Controleer het bestand voordat je het deelt.");return;}
       if(action==="weekly-report"){await renderWeeklyReport();setStatus("Weekoverzicht gemaakt; alleen lokaal weergegeven.");return;}
+      if(action==="export-weekly-report"){exportWeeklyReport();return;}
     }catch(error){setStatus(error.message||"De bewerking is mislukt.",true);}
   });
   root.addEventListener("change",event=>{
@@ -231,6 +233,7 @@
   });
   ["pointerdown","keydown","touchstart"].forEach(name=>document.addEventListener(name,()=>resetIdle(),{passive:true}));
   window.addEventListener("pagehide",()=>{clearTimeout(idleTimer);token="";user=null;});
+  window.ProjectN01AccountPortal=Object.freeze({clearSession:()=>logout(false)});
   const params=new URLSearchParams(location.search);
   render();
   if(params.get("verifyEmail"))setStatus("Klik op E-mailadres bevestigen om het account te activeren.");
