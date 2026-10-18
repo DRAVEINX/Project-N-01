@@ -59,8 +59,9 @@ function upcomingItems(snapshot, prefs, now = new Date()) {
   const quietEnd = prefs.quietEnd || "";
   const privatePreview = prefs.privateNotifications !== false;
   for (const appointment of snapshot.appointments || []) {
-    if (!appointment.date || !appointment.start || !(Number(appointment.reminderMins) > 0)) continue;
-    const at = new Date(appointment.date + "T" + appointment.start + ":00");
+    if (!appointment.date || !(Number(appointment.reminderMins) > 0)) continue;
+    if (!appointment.start && appointment.allDay !== true) continue;
+    const at = new Date(appointment.date + "T" + (appointment.allDay === true ? "09:00" : appointment.start) + ":00");
     at.setTime(at.getTime() - Number(appointment.reminderMins) * 60000);
     add("appointment:" + appointment.id + ":" + appointment.date, appointment.title || "Afspraak", at, quietStart, quietEnd, privatePreview);
   }
