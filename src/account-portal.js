@@ -39,7 +39,7 @@
     return data;
   }
   function body(value){return JSON.stringify(value);}
-  function field(label,name,type="text",attrs=""){return '<label class="ap-field"><span>'+esc(label)+'</span><input name="'+esc(name)+'" type="'+esc(type)+'" '+attrs+' required></label>';}
+  function field(label,name,type="text",attrs=""){const optional=name==="totp";return '<label class="ap-field"><span>'+esc(label)+'</span><input name="'+esc(name)+'" type="'+esc(type)+'" '+attrs+(optional?"":" required")+'></label>';}
   function button(label,action,kind="secondary-button",extra=""){return '<button type="button" class="'+kind+'" data-ap-action="'+esc(action)+'" '+extra+'>'+esc(label)+'</button>';}
   function status(){return '<p id="account-status" class="ap-status'+(statusError?' is-error':'')+'" role="status" aria-live="polite">'+esc(statusText)+'</p>';}
   function serverForm(){return '<form class="ap-form" data-ap-form="server">'+field("API-serveradres","apiBase","url",'value="'+esc(apiBase)+'" placeholder="https://api.example.org" autocomplete="url"')+'<button class="primary-button" type="submit">Serveradres opslaan</button><p class="ap-muted">Laat het adres leeg zolang de online dienst nog niet is gehost. Zet nooit wachtwoorden, API-sleutels of databasegegevens in de app.</p></form>';}
@@ -139,7 +139,7 @@
   async function pullCloud(){
     const r=await request("/v1/sync/vault");if(!r.envelope)throw new Error("Er staat nog geen cloudkluis. Synchroniseer eerst vanaf het oorspronkelijke apparaat.");
     if(!confirm("Dit vervangt de actieve lokale kluis door de versleutelde cloudversie "+r.version+". De huidige lokale kluis wordt eerst als herstelversie bewaard. Doorgaan?"))return;
-    archiveLocal();localStorage.setItem(VAULT_KEY,JSON.stringify(r.envelope));localStorage.setItem(VERSION_KEY,user.id+":"+r.version);
+    await archiveLocal();localStorage.setItem(VAULT_KEY,JSON.stringify(r.envelope));localStorage.setItem(VERSION_KEY,user.id+":"+r.version);
     setStatus("Cloudkluis teruggezet. De app wordt opnieuw geopend; ontgrendel met dezelfde kluiswachtzin.");location.reload();
   }
   async function showRevisions(){
@@ -166,7 +166,7 @@
   }
   async function loadConsents(householdId){
     const box=root.querySelector("#ap-consents");if(!box)return;
-    try{const r=await request("/v1/households/"+encodeURIComponent(householdId)+"/consents");box.innerHTML=(r.consents||[]).map(c=>'<div class="ap-inventory-row"><span><strong>'+esc(c.owner_name)+' → '+esc(c.viewer_name)+'</strong><small>'+esc((c.scopes||[]).join(", "))+(c.revoked_at?" · ingetrokken":" · actief")+'</small></span>'+(c.owner_user_id===user.id&&!c.revoked_at?button("Intrekken","revoke-consent","secondary-button danger-button",'data-consent-id="'+esc(c.id)+' data-household-id="'+esc(householdId)+'"'):"")+'</div>').join("")||'<p class="ap-muted">Nog geen toestemmingen geregistreerd.</p>';}catch(e){box.textContent=e.message;}
+    try{const r=await request("/v1/households/"+encodeURIComponent(householdId)+"/consents");box.innerHTML=(r.consents||[]).map(c=>'<div class="ap-inventory-row"><span><strong>'+esc(c.owner_name)+' → '+esc(c.viewer_name)+'</strong><small>'+esc((c.scopes||[]).join(", "))+(c.revoked_at?" · ingetrokken":" · actief")+'</small></span>'+(c.owner_user_id===user.id&&!c.revoked_at?button("Intrekken","revoke-consent","secondary-button danger-button",'data-consent-id="'+esc(c.id)+'" data-household-id="'+esc(householdId)+'"'):"")+'</div>').join("")||'<p class="ap-muted">Nog geen toestemmingen geregistreerd.</p>';}catch(e){box.textContent=e.message;}
   }
   async function renderWeeklyReport(){
     const box=root.querySelector("#ap-weekly-report");if(!box)return;
