@@ -166,15 +166,27 @@ async function runRoute(req, res, url) {
     if (!rateLimit(req, res, "verify-email", 10)) return;
     const body = await readBody(req);
     if (typeof body.token !== "string" || body.token.length > 200) return reply(res, 400, { error: "invalid-token" });
-    const row = await pool.query("SELECT v.id,u.id AS user_id,u.email,u.display_name,u.mfa_enabled FROM n01_email_verifications v JOIN n01_users u ON u.id=v.user_id WHERE v.token_hash=$1 AND v.used_at IS NULL AND v.expires_at>NOW()", [hashToken(body.token)]);
-    if (!row.rowCount) return reply(res, 400, { error: "invalid-or-expired-token" });
-    const user = row.rows[0];
-    await pool.query("BEGIN");
+    const client = await pool.connect();
+    let user;
     try {
-      await pool.query("UPDATE n01_email_verifications SET used_at=NOW() WHERE id=$1", [row.rows[0].id]);
-      await pool.query("UPDATE n01_users SET email_verified_at=COALESCE(email_verified_at,NOW()),updated_at=NOW() WHERE id=$1", [user.user_id]);
-      await pool.query("COMMIT");
-    } catch(e) { await pool.query("ROLLBACK"); throw e; }
+      await client.query("BEGIN");
+      const row = await client.query("SELECT v.id,u.id AS user_id,u.email,u.display_name,u.mfa_enabled FROM n01_email_verifications v JOIN n01_users u ON u.id=v.user_id WHERE v.token_hash=$1 AND v.used_at IS NULL AND v.expires_at>NOW() FOR UPDATE OF v", [hashToken(body.token)]);
+      if (!row.rowCount) {
+        await client.query("ROLLBACK");
+        return reply(res, 400, { error: "invalid-or-expired-token" });
+      }
+      user = row.rows[0];
+      const consumed = await client.query("UPDATE n01_email_verifications SET used_at=NOW() WHERE id=$1 AND used_at IS NULL AND expires_at>NOW() RETURNING id", [user.id]);
+      if (!consumed.rowCount) {
+        await client.query("ROLLBACK");
+        return reply(res, 400, { error: "invalid-or-expired-token" });
+      }
+      await client.query("UPDATE n01_users SET email_verified_at=COALESCE(email_verified_at,NOW()),updated_at=NOW() WHERE id=$1", [user.user_id]);
+      await client.query("COMMIT");
+    } catch(e) {
+      try { await client.query("ROLLBACK"); } catch {}
+      throw e;
+    } finally { client.release(); }
     return reply(res, 200, await createSession({ id:user.user_id,email:user.email,display_name:user.display_name,mfa_enabled:user.mfa_enabled },res));
   }
   if (path === "/v1/auth/resend-verification" && method === "POST") {
@@ -220,16 +232,29 @@ async function runRoute(req, res, url) {
     let newHash;
     try { newHash = await hashPassword(body.password); } catch { return reply(res, 400, { error: "password-policy", message: "Use at least 14 characters with lower-case, upper-case and a number." }); }
     if (typeof body.token !== "string" || body.token.length > 200) return reply(res, 400, { error: "invalid-or-expired-token" });
-    const found = await pool.query("SELECT id,user_id FROM n01_password_resets WHERE token_hash=$1 AND used_at IS NULL AND expires_at>NOW()", [hashToken(body.token)]);
-    if (!found.rowCount) return reply(res, 400, { error: "invalid-or-expired-token", message: "The link is invalid or has expired." });
-    await pool.query("BEGIN");
+    const client = await pool.connect();
+    let reset;
     try {
-      await pool.query("UPDATE n01_password_resets SET used_at=NOW() WHERE id=$1", [found.rows[0].id]);
-      await pool.query("UPDATE n01_users SET password_hash=$1,updated_at=NOW() WHERE id=$2", [newHash,found.rows[0].user_id]);
-      await pool.query("UPDATE n01_sessions SET revoked_at=NOW() WHERE user_id=$1 AND revoked_at IS NULL", [found.rows[0].user_id]);
-      await pool.query("DELETE FROM n01_password_resets WHERE user_id=$1 AND id<>$2", [found.rows[0].user_id,found.rows[0].id]);
-      await pool.query("COMMIT");
-    } catch(e) { await pool.query("ROLLBACK"); throw e; }
+      await client.query("BEGIN");
+      const found = await client.query("SELECT id,user_id FROM n01_password_resets WHERE token_hash=$1 AND used_at IS NULL AND expires_at>NOW() FOR UPDATE", [hashToken(body.token)]);
+      if (!found.rowCount) {
+        await client.query("ROLLBACK");
+        return reply(res, 400, { error: "invalid-or-expired-token", message: "The link is invalid or has expired." });
+      }
+      reset = found.rows[0];
+      const consumed = await client.query("UPDATE n01_password_resets SET used_at=NOW() WHERE id=$1 AND used_at IS NULL AND expires_at>NOW() RETURNING id", [reset.id]);
+      if (!consumed.rowCount) {
+        await client.query("ROLLBACK");
+        return reply(res, 400, { error: "invalid-or-expired-token", message: "The link is invalid or has expired." });
+      }
+      await client.query("UPDATE n01_users SET password_hash=$1,updated_at=NOW() WHERE id=$2", [newHash,reset.user_id]);
+      await client.query("UPDATE n01_sessions SET revoked_at=NOW() WHERE user_id=$1 AND revoked_at IS NULL", [reset.user_id]);
+      await client.query("DELETE FROM n01_password_resets WHERE user_id=$1 AND id<>$2", [reset.user_id,reset.id]);
+      await client.query("COMMIT");
+    } catch(e) {
+      try { await client.query("ROLLBACK"); } catch {}
+      throw e;
+    } finally { client.release(); }
     return reply(res, 200, { message: "Password changed. Sign in again on each device." });
   }
   if (path === "/v1/auth/logout" && method === "POST") {
