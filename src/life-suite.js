@@ -503,7 +503,8 @@
     if (!state) return;
     root.classList.toggle("ls-large-text", state.preferences.largeText === true);
     root.classList.toggle("ls-high-contrast", state.preferences.highContrast === true);
-    root.classList.toggle("ls-reduced-motion", state.preferences.reducedMotion === true);\n    ["nova","ocean","pink","emerald"].forEach(theme => root.classList.toggle("ls-theme-" + theme, (state.preferences.theme || "nova") === theme));
+    root.classList.toggle("ls-reduced-motion", state.preferences.reducedMotion === true);
+    ["nova","ocean","pink","emerald"].forEach(theme => root.classList.toggle("ls-theme-" + theme, (state.preferences.theme || "nova") === theme));
   }
   async function readImage(file, maxBytes) {
     if (!file || !file.type.startsWith("image/")) return "";
