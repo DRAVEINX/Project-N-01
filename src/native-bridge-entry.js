@@ -39,7 +39,7 @@ function makeNotification({ id, title, body, at, originId, quietStart, quietEnd,
     schedule: { at, allowWhileIdle: true },
     sound: undefined,
     actionTypeId: ACTION_TYPE,
-    extra: { projectN01: MANAGED, originId, quietStart: quietStart || "", quietEnd: quietEnd || "", privatePreview: privatePreview === true }
+    extra: { projectN01: MANAGED, originId, quietStart: quietStart || "", quietEnd: quietEnd || "", privatePreview: privatePreview === true, snoozed: String(id).startsWith("snooze:") }
   };
 }
 function upcomingItems(snapshot, prefs, now = new Date()) {
@@ -86,7 +86,7 @@ function upcomingItems(snapshot, prefs, now = new Date()) {
 }
 async function cancelManaged() {
   const pending = await LocalNotifications.getPending();
-  const ids = (pending.notifications || []).filter(item => item.extra && item.extra.projectN01 === MANAGED).map(item => ({ id: item.id }));
+  const ids = (pending.notifications || []).filter(item => item.extra && item.extra.projectN01 === MANAGED && item.extra.snoozed !== true).map(item => ({ id: item.id }));
   if (ids.length) await LocalNotifications.cancel({ notifications: ids });
 }
 async function scheduleSnooze(notification) {
