@@ -95,7 +95,7 @@ jobs:
       - name: Upload phone test APK
         uses: actions/upload-artifact@v4
         with:
-          name: project-n-01-phone-debug-apk
+          name: novalife-phone-debug-apk
           path: android/app/build/outputs/apk/phone/debug/*.apk
           if-no-files-found: error
           retention-days: 30
@@ -103,7 +103,7 @@ jobs:
       - name: Upload tablet test APK
         uses: actions/upload-artifact@v4
         with:
-          name: project-n-01-tablet-debug-apk
+          name: novalife-tablet-debug-apk
           path: android/app/build/outputs/apk/tablet/debug/*.apk
           if-no-files-found: error
           retention-days: 30
@@ -122,7 +122,7 @@ jobs:
       - name: Upload phone release candidates
         uses: actions/upload-artifact@v4
         with:
-          name: project-n-01-phone-release-candidate
+          name: novalife-phone-release-candidate
           path: |
             android/app/build/outputs/apk/phone/release/*.apk
             android/app/build/outputs/bundle/phoneRelease/*.aab
@@ -132,7 +132,7 @@ jobs:
       - name: Upload tablet release candidates
         uses: actions/upload-artifact@v4
         with:
-          name: project-n-01-tablet-release-candidate
+          name: novalife-tablet-release-candidate
           path: |
             android/app/build/outputs/apk/tablet/release/*.apk
             android/app/build/outputs/bundle/tabletRelease/*.aab
