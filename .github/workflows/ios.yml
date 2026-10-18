@@ -1,6 +1,7 @@
 name: Project N-01 iOS archive
 
 on:
+  pull_request:
   push:
     branches: [main]
     paths:
