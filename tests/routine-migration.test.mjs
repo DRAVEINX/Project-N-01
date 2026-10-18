@@ -77,3 +77,20 @@ test("migration verification failure locks the vault and retains plaintext sourc
   assert.equal(vault.locked, true);
   assert.equal(storage.getItem(legacyRoutineStorageKey), before);
 });
+
+
+test("migration locks the vault and preserves legacy data when read-back throws", async () => {
+  const storage = new MemoryStorage({
+    [legacyRoutineStorageKey]: JSON.stringify([{ id: "r1", name: "Routine", steps: ["Step one"] }])
+  });
+  const before = storage.getItem(legacyRoutineStorageKey);
+  const vault = mockVault();
+  vault.read = () => { throw new Error("storage read failed"); };
+
+  await assert.rejects(
+    migrateLegacyRoutines({ storage, vault, passphrase }),
+    /verification failed/
+  );
+  assert.equal(vault.locked, true);
+  assert.equal(storage.getItem(legacyRoutineStorageKey), before);
+});
