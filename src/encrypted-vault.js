@@ -11,6 +11,19 @@ function cloneJson(value) {
   return JSON.parse(serialized);
 }
 
+function isCanonicalBase64(value, expectedBytes, maxBytes) {
+  if (typeof value !== "string" || value.length > 2_000_000 ||
+      !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) return false;
+  try {
+    const decoded = atob(value);
+    if (btoa(decoded) !== value) return false;
+    if (expectedBytes !== undefined && decoded.length !== expectedBytes) return false;
+    return maxBytes === undefined || decoded.length <= maxBytes;
+  } catch {
+    return false;
+  }
+}
+
 export class EncryptedVault {
   constructor(storage, storageKey = "project-n-01-encrypted-vault-v1") {
     if (!storage || typeof storage.getItem !== "function" ||
@@ -130,9 +143,10 @@ export class EncryptedVault {
         envelope.kdf !== encryptedJsonFormat.kdf ||
         envelope.iterations !== encryptedJsonFormat.iterations ||
         envelope.cipher !== encryptedJsonFormat.cipher ||
-        typeof envelope.salt !== "string" ||
-        typeof envelope.iv !== "string" ||
-        typeof envelope.ciphertext !== "string") {
+        !isCanonicalBase64(envelope.salt, 16) ||
+        !isCanonicalBase64(envelope.iv, 12) ||
+        !isCanonicalBase64(envelope.ciphertext, undefined, 1_000_016) ||
+        atob(envelope.ciphertext).length < 16) {
       throw new Error("Stored vault is invalid.");
     }
     return cloneJson(envelope);
