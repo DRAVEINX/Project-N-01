@@ -189,6 +189,10 @@
       const previous = localStorage.getItem(STORAGE_KEY);
       if(previous && window.ProjectN01VersionHistory && typeof window.ProjectN01VersionHistory.archive==="function"){try{await window.ProjectN01VersionHistory.archive(HISTORY_KEY,previous);}catch{ /* Keep saving current data if history storage is unavailable. */ }}
       localStorage.setItem(STORAGE_KEY, raw);
+      const accountPortal=window.ProjectN01AccountPortal;
+      if(navigator.onLine&&accountPortal&&typeof accountPortal.syncVaultEnvelope==="function"&&accountPortal.isSignedIn()){
+        accountPortal.syncVaultEnvelope(envelope).catch(error=>{if(state&&sessionKey)setStatus("Lokaal opgeslagen; synchronisatie vraagt aandacht: "+String(error&&error.message||"netwerkfout"),true);});
+      }
       if (message !== false) setStatus(message || t("saved"));
       startAutoLock();
       syncNativeNotifications();
