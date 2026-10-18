@@ -264,8 +264,8 @@ test("sensitive module never writes readable personal records as standalone loca
 test("Android phone and tablet have separate installable build variants and responsive tablet layout", () => {
   assert.match(androidVariantScript, /applicationIdSuffix "\.phone"/);
   assert.match(androidVariantScript, /applicationIdSuffix "\.tablet"/);
-  assert.match(androidVariantScript, /Project N-01 Telefoon/);
-  assert.match(androidVariantScript, /Project N-01 Tablet/);
+  assert.match(androidVariantScript, /NovaLife Telefoon/);
+  assert.match(androidVariantScript, /NovaLife Tablet/);
   assert.match(androidWorkflow, /assemblePhoneDebug assembleTabletDebug/);
   assert.match(androidWorkflow, /assemblePhoneRelease bundlePhoneRelease assembleTabletRelease bundleTabletRelease/);
   assert.match(androidWorkflow, /project-n-01-phone-release-candidate/);
