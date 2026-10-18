@@ -45,6 +45,23 @@ if (androidStart < 0) throw new Error("The Android Gradle configuration has no a
 const androidOpen = gradle.indexOf("{", androidStart);
 const androidClose = findMatchingBrace(gradle, androidOpen);
 const androidBlock = gradle.slice(androidOpen + 1, androidClose);
+
+const defaultConfigMatch = androidBlock.match(/\\bdefaultConfig\\s*\\{/);
+if (!defaultConfigMatch) throw new Error("The Android Gradle configuration has no defaultConfig { } block.");
+const defaultConfigOpen = gradle.indexOf("{", androidOpen + 1 + defaultConfigMatch.index);
+const defaultConfigClose = findMatchingBrace(gradle, defaultConfigOpen);
+const defaultConfig = gradle.slice(defaultConfigOpen + 1, defaultConfigClose);
+const targetSdkLine = /^([ \\t]*)targetSdk(?:Version)?\\s+.*$/m;
+let updatedDefaultConfig;
+if (targetSdkLine.test(defaultConfig)) {
+  updatedDefaultConfig = defaultConfig.replace(targetSdkLine, "$1targetSdkVersion 36");
+} else {
+  updatedDefaultConfig = "\\n        targetSdkVersion 36" + defaultConfig;
+}
+if (updatedDefaultConfig !== defaultConfig) {
+  const updatedGradle = gradle.slice(0, defaultConfigOpen + 1) + updatedDefaultConfig + gradle.slice(defaultConfigClose);
+  await writeFile(gradlePath, updatedGradle, "utf8");
+}
 if (!androidBlock.includes('applicationIdSuffix ".phone"') || !androidBlock.includes('applicationIdSuffix ".tablet"')) {
   const flavors = "\n    // Keep phone and tablet packages installable side-by-side.\n" +
     '    flavorDimensions += "device"\n' +
@@ -76,4 +93,9 @@ for (const [flavor, label] of labels) {
   await writeFile(join(valuesDir, "strings.xml"), xml, "utf8");
 }
 
-console.log("Android phone and tablet product flavors are configured.");
+const finalGradle = await readFile(gradlePath, "utf8");
+const finalTargetSdk = finalGradle.match(/\\btargetSdk(?:Version)?\\s+(\\d+)/);
+if (!finalTargetSdk || Number(finalTargetSdk[1]) < 36) {
+  throw new Error("Google Play submission requires target API level 36 or higher.");
+}
+console.log("Android phone and tablet variants are configured with target API level " + finalTargetSdk[1] + ".");
