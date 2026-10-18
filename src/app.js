@@ -2,7 +2,7 @@ const translations = {
   nl: {
     skip:"Ga naar de inhoud",mainNavigationLabel:"Hoofdnavigatie",languageSelectLabel:"Taal kiezen",languageSettingsLabel:"Taalinstelling",closePhraseLabel:"Sluit de getoonde zin",brandline:"Ruimte voor jouw dag",navToday:"Mijn dag",navRoutines:"Routines",const translations = {
   nl: {
-    skip:"Ga naar de inhoud",mainNavigationLabel:"Hoofdnavigatie",languageSelectLabel:"Taal kiezen",languageSettingsLabel:"Taalinstelling",closePhraseLabel:"Sluit de getoonde zin",brandline:"Ruimte voor jouw dag",navToday:"Mijn dag",navRoutines:"Routines","Agenda, begeleiders, stemming, hulp en veilige persoonlijke gegevens.",navCalm:"Rustmoment",navCommunicate:"Communicatie",navNotes:"Mijn notities",privateNote:"Jouw ruimte. Privé by default.",settings:"Instellingen",eyebrow:"EEN MOMENT VOOR JOU",greeting:"Je hoeft niet alles tegelijk te doen.",welcomeText:"Kies één kleine stap. De rest mag even wachten.",startRoutine:"Bekijk mijn routine",yourOverview:"JOUW OVERZICHT",todayTitle:"Vandaag, stap voor stap",tasksDone:"Taken afgerond",pace:"Jouw tempo",noRush:"Geen haast",paceFoot:"Pauze nemen mag altijd.",nextSteps:"Kleine stappen",nextStepsText:"Kies wat nu haalbaar voelt.",task1:"Iets drinken",task1sub:"Een slok water is al goed",task2:"Mijn spullen klaarleggen",task2sub:"Alleen wat ik nodig heb",task3:"Even naar buiten",task3sub:"Ook vijf minuten telt",needBreak:"Even pauze?",breakText:"Je mag eerst opladen.",openCalm:"Open rustmoment",gentleReminder:"Klein is ook vooruitgang. Je hoeft het niet perfect te doen.",buildRhythm:"JOUW RITME",routinesTitle:"Routines die bij jou passen",routinesIntro:"Een overzichtelijke start. Je kunt later aanpassen wat voor jou werkt.",morning:"OCHTEND",morningTitle:"Rustig opstarten",morning1:"Gordijnen openen",morning2:"Aankleden",morning3:"Ontbijt of iets drinken",afternoon:"MIDDAG",afternoonTitle:"Even opnieuw kijken",afternoon1:"Check mijn planning",afternoon2:"Kies één volgende stap",afternoon3:"Plan een pauze",evening:"AVOND",eveningTitle:"Zacht afronden",evening1:"Spullen klaarleggen",evening2:"Een fijn moment onthouden",evening3:"Scherm rustig afsluiten",markDone:"Markeer als klaar",slowDown:"VERTRAAG EVEN",calmTitle:"Een rustmoment voor jou",calmIntro:"Je hoeft niets te presteren. Kies wat prettig voelt.",ready:"Klaar?",breathIntro:"Volg de cirkel als dat fijn voelt, of kijk er gewoon naar.",startBreathing:"Start rustige ademhaling",stop:"Stop",otherOptions:"Andere opties",grounding:"Voel de grond onder je voeten",groundingSub:"Breng je aandacht naar het hier en nu",quiet:"Maak het wat stiller",quietSub:"Kies één prikkel die je kunt verminderen",water:"Neem iets te drinken",waterSub:"Een kleine, concrete stap",yourWords:"JOUW WOORDEN",communicateTitle:"Je kunt het op jouw manier zeggen",communicateIntro:"Tik op een zin om die groot in beeld te zetten.",phraseBreak:"Ik heb even pauze nodig.",phraseHelp:"Wil je me even helpen?",phraseSlow:"Kun je het rustig uitleggen?",phraseNo:"Dit voelt nu niet prettig.",tapPhrase:"Tik om te tonen",youCanShow:"JE KUNT DIT LATEN ZIEN",readAloud:"Lees voor",privateSpace:"ALLEEN VOOR JOU",notesTitle:"Mijn notities",notesIntro:"Een plek om iets van je af te schrijven. In deze prototypeversie wordt niets opgeslagen.",notePrompt:"Wat wil je onthouden of kwijt?",notePlaceholder:"Je mag het kort houden. Een paar woorden zijn genoeg.",speechToTextTitle:"Spraak naar tekst",speechToTextIntro:"Spreek woorden in en voeg de herkende tekst toe aan je notitie. De herkenning kan door je browser of een externe dienst worden verwerkt; gebruik dit niet voor gevoelige informatie.",startDictation:"Start inspreken",stopDictation:"Stop inspreken",dictationStarted:"Ik luister. Spreek rustig; tik op stop als je klaar bent.",dictationStopped:"Inspreken gestopt.",dictationUnsupported:"Spraakherkenning wordt niet door deze browser ondersteund.",dictationPermissionError:"De microfoon of spraakherkenning is niet beschikbaar. Controleer de toestemming en probeer opnieuw.",dictationNoResult:"Er is geen tekst herkend. Probeer het nog eens.",dictationError:"Spraakherkenning is gestopt door een fout. Probeer het opnieuw.",dictationAdded:"De herkende tekst is aan je notitie toegevoegd.",voiceNoteTitle:"Spraaknotitie",voiceNoteIntro:"Neem lokaal een korte spraaknotitie op. Je opname wordt niet automatisch opgeslagen of geüpload.",startRecording:"Start opname",stopRecording:"Stop opname",downloadRecording:"Download audio",voiceNotePlaybackLabel:"Spraaknotitie afspelen",recordingStarted:"Opname loopt. Tik op stop wanneer je klaar bent.",recordingStopped:"Opname klaar. Je kunt luisteren of het bestand downloaden.",recordingUnsupported:"Audio opnemen wordt niet door deze browser ondersteund.",recordingPermissionError:"Geen toegang tot de microfoon. Controleer de toestemming en probeer opnieuw.",recordingError:"De opname is mislukt. Probeer het opnieuw.",recordingEmpty:"Er is nog geen opname om te downloaden.",notSaved:"Niet opgeslagen in deze demo",clearNote:"Leegmaken",makeItYours:"PAS AAN WAT BIJ JOU PAST",settingsTitle:"Instellingen",settingsIntro:"Iedereen is anders. Kies wat prettig werkt voor jou.",largeText:"Grotere tekst",largeTextSub:"Maak tekst makkelijker leesbaar",lessMotion:"Minder beweging",lessMotionSub:"Beperk animaties en overgangen",quietView:"Rustige weergave",quietViewSub:"Verberg decoratieve elementen",languageSetting:"Taal",languageSub:"Nederlands of Engels",settingsFootnote:"Je voorkeuren worden lokaal in deze browser bewaard. Notities worden niet opgeslagen.",privacyTitle:"Privacy en lokale gegevens",privacyDetails:"De voortgang van vandaag en toegankelijkheidsvoorkeuren worden onversleuteld in deze browser bewaard. De dagelijkse voortgang wordt automatisch de volgende dag opnieuw gestart. Eigen routines worden alleen versleuteld opgeslagen nadat je de kluis activeert; de oude onversleutelde kopie moet je apart verwijderen. Notities en tekeningen worden niet bewaard.",clearLocalData:"Wis lokale appgegevens",clearLocalDataConfirm:"Wis alle eigen routines, de voortgang van vandaag, toegankelijkheidsvoorkeuren en de lokale versleutelde kluis die deze app in deze browser bewaart? Dit kan niet ongedaan worden gemaakt.",localDataCleared:"De lokale appgegevens zijn gewist.",localDataClearError:"Niet alle gegevens konden worden gewist. Probeer het opnieuw.",footerText:"Een kleine stap is ook een stap.",taskDone:"Goed gedaan. Eén stap is gezet.",allTasksDone:"Je hebt alle drie de stappen afgevinkt. Mooi gedaan.",routineDone:"Routine afgevinkt. Goed bezig.",routineMarkDone:"Markeer als klaar",routineMarkedDone:"✓ Afgerond",routineStepDone:"Stap afgerond.",routineProgress:"{done} van {total} stappen afgerond",breathingIn:"Adem rustig in",breathingOut:"Adem rustig uit",breathingStopped:"Ademhalingsoefening gestopt. Neem de tijd.",tipSenses:"Voel je voeten op de vloer. Kijk rustig om je heen en noem één ding dat je ziet.",tipQuiet:"Zet één melding uit, ga iets verder van geluid staan of kies een rustigere plek als dat kan.",tipWater:"Pak iets te drinken en neem één slok. Dat is genoeg voor nu.",noteCleared:"Je notitie is uit het veld leeggemaakt.",downloadTextNote:"Download notitie als tekstbestand",copyTextNote:"Kopieer notitie",noteCopied:"De notitie is naar het klembord gekopieerd.",noteCopyEmpty:"Schrijf of spreek eerst iets in voordat je de notitie kopieert.",noteCopyFallback:"Automatisch kopiëren lukte niet. Je notitie is geselecteerd; kopieer deze handmatig.",noteTextEmpty:"Schrijf of spreek eerst iets in voordat je de notitie downloadt.",noteTextDownloaded:"Je notitie is als tekstbestand gedownload.",noteCharacterCount:"{count} tekens",sketchTitle:"Of maak een tekening",sketchIntro:"Je kunt tekenen met je vinger, muis of toetsenbord. De tekening wordt niet opgeslagen.",sketchCanvasLabel:"Tekenvlak. Gebruik de pijltjestoetsen om te tekenen en Shift plus een pijltjestoets om de pen te verplaatsen zonder te tekenen.",brushSize:"Pendikte",clearSketch:"Wis tekening",exportSketch:"Download tekening als PNG",sketchExported:"De tekening is als PNG gedownload.",sketchEmpty:"Teken eerst iets voordat je het downloadt.",sketchExportError:"De tekening kon niet worden geëxporteerd.",sketchCleared:"De tekening is gewist.",sketchDrawn:"Je kunt tekenen met je vinger, muis of pijltjestoetsen.",sketchUnavailable:"Tekenen is niet beschikbaar op dit apparaat.",phraseBreakText:"Ik heb even pauze nodig.",phraseHelpText:"Wil je me even helpen?",phraseSlowText:"Kun je het rustig uitleggen?",phraseNoText:"Dit voelt nu niet prettig.",readUnavailable:"Voorlezen is op dit apparaat niet beschikbaar.",readError:"Voorlezen kan op dit moment niet starten.",customRoutineTitle:"Maak je eigen routine",customRoutineIntro:"Kies een naam en zet elke stap op een aparte regel.",customRoutineName:"Naam van de routine",customRoutineNamePlaceholder:"Bijvoorbeeld: Klaarmaken om weg te gaan",customRoutineSteps:"Stappen (één per regel, maximaal 10)",customRoutineStepsPlaceholder:"Tas pakken\nSleutels controleren\nJas aantrekken",customRoutinePrivacy:"Eigen routines blijven lokaal. Activeer de versleutelde kluis in de instellingen om routines versleuteld te bewaren; verwijder daarna apart de oude onversleutelde kopie.",vaultRoutinePrivacy:"Je routines worden versleuteld opgeslagen in deze browser zolang je de kluis gebruikt. Bewaar je wachtzin veilig; zonder wachtzin kun je de kluis niet openen.",vaultLockedPrivacy:"De versleutelde kluis is vergrendeld. Je routines zijn niet zichtbaar totdat je de kluis met je wachtzin opent.",customRoutineAdd:"Routine toevoegen",customRoutineDelete:"Verwijder routine",customRoutineEmpty:"Nog geen eigen routines toegevoegd.",customRoutineAdded:"Je routine is toegevoegd.",customRoutineDeleted:"Routine verwijderd.",customRoutineStorageError:"Opslaan is niet gelukt. Controleer de browseropslag.",exportRoutines:"Eigen routines exporteren",importRoutines:"Eigen routines importeren",routineBackupPrivacy:"Exportbestanden zijn niet versleuteld. Bewaar ze op een veilige plek en deel ze niet met anderen.",encryptedBackupTitle:"Versleutelde back-up",encryptedBackupIntro:"Maak een versleuteld back-upbestand van je eigen routines. Gebruik een wachtzin van minstens 12 tekens en bewaar die apart. Zonder wachtzin kan de back-up niet worden hersteld.",backupPassphraseLabel:"Back-upwachtzin (minstens 12 tekens)",confirmVaultPassphraseLabel:"Bevestig wachtzin bij het maken van een nieuwe kluis",vaultPassphraseMismatch:"De wachtzinnen komen niet overeen. Controleer ze voordat je de kluis maakt.",backupPassphraseHelp:"De wachtzin wordt niet opgeslagen. Gebruik niet je accountwachtwoord.",exportEncryptedRoutines:"Versleutelde back-up maken",importEncryptedRoutines:"Versleutelde back-up herstellen",encryptedBackupSuccess:"De versleutelde back-up is verwerkt.",encryptedBackupError:"De back-up kan niet worden ontsleuteld of is ongeldig. Controleer de wachtzin en het bestand.",encryptedBackupEmpty:"Maak eerst minstens één eigen routine.",routineExported:"Je routinebestand is klaargemaakt.",routineImportSuccess:"Routines geïmporteerd.",routineImportError:"Dit bestand is ongeldig of bevat geen bruikbare routines.",routineImportReadError:"Het bestand kon niet worden gelezen.",vaultMigrationTitle:"Bestaande routines veilig kopiëren",vaultMigrationIntro:"Kopieer je bestaande routines naar een lokale versleutelde kluis en download een versleutelde kopie. De oorspronkelijke routines blijven staan en zijn nog steeds onversleuteld in deze prototype-app.",vaultMigrationAction:"Versleutelde opslag activeren / ontgrendelen",vaultMigrationSuccess:"De versleutelde kluis is gemaakt en de kopie is gedownload. De oorspronkelijke routines zijn niet verwijderd en blijven onversleuteld in de app.",vaultMigrationDownloadOnly:"Er bestaat al een versleutelde kluis; de versleutelde kluisfile is opnieuw gedownload. De oorspronkelijke routines blijven onversleuteld.",vaultMigrationError:"De kopie kon niet worden gemaakt. Controleer of je routines hebt opgeslagen en gebruik een wachtzin van minstens 12 tekens.",vaultLocked:"De versleutelde kluis is vergrendeld. Voer je wachtzin in om routines te openen.",vaultUnlocked:"De versleutelde routine-opslag is ontgrendeld en actief.",vaultLockedStatus:"De versleutelde routine-opslag is vergrendeld.",vaultAutoLock:"De kluis wordt automatisch vergrendeld na 5 minuten inactiviteit of wanneer je dit tabblad verlaat.",vaultLockAction:"Kluis vergrendelen",vaultDeletePlaintextAction:"Onversleutelde routinekopie verwijderen",vaultDeletePlaintextConfirm:"Verwijder de onversleutelde kopie van eigen routines uit deze browser? Doe dit alleen als de versleutelde kluis is ontgrendeld en gecontroleerd.",vaultPlaintextDeleted:"De onversleutelde routinekopie is verwijderd.",vaultPlaintextDeleteError:"De onversleutelde kopie kon niet worden verwijderd.",clearRoutines:"Alle eigen routines wissen",clearRoutinesConfirm:"Weet je zeker dat je alle eigen routines wilt wissen? Dit kan niet ongedaan worden gemaakt.",routinesCleared:"Alle eigen routines zijn gewist.",customRoutineInvalid:"Vul een naam en minimaal één stap in. Maximaal 10 stappen.",customRoutineLimit:"Je kunt maximaal 50 eigen routines bewaren.",routineImportLimit:"Deze back-up past niet: maximaal 50 routines zijn toegestaan. Er is niets gewijzigd."
+    skip:"Ga naar de inhoud",mainNavigationLabel:"Hoofdnavigatie",languageSelectLabel:"Taal kiezen",languageSettingsLabel:"Taalinstelling",closePhraseLabel:"Sluit de getoonde zin",brandline:"Ruimte voor jouw dag",navToday:"Mijn dag",navRoutines:"Routines","Agenda, begeleiders, stemming, hulp en veilige persoonlijke gegevens.",navCalm:"Rustmoment",navCommunicate:"Communicatie",navNotes:"Mijn notities",privateNote:"Jouw ruimte. Privé by default.",settings:"Instellingen",eyebrow:"EEN MOMENT VOOR JOU",greeting:"Je hoeft niet alles tegelijk te doen.",welcomeText:"Kies één kleine stap. De rest mag even wachten.",startRoutine:"Bekijk mijn routine",yourOverview:"JOUW OVERZICHT",todayTitle:"Vandaag, stap voor stap",tasksDone:"Taken afgerond",pace:"Jouw tempo",noRush:"Geen haast",paceFoot:"Pauze nemen mag altijd.",nextSteps:"Kleine stappen",nextStepsText:"Kies wat nu haalbaar voelt.",task1:"Iets drinken",task1sub:"Een slok water is al goed",task2:"Mijn spullen klaarleggen",task2sub:"Alleen wat ik nodig heb",task3:"Even naar buiten",task3sub:"Ook vijf minuten telt",needBreak:"Even pauze?",breakText:"Je mag eerst opladen.",openCalm:"Open rustmoment",gentleReminder:"Klein is ook vooruitgang. Je hoeft het niet perfect te doen.",buildRhythm:"JOUW RITME",routinesTitle:"Routines die bij jou passen",routinesIntro:"Een overzichtelijke start. Je kunt later aanpassen wat voor jou werkt.",morning:"OCHTEND",morningTitle:"Rustig opstarten",morning1:"Gordijnen openen",morning2:"Aankleden",morning3:"Ontbijt of iets drinken",afternoon:"MIDDAG",afternoonTitle:"Even opnieuw kijken",afternoon1:"Check mijn planning",afternoon2:"Kies één volgende stap",afternoon3:"Plan een pauze",evening:"AVOND",eveningTitle:"Zacht afronden",evening1:"Spullen klaarleggen",evening2:"Een fijn moment onthouden",evening3:"Scherm rustig afsluiten",markDone:"Markeer als klaar",slowDown:"VERTRAAG EVEN",calmTitle:"Een rustmoment voor jou",calmIntro:"Je hoeft niets te presteren. Kies wat prettig voelt.",ready:"Klaar?",breathIntro:"Volg de cirkel als dat fijn voelt, of kijk er gewoon naar.",startBreathing:"Start rustige ademhaling",stop:"Stop",otherOptions:"Andere opties",grounding:"Voel de grond onder je voeten",groundingSub:"Breng je aandacht naar het hier en nu",quiet:"Maak het wat stiller",quietSub:"Kies één prikkel die je kunt verminderen",water:"Neem iets te drinken",waterSub:"Een kleine, concrete stap",yourWords:"JOUW WOORDEN",communicateTitle:"Je kunt het op jouw manier zeggen",communicateIntro:"Tik op een zin om die groot in beeld te zetten.",phraseBreak:"Ik heb even pauze nodig.",phraseHelp:"Wil je me even helpen?",phraseSlow:"Kun je het rustig uitleggen?",phraseNo:"Dit voelt nu niet prettig.",tapPhrase:"Tik om te tonen",youCanShow:"JE KUNT DIT LATEN ZIEN",readAloud:"Lees voor",privateSpace:"ALLEEN VOOR JOU",notesTitle:"Mijn notities",notesIntro:"Een plek om iets van je af te schrijven. In deze prototypeversie wordt niets opgeslagen.",notePrompt:"Wat wil je onthouden of kwijt?",notePlaceholder:"Je mag het kort houden. Een paar woorden zijn genoeg.",speechToTextTitle:"Spraak naar tekst",speechToTextIntro:"Spreek woorden in en voeg de herkende tekst toe aan je notitie. De herkenning kan door je browser of een externe dienst worden verwerkt; gebruik dit niet voor gevoelige informatie.",startDictation:"Start inspreken",stopDictation:"Stop inspreken",dictationStarted:"Ik luister. Spreek rustig; tik op stop als je klaar bent.",dictationStopped:"Inspreken gestopt.",dictationUnsupported:"Spraakherkenning wordt niet door deze browser ondersteund.",dictationPermissionError:"De microfoon of spraakherkenning is niet beschikbaar. Controleer de toestemming en probeer opnieuw.",dictationNoResult:"Er is geen tekst herkend. Probeer het nog eens.",dictationError:"Spraakherkenning is gestopt door een fout. Probeer het opnieuw.",dictationAdded:"De herkende tekst is aan je notitie toegevoegd.",voiceNoteTitle:"Spraaknotitie",voiceNoteIntro:"Neem lokaal een korte spraaknotitie op. Je opname wordt niet automatisch opgeslagen of geüpload.",startRecording:"Start opname",stopRecording:"Stop opname",downloadRecording:"Download audio",voiceNotePlaybackLabel:"Spraaknotitie afspelen",recordingStarted:"Opname loopt. Tik op stop wanneer je klaar bent.",recordingStopped:"Opname klaar. Je kunt luisteren of het bestand downloaden.",recordingUnsupported:"Audio opnemen wordt niet door deze browser ondersteund.",recordingPermissionError:"Geen toegang tot de microfoon. Controleer de toestemming en probeer opnieuw.",recordingError:"De opname is mislukt. Probeer het opnieuw.",recordingEmpty:"Er is nog geen opname om te downloaden.",notSaved:"Niet opgeslagen in deze demo",clearNote:"Leegmaken",makeItYours:"PAS AAN WAT BIJ JOU PAST",settingsTitle:"Instellingen",settingsIntro:"Iedereen is anders. Kies wat prettig werkt voor jou.",largeText:"Grotere tekst",largeTextSub:"Maak tekst makkelijker leesbaar",lessMotion:"Minder beweging",lessMotionSub:"Beperk animaties en overgangen",quietView:"Rustige weergave",quietViewSub:"Verberg decoratieve elementen",languageSetting:"Taal",languageSub:"Nederlands of Engels",settingsFootnote:"Je voorkeuren worden lokaal in deze browser bewaard. Notities worden niet opgeslagen.",privacyTitle:"Privacy en lokale gegevens",privacyDetails:"De voortgang van vandaag en toegankelijkheidsvoorkeuren worden onversleuteld in deze browser bewaard. De dagelijkse voortgang wordt automatisch de volgende dag opnieuw gestart. Eigen routines worden alleen versleuteld opgeslagen nadat je de kluis activeert; de oude onversleutelde kopie moet je apart verwijderen. Notities en tekeningen worden niet bewaard.",clearLocalData:"Wis lokale appgegevens",clearLocalDataConfirm:"Wis alle eigen routines, de voortgang van vandaag, toegankelijkheidsvoorkeuren en de lokale versleutelde kluis die deze app in deze browser bewaart? Dit kan niet ongedaan worden gemaakt.",localDataCleared:"De lokale appgegevens zijn gewist.",localDataClearError:"Niet alle gegevens konden worden gewist. Probeer het opnieuw.",footerText:"Een kleine stap is ook een stap.",taskDone:"Goed gedaan. Eén stap is gezet.",allTasksDone:"Je hebt alle drie de stappen afgevinkt. Mooi gedaan.",routineDone:"Routine afgevinkt. Goed bezig.",routineMarkDone:"Markeer als klaar",routineMarkedDone:"✓ Afgerond",routineStepDone:"Stap afgerond.",routineProgress:"{done} van {total} stappen afgerond",breathingIn:"Adem rustig in",breathingOut:"Adem rustig uit",breathingStopped:"Ademhalingsoefening gestopt. Neem de tijd.",tipSenses:"Voel je voeten op de vloer. Kijk rustig om je heen en noem één ding dat je ziet.",tipQuiet:"Zet één melding uit, ga iets verder van geluid staan of kies een rustigere plek als dat kan.",tipWater:"Pak iets te drinken en neem één slok. Dat is genoeg voor nu.",noteCleared:"Je notitie is uit het veld leeggemaakt.",downloadTextNote:"Download notitie als tekstbestand",copyTextNote:"Kopieer notitie",noteCopied:"De notitie is naar het klembord gekopieerd.",noteCopyEmpty:"Schrijf of spreek eerst iets in voordat je de notitie kopieert.",noteCopyFallback:"Automatisch kopiëren lukte niet. Je notitie is geselecteerd; kopieer deze handmatig.",noteTextEmpty:"Schrijf of spreek eerst iets in voordat je de notitie downloadt.",noteTextDownloaded:"Je notitie is als tekstbestand gedownload.",noteCharacterCount:"{count} tekens",sketchTitle:"Of maak een tekening",sketchIntro:"Je kunt tekenen met je vinger, muis of toetsenbord. De tekening wordt niet opgeslagen.",sketchCanvasLabel:"Tekenvlak. Gebruik de pijltjestoetsen om te tekenen en Shift plus een pijltjestoets om de pen te verplaatsen zonder te tekenen.",brushSize:"Pendikte",clearSketch:"Wis tekening",exportSketch:"Download tekening als PNG",sketchExported:"De tekening is als PNG gedownload.",sketchEmpty:"Teken eerst iets voordat je het downloadt.",sketchExportError:"De tekening kon niet worden geëxporteerd.",sketchCleared:"De tekening is gewist.",sketchDrawn:"Je kunt tekenen met je vinger, muis of pijltjestoetsen.",sketchUnavailable:"Tekenen is niet beschikbaar op dit apparaat.",phraseBreakText:"Ik heb even pauze nodig.",phraseHelpText:"Wil je me even helpen?",phraseSlowText:"Kun je het rustig uitleggen?",phraseNoText:"Dit voelt nu niet prettig.",readUnavailable:"Voorlezen is op dit apparaat niet beschikbaar.",readError:"Voorlezen kan op dit moment niet starten.",customRoutineTitle:"Maak je eigen routine",customRoutineIntro:"Kies een naam en zet elke stap op een aparte regel.",customRoutineName:"Naam van de routine",customRoutineNamePlaceholder:"Bijvoorbeeld: Klaarmaken om weg te gaan",customRoutineSteps:"Stappen (één per regel, maximaal 10)",customRoutineStepsPlaceholder:"Tas pakken\nSleutels controleren\nJas aantrekken",customRoutinePrivacy:"Eigen routines blijven lokaal. Activeer de versleutelde kluis in de instellingen om routines versleuteld te bewaren; verwijder daarna apart de oude onversleutelde kopie.",vaultRoutinePrivacy:"Je routines worden versleuteld opgeslagen in deze browser zolang je de kluis gebruikt. Bewaar je wachtzin veilig; zonder wachtzin kun je de kluis niet openen.",vaultLockedPrivacy:"De versleutelde kluis is vergrendeld. Je routines zijn niet zichtbaar totdat je de kluis met je wachtzin opent.",customRoutineAdd:"Routine toevoegen",customRoutineDelete:"Verwijder routine",customRoutineEmpty:"Nog geen eigen routines toegevoegd.",customRoutineAdded:"Je routine is toegevoegd.",customRoutineDeleted:"Routine verwijderd.",customRoutineStorageError:"Eigen routines zijn niet opgeslagen: activeer en ontgrendel eerst de versleutelde routineskluis in Instellingen.",exportRoutines:"Eigen routines exporteren",importRoutines:"Eigen routines importeren",routineBackupPrivacy:"Exportbestanden zijn niet versleuteld. Bewaar ze op een veilige plek en deel ze niet met anderen.",encryptedBackupTitle:"Versleutelde back-up",encryptedBackupIntro:"Maak een versleuteld back-upbestand van je eigen routines. Gebruik een wachtzin van minstens 12 tekens en bewaar die apart. Zonder wachtzin kan de back-up niet worden hersteld.",backupPassphraseLabel:"Back-upwachtzin (minstens 12 tekens)",confirmVaultPassphraseLabel:"Bevestig wachtzin bij het maken van een nieuwe kluis",vaultPassphraseMismatch:"De wachtzinnen komen niet overeen. Controleer ze voordat je de kluis maakt.",backupPassphraseHelp:"De wachtzin wordt niet opgeslagen. Gebruik niet je accountwachtwoord.",exportEncryptedRoutines:"Versleutelde back-up maken",importEncryptedRoutines:"Versleutelde back-up herstellen",encryptedBackupSuccess:"De versleutelde back-up is verwerkt.",encryptedBackupError:"De back-up kan niet worden ontsleuteld of is ongeldig. Controleer de wachtzin en het bestand.",encryptedBackupEmpty:"Maak eerst minstens één eigen routine.",routineExported:"Je routinebestand is klaargemaakt.",routineImportSuccess:"Routines geïmporteerd.",routineImportError:"Dit bestand is ongeldig of bevat geen bruikbare routines.",routineImportReadError:"Het bestand kon niet worden gelezen.",vaultMigrationTitle:"Bestaande routines veilig kopiëren",vaultMigrationIntro:"Kopieer je bestaande routines naar een lokale versleutelde kluis en download een versleutelde kopie. De oorspronkelijke routines blijven staan en zijn nog steeds onversleuteld in deze prototype-app.",vaultMigrationAction:"Versleutelde opslag activeren / ontgrendelen",vaultMigrationSuccess:"De versleutelde kluis is gemaakt en de kopie is gedownload. De oorspronkelijke routines zijn niet verwijderd en blijven onversleuteld in de app.",vaultMigrationDownloadOnly:"Er bestaat al een versleutelde kluis; de versleutelde kluisfile is opnieuw gedownload. De oorspronkelijke routines blijven onversleuteld.",vaultMigrationError:"De kopie kon niet worden gemaakt. Controleer of je routines hebt opgeslagen en gebruik een wachtzin van minstens 12 tekens.",vaultLocked:"De versleutelde kluis is vergrendeld. Voer je wachtzin in om routines te openen.",vaultUnlocked:"De versleutelde routine-opslag is ontgrendeld en actief.",vaultLockedStatus:"De versleutelde routine-opslag is vergrendeld.",vaultAutoLock:"De kluis wordt automatisch vergrendeld na 5 minuten inactiviteit of wanneer je dit tabblad verlaat.",vaultLockAction:"Kluis vergrendelen",vaultDeletePlaintextAction:"Onversleutelde routinekopie verwijderen",vaultDeletePlaintextConfirm:"Verwijder de onversleutelde kopie van eigen routines uit deze browser? Doe dit alleen als de versleutelde kluis is ontgrendeld en gecontroleerd.",vaultPlaintextDeleted:"De onversleutelde routinekopie is verwijderd.",vaultPlaintextDeleteError:"De onversleutelde kopie kon niet worden verwijderd.",clearRoutines:"Alle eigen routines wissen",clearRoutinesConfirm:"Weet je zeker dat je alle eigen routines wilt wissen? Dit kan niet ongedaan worden gemaakt.",routinesCleared:"Alle eigen routines zijn gewist.",customRoutineInvalid:"Vul een naam en minimaal één stap in. Maximaal 10 stappen.",customRoutineLimit:"Je kunt maximaal 50 eigen routines bewaren.",routineImportLimit:"Deze back-up past niet: maximaal 50 routines zijn toegestaan. Er is niets gewijzigd."
   },
   en: {
     skip:"Skip to content",mainNavigationLabel:"Main navigation",languageSelectLabel:"Choose language",languageSettingsLabel:"Language setting",closePhraseLabel:"Close displayed phrase",brandline:"Room for your day",navToday:"My day",navRoutines:"Routines",const translations = {
@@ -70,28 +70,36 @@ function localDateKey(date = new Date()) {
 }
 function readDailyProgress() {
   try {
-    const raw = localStorage.getItem(dailyProgressKey);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
+    const api = window.ProjectN01LifeSuite;
+    const parsed = api && typeof api.getRoutineProgress === "function" ? api.getRoutineProgress() : null;
     if (!parsed || parsed.date !== localDateKey()) return null;
     return parsed;
   } catch {
     return null;
   }
 }
-function saveDailyProgress() {
+async function saveDailyProgress() {
   const progress = {
     date: localDateKey(),
-    tasks: $$("[data-task]").map(input => input.checked),
+    tasks: $("[data-task]").map(input => input.checked),
     routines: Object.fromEntries(builtInRoutineIds.map(id => [
       id,
       $("[data-routine-step]").filter(input => input.dataset.routineStep === id).map(input => input.checked)
     ]))
   };
+  const api = window.ProjectN01LifeSuite;
+  if (!api || typeof api.saveRoutineProgress !== "function" || !api.isUnlocked()) {
+    const status = $("#task-status");
+    if (status) status.textContent = "Ontgrendel eerst de versleutelde kluis in Mijn leven om voortgang beveiligd op te slaan.";
+    return false;
+  }
   try {
-    localStorage.setItem(dailyProgressKey, JSON.stringify(progress));
+    const saved = await api.saveRoutineProgress(progress);
+    if (!saved) throw new Error("Secure save failed");
     return true;
   } catch {
+    const status = $("#task-status");
+    if (status) status.textContent = "Voortgang kon niet versleuteld worden opgeslagen. Controleer je kluis en opslagruimte.";
     return false;
   }
 }
@@ -224,7 +232,7 @@ async function saveCustomRoutines() {
       if (!activeVault || !activeVault.isUnlocked) throw new Error("vault-locked");
       await activeVault.save({ routines: customRoutines });
     } else {
-      localStorage.setItem(customRoutineStorageKey, JSON.stringify(customRoutines));
+      throw new Error("secure-vault-required");
     }
     return true;
   } catch {
@@ -1013,25 +1021,40 @@ $("#export-sketch").addEventListener("click", () => {
   }
 });
 const preferenceKey = "project-n-01-preferences-v1";
+let sessionPreferences = null;
 function readPreferences() {
   try {
-    const raw = localStorage.getItem(preferenceKey);
-    return raw ? JSON.parse(raw) : {};
+    const api = window.ProjectN01LifeSuite;
+    const stored = api && typeof api.getAppPreferences === "function" ? api.getAppPreferences() : null;
+    return stored || sessionPreferences || {};
   } catch {
-    return {};
+    return sessionPreferences || {};
   }
 }
 function savePreferences() {
-  try {
-    localStorage.setItem(preferenceKey, JSON.stringify({
-      language,
-      largeText: $("#large-text").checked,
-      reducedMotion: $("#less-motion").checked,
-      quietView: $("#quiet-view").checked
-    }));
-  } catch {
-    // Preferences still work for this session if storage is unavailable.
+  const current = {
+    language,
+    largeText: $("#large-text").checked,
+    reducedMotion: $("#less-motion").checked,
+    quietView: $("#quiet-view").checked
+  };
+  sessionPreferences = current;
+  const api = window.ProjectN01LifeSuite;
+  if (!api || typeof api.saveAppPreferences !== "function" || !api.isUnlocked()) {
+    const status = $("#local-data-status");
+    if (status) status.textContent = "Instellingen werken tijdelijk, maar worden pas duurzaam opgeslagen wanneer je de versleutelde kluis in Mijn leven ontgrendelt.";
+    return false;
   }
+  api.saveAppPreferences(current).then(saved => {
+    if (!saved) throw new Error("Secure preference save failed");
+    sessionPreferences = null;
+    const status = $("#local-data-status");
+    if (status) status.textContent = "Toegankelijkheidsinstellingen veilig versleuteld opgeslagen.";
+  }).catch(() => {
+    const status = $("#local-data-status");
+    if (status) status.textContent = "Instellingen konden niet versleuteld worden opgeslagen.";
+  });
+  return true;
 }
 function applyPreferences() {
   const preferences = readPreferences();
@@ -1062,6 +1085,53 @@ restoreDailyProgress();
 updateTaskCount();
 for (const routine of builtInRoutineIds) updateRoutineProgress(routine);
 applyPreferences();
+async function migrateLegacyPreferencesAndProgress() {
+  const api = window.ProjectN01LifeSuite;
+  if (!api || !api.isUnlocked()) return;
+  const legacyProgress = localStorage.getItem(dailyProgressKey);
+  const legacyPrefs = localStorage.getItem(preferenceKey);
+  if (legacyProgress || legacyPrefs) {
+    const confirmed = window.confirm("Deze installatie bevat oude voortgangs- of toegankelijkheidsgegevens die nog onversleuteld zijn opgeslagen. Wil je ze naar de ontgrendelde versleutelde kluis verplaatsen en de oude onversleutelde kopieën daarna verwijderen?");
+    if (confirmed) {
+      let ok = true;
+      if (legacyProgress) {
+        try {
+          const parsed = JSON.parse(legacyProgress);
+          if (parsed && typeof parsed.date === "string" && typeof api.saveRoutineProgress === "function") ok = (await api.saveRoutineProgress(parsed)) && ok;
+        } catch { ok = false; }
+      }
+      if (legacyPrefs) {
+        try {
+          const parsed = JSON.parse(legacyPrefs);
+          if (parsed && typeof parsed === "object" && typeof api.saveAppPreferences === "function") ok = (await api.saveAppPreferences(parsed)) && ok;
+        } catch { ok = false; }
+      }
+      if (ok) {
+        localStorage.removeItem(dailyProgressKey);
+        localStorage.removeItem(preferenceKey);
+      } else {
+        const status = $("#local-data-status");
+        if (status) status.textContent = "De migratie is niet volledig gelukt. De oude kopieën zijn behouden zodat gegevens niet verloren gaan; controleer de opslag en probeer opnieuw.";
+      }
+    } else {
+      const status = $("#local-data-status");
+      if (status) status.textContent = "Let op: er staan nog oude, onversleutelde kopieën op dit apparaat. Je kunt deze later migreren via de versleutelde kluis.";
+    }
+  } else if (sessionPreferences) {
+    await api.saveAppPreferences(sessionPreferences);
+    sessionPreferences = null;
+  }
+  applyPreferences();
+  restoreDailyProgress();
+  updateTaskCount();
+  for (const routine of builtInRoutineIds) updateRoutineProgress(routine);
+}
+window.addEventListener("project-n01-vault-unlocked", () => {
+  migrateLegacyPreferencesAndProgress().catch(() => {
+    const status = $("#local-data-status");
+    if (status) status.textContent = "De migratie van oude instellingen kon niet worden afgerond.";
+  });
+});
 
 // Offline support is enabled only on secure origins or localhost.
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
