@@ -12,6 +12,21 @@ This checklist separates automated build success from actual product/release ver
 
 These are CI build results only. They do not confirm that an app has been installed and exercised on physical devices.
 
+### Artifact retrieval
+
+Use the artifact section of each successful run to download the matching ZIP bundle. Do not use an artifact from a different commit when recording acceptance results.
+
+- Android phone and tablet candidates (source commit `d43f216642c4745b3c8e3592a8c9d4abe87472c0`): https://github.com/DRAVEINX/Project-N-01/actions/runs/39109348863
+  - `project-n-01-phone-release-candidate` (artifact ID `12130170742`)
+  - `project-n-01-tablet-release-candidate` (artifact ID `12129945994`)
+  - Debug APKs are also attached to this run for phone (`12129028808`) and tablet (`12129342841`).
+- Windows unsigned MSI candidate: https://github.com/DRAVEINX/Project-N-01/actions/runs/39109348849 (artifact ID `12129399177`).
+- iOS unsigned archive candidate: https://github.com/DRAVEINX/Project-N-01/actions/runs/39109348935 (artifact ID `12129239934`).
+- The roadmap/checklist documentation regression run on the latest docs commit succeeded: https://github.com/DRAVEINX/Project-N-01/actions/runs/39109723398.
+
+Artifact IDs are for traceability; the ZIP files still need to be downloaded and inspected, and none of these entries proves physical-device acceptance or release signing.
+
+
 ## Android phone and tablet
 
 Artifacts are uploaded by the Android workflow as `project-n-01-phone-release-candidate` and `project-n-01-tablet-release-candidate`. Each contains the relevant release APK and AAB when the build succeeds. Release signing is optional in the workflow, so verify signatures before distribution.
