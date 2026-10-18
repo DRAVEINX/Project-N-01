@@ -377,7 +377,7 @@ test("export rejects invalid base64 fields and impossible encrypted data sizes",
   storage.setItem("test-vault", JSON.stringify({ ...valid, salt: "not-base64!" }));
   assert.throws(() => vault.exportEnvelope(), /Stored vault is invalid/);
 
-  storage.setItem("test-vault", JSON.stringify({ ...valid, iv: "AAAAAAAAAAAAAAAA" }));
+  storage.setItem("test-vault", JSON.stringify({ ...valid, iv: "AAAAAAAAAAAAAAAAAAAAAA==" }));
   assert.throws(() => vault.exportEnvelope(), /Stored vault is invalid/);
 
   storage.setItem("test-vault", JSON.stringify({ ...valid, ciphertext: "AAAAAAAAAAAAAAAAAAAAAA==" }));
