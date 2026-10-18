@@ -635,7 +635,7 @@ $$("[data-task]").forEach(input => input.addEventListener("change", () => {
   saveDailyProgress();
 }));
 function updateRoutineProgress(routine) {
-  const steps = $$$("[data-routine-step]").filter(input => input.dataset.routineStep === routine);
+  const steps = $("[data-routine-step]").filter(input => input.dataset.routineStep === routine);
   const done = steps.filter(input => input.checked).length;
   const progress = $(`[data-routine-progress="${routine}"]`);
   if (progress) progress.textContent = t("routineProgress").replace("{done}", String(done)).replace("{total}", String(steps.length));
@@ -656,7 +656,7 @@ function updateRoutineProgress(routine) {
 }));
   $$("[data-complete-routine]").forEach(button => button.addEventListener("click", () => {
   const routine = button.dataset.completeRoutine;
-  const steps = $$$("[data-routine-step]").filter(input => input.dataset.routineStep === routine);
+  const steps = $("[data-routine-step]").filter(input => input.dataset.routineStep === routine);
   const complete = steps.length > 0 && steps.every(input => input.checked);
   steps.forEach(input => { input.checked = !complete; });
   updateRoutineProgress(routine);
