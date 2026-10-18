@@ -85,7 +85,9 @@ function publicUser(user) {
 }
 function isEncryptedEnvelope(payload) {
   return payload && payload.format === "project-n-01-life-v1" && payload.cipher === "AES-256-GCM" &&
+    payload.kdf === "PBKDF2-SHA-256" && payload.iterations === 310000 &&
     typeof payload.salt === "string" && typeof payload.iv === "string" && typeof payload.ciphertext === "string" &&
+    payload.salt.length <= 64 && payload.iv.length <= 64 && payload.ciphertext.length > 0 &&
     payload.ciphertext.length < MAX_BODY * 2 && payload.version === 1;
 }
 
@@ -296,6 +298,23 @@ export async function createApiServer(options = {}) {
         db.sessions = db.sessions.filter(s => s.tokenHash !== auth.session.tokenHash);
         await persist();
         send(res, 200, { ok: true });
+        return;
+      }
+      if (req.method === "DELETE" && url.pathname === "/api/account") {
+        if (!auth) { send(res, 401, { error: "authentication-required" }); return; }
+        const body = await readBody(req);
+        const derived = await passwordKey(String(body.password || ""), Buffer.from(auth.user.salt, "base64url"));
+        if (!safeEqual(derived.toString("base64url"), auth.user.passwordHash)) { send(res, 401, { error: "invalid-credentials" }); return; }
+        const userId = auth.user.id;
+        db.users = db.users.filter(u => u.id !== userId);
+        db.sessions = db.sessions.filter(s => s.userId !== userId);
+        db.resets = db.resets.filter(r => r.userId !== userId);
+        db.sync = db.sync.filter(s => s.userId !== userId);
+        db.workspaces = db.workspaces.filter(w => w.ownerId !== userId).map(w => Object.assign({}, w, {members:w.members.filter(m => m.userId !== userId)}));
+        db.invites = db.invites.filter(i => i.ownerId !== userId && i.acceptedBy !== userId);
+        db.users.forEach(u => { u.workspaces = (u.workspaces || []).filter(id => db.workspaces.some(w => w.id === id)); });
+        await persist();
+        send(res, 200, { ok: true, message: "Account, sessions, invitations and server-side encrypted sync copy deleted." });
         return;
       }
       if (req.method === "POST" && url.pathname === "/api/auth/2fa/setup") {
