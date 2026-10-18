@@ -142,3 +142,10 @@
 .ls-plan-summary small { color:var(--mint); }
 @media(min-width:760px) { .ls-weekplan-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(min-width:1180px) { .ls-weekplan-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+
+.ls-simple-mode .ls-muted{display:none}
+.ls-simple-mode .ls-item p{font-size:1.05em;line-height:1.6}
+.ls-cancelled{color:#ff9ca7;font-size:.85em;font-weight:700}
+.ls-goal-progress{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;margin:.5rem 0}
+.ls-goal-progress label{display:flex;align-items:center;gap:.5rem;flex:1;min-width:180px}
+.ls-goal-progress input{flex:1;min-width:90px}
