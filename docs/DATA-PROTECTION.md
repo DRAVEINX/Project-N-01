@@ -4,7 +4,7 @@
 
 - When encrypted routine storage is not enabled, custom routines are stored in browser `localStorage` and are **not encrypted**. After the user enables the vault and optionally removes the old plaintext copy, custom routine templates are stored in an authenticated encrypted envelope. Accessibility preferences remain unencrypted in `localStorage`.
 - Routine JSON exports are plaintext and must be treated as readable by anyone who obtains the file.
-- Notes and drawings are currently temporary and are not persisted.
+- The Life Suite stores diary text, mood records, drawings, audio attachments, guides, goals, the emergency plan, small document attachments, handover notes, absences and other Life Suite records inside its local encrypted envelope. This relies on the user-created vault passphrase and has not been independently security-reviewed.
 - The experimental `src/secure-storage.js` module provides Web Crypto AES-256-GCM encryption with a random 128-bit salt, random 96-bit IV, PBKDF2-SHA-256 key derivation, and a 128-bit authentication tag.
 - The optional encrypted vault is connected to custom routine-template persistence. The user must unlock it with a passphrase on each page load; a derived `CryptoKey` is retained only in an in-memory closure while unlocked and is discarded on lock. The prototype auto-locks after five minutes without activity and when the page is hidden or navigated away from; there is no password-reset service and independent security review is still missing, so this is not yet a release-ready security guarantee. A separate encrypted recovery-file/code workflow is described below.
 - Browser encryption does not protect data from a compromised device, malicious browser extension, injected script, or someone with access to an unlocked app session.
@@ -15,7 +15,7 @@
 | --- | --- |
 | Accessibility preferences | Non-sensitive settings; persist locally and minimize collection |
 | Custom routine templates | Optional encrypted vault after passphrase unlock; old plaintext copy must be removed separately. Accessibility preferences remain unencrypted. |
-| Mood entries, journal text, drawings, voice recordings | Sensitive; do not persist until encryption, deletion, backup and consent flows are implemented |
+| Mood entries, journal text, drawings, voice recordings | Stored inside the encrypted Life Suite envelope; still require hands-on deletion/recovery tests and an independent security review |
 | Caregiver/guardian access | Explicit, revocable consent and separate authorization; never infer permission from device ownership |
 | Backups | Versioned encrypted envelope; never include passwords or raw derived keys |
 
@@ -36,7 +36,7 @@
 
 The experimental envelope includes `format`, `version`, `kdf`, `iterations`, `cipher`, `salt`, `iv` and `ciphertext`. The passphrase and derived key are not serialized. AES-GCM authentication failures reject decryption. Format/version checks are strict to avoid silently accepting unknown schemes.
 
-This is an engineering plan, not a certification, legal assessment, or claim that the current application encrypts data.
+This is an engineering plan, not a certification or legal assessment. The Life Suite encrypts its state envelope, but not all Project N-01 data is yet encrypted: legacy routine completion/progress and global accessibility preferences still use plain browser storage until migrated. Do not describe the whole application as fully encrypted or production secure.
 
 
 ## Encrypted routine backup prototype
@@ -81,3 +81,14 @@ Before production, test the envelope format and schema against malformed imports
 The Daily Life Suite now provides a **separate encrypted recovery backup**. It creates a randomly generated recovery code, derives an AES-256-GCM key from that code and a fresh random salt, and downloads a recovery JSON file containing only the encrypted envelope. The code is shown in the open session and is not stored in the normal app data. Save the downloaded file and the code separately, such as in two different safe locations. Import the file using the displayed code in the normal encrypted-backup restore field. If either item is lost, that recovery copy cannot be opened.
 
 This is a manual file-based recovery aid, not password reset, cloud backup, account recovery, or synchronization. It does not recover the original browser's encrypted vault unless the user restores the exported file. The app cannot retrieve a forgotten passphrase or missing recovery code.
+
+
+## New account, sync and notification work — rollout caveats
+
+The platform integration stores only the current Life Suite encrypted-envelope JSON in `app_sync_snapshots`; the backend is not sent decrypted mood or journal text by the snapshot API. Snapshot hashes, timestamps and device labels are metadata. A user must provide the same vault passphrase on each device to unlock a restored snapshot. A version conflict requires an explicit upload or restore choice; this does not merge individual records.
+
+The SQL migration adds row-level security for the profiles, snapshots and caregiver link tables, plus a check that users with a verified TOTP factor present an AAL2 session for private cloud data. This migration must be applied to the intended Supabase project and tested against real Supabase Auth behavior before the feature is used. The client-side URL/key form must only receive a public anon/publishable key—never a service-role key.
+
+Caregiver invitations contain an email-bound one-use token hash, a role and scope metadata. The service does not yet send e-mail invitations or expose/decrypt the owner's main vault through that link. Do not record confidential information in the app on the assumption that an invited caregiver can view it, and do not claim record-level sharing is complete.
+
+Native local reminders are scheduled through Capacitor when the Life Suite is unlocked. Delivery after app close/reboot, permission handling, exact alarms and clock/time-zone changes need physical-device tests; notifications are not an emergency service. Independent privacy/security review and TalkBack/user testing remain release blockers.
