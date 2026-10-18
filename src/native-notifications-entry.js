@@ -52,10 +52,11 @@ function buildSchedule(items, quietStart = "22:00", quietEnd = "07:00", showDeta
     if (!Number.isFinite(base.getTime())) continue;
     const repeat = ["daily","weekly"].includes(item.repeat) ? item.repeat : "none";
     const steps = repeat === "daily" ? 1 : repeat === "weekly" ? 7 : 0;
+    const advanceLocalDays = (date,days) => { const next = new Date(date); next.setDate(next.getDate()+days); return next; };
     let count = 0;
-    while (base.getTime() <= now && steps && count < 400) { base = new Date(base.getTime()+steps*86400000); count++; }
+    while (base.getTime() <= now && steps && count < 400) { base = advanceLocalDays(base,steps); count++; }
     add("reminder:"+item.id,base,item.title,"reminder");
-    if (steps) for (let i=1;i<30/steps && result.length<60;i++) add("reminder:"+item.id+":"+i,new Date(base.getTime()+steps*i*86400000),item.title,"reminder");
+    if (steps) for (let i=1;i<30/steps && result.length<60;i++) add("reminder:"+item.id+":"+i,advanceLocalDays(base,steps*i),item.title,"reminder");
   }
   return result.slice(0,60);
 }
