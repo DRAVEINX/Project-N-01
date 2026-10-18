@@ -41,8 +41,9 @@ jobs:
       - name: Verify current web assets for iOS
         run: |
           test -s www/src/life-suite.js
+          test -s www/src/platform-services.js
           test -s www/src/styles.css
-          grep -F 'project-n-01-prototype-v15' www/service-worker.js
+          grep -F 'project-n-01-prototype-v16' www/service-worker.js
 
       - name: Add and sync iOS platform
         run: |
