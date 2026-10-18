@@ -1,3 +1,4 @@
+# NovaLife Android: push-triggered validation and manual workflow_dispatch release-candidate builds.
 name: NovaLife Android build
 
 on:
