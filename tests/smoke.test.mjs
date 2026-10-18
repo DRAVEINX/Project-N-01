@@ -160,7 +160,7 @@ test("routine checkbox and completion listeners use the shared query helper", ()
 
 test("document title follows the active view and updates when language changes", () => {
   assert.match(js, /function updateDocumentTitle\(\)/);
-  assert.match(js, /document\.title = pageName \? `\$\{pageName\} · Project N-01` : "Project N-01"/);
+  assert.match(js, /document\.title = pageName \? `\$\{pageName\} · NovaLife` : "NovaLife"/);
   assert.match(js, /updateDocumentTitle\(\);/);
 });
 
