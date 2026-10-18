@@ -2,7 +2,7 @@ name: NovaLife CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feature/novalife-rebrand"]
   pull_request:
     branches: [main]
   workflow_dispatch:
