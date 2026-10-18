@@ -1,0 +1,71 @@
+name: NovaLife Android build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - feature/novalife-care-portals
+    paths:
+      - "index.html"
+      - "offline.html"
+      - "manifest.webmanifest"
+      - "service-worker.js"
+      - "src/**"
+      - "assets/**"
+      - "package.json"
+      - "capacitor.config.json"
+      - "scripts/prepare-mobile.mjs"
+      - ".github/workflows/novalife-android-build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  android-build:
+    name: Build Android APK and AAB
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install JavaScript dependencies
+        run: npm install
+
+      - name: Run smoke tests
+        run: npm test
+
+      - name: Prepare mobile web bundle
+        run: npm run build:mobile
+
+      - name: Generate Android project
+        run: npx cap add android
+
+      - name: Sync Capacitor assets
+        run: npx cap sync android
+
+      - name: Build debug APK and release AAB
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug bundleRelease
+
+      - name: Upload Android build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: novalife-android-unsigned-builds
+          if-no-files-found: error
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/app/build/outputs/bundle/release/*.aab
