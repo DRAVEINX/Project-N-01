@@ -268,8 +268,8 @@ test("Android phone and tablet have separate installable build variants and resp
   assert.match(androidVariantScript, /NovaLife Tablet/);
   assert.match(androidWorkflow, /assemblePhoneDebug assembleTabletDebug/);
   assert.match(androidWorkflow, /assemblePhoneRelease bundlePhoneRelease assembleTabletRelease bundleTabletRelease/);
-  assert.match(androidWorkflow, /project-n-01-phone-release-candidate/);
-  assert.match(androidWorkflow, /project-n-01-tablet-release-candidate/);
+  assert.match(androidWorkflow, /novalife-phone-release-candidate/);
+  assert.match(androidWorkflow, /novalife-tablet-release-candidate/);
   assert.match(baseStyles, /@media \(min-width:761px\) and \(max-width:900px\)/);
   assert.match(workflow, /node --check scripts\/configure-android-build-variants\.mjs/);
 });
