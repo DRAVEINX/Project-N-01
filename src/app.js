@@ -61,31 +61,57 @@ function localDateKey(date = new Date()) {
 }
 function readDailyProgress() {
   try {
-    const raw = localStorage.getItem(dailyProgressKey);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || parsed.date !== localDateKey()) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
+    const secure = window.ProjectN01Vault;
+    if (secure && secure.isUnlocked()) return secure.getDailyProgress(localDateKey());
+  } catch {}
+  return null;
 }
 function saveDailyProgress() {
   const progress = {
     date: localDateKey(),
-    tasks: $$("[data-task]").map(input => input.checked),
+    tasks: $("#task-list [data-task]").map(input => input.checked),
     routines: Object.fromEntries(builtInRoutineIds.map(id => [
       id,
-      $("[data-routine-step]").filter(input => input.dataset.routineStep === id).map(input => input.checked)
+      $("#routine-list [data-routine-step]").filter(input => input.dataset.routineStep === id).map(input => input.checked)
     ]))
   };
-  try {
-    localStorage.setItem(dailyProgressKey, JSON.stringify(progress));
+  const secure = window.ProjectN01Vault;
+  if (secure && secure.isUnlocked()) {
+    secure.saveDailyProgress(progress).then(ok => {
+      const status = $("#task-status");
+      if (!ok && status) status.textContent = "Voortgang kon niet veilig worden opgeslagen.";
+    });
     return true;
-  } catch {
-    return false;
   }
+  const status = $("#task-status");
+  if (status) status.textContent = "Ontgrendel Mijn leven om je voortgang versleuteld te bewaren.";
+  return false;
 }
+
+async function migrateLegacyDataIntoVault() {
+  const secure = window.ProjectN01Vault;
+  if (!secure || !secure.isUnlocked()) return;
+  try {
+    const legacyProgress = localStorage.getItem(dailyProgressKey);
+    if (legacyProgress) {
+      const parsed = JSON.parse(legacyProgress);
+      if (parsed && typeof parsed === "object") await secure.importLegacyDailyProgress(parsed);
+    }
+  } catch {}
+  try {
+    const legacyPreferences = localStorage.getItem(preferenceKey);
+    if (legacyPreferences) {
+      const parsed = JSON.parse(legacyPreferences);
+      if (parsed && typeof parsed === "object") await secure.importLegacyAppPreferences(parsed);
+    }
+  } catch {}
+  restoreDailyProgress();
+  applyPreferences();
+}
+window.addEventListener("projectn-vault-state", event => {
+  if (event.detail && event.detail.unlocked) migrateLegacyDataIntoVault();
+});
+
 function restoreDailyProgress() {
   const progress = readDailyProgress();
   if (!progress) return;
@@ -1006,22 +1032,27 @@ $("#export-sketch").addEventListener("click", () => {
 const preferenceKey = "project-n-01-preferences-v1";
 function readPreferences() {
   try {
-    const raw = localStorage.getItem(preferenceKey);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+    const secure = window.ProjectN01Vault;
+    if (secure && secure.isUnlocked()) return secure.getAppPreferences() || {};
+  } catch {}
+  return {};
 }
 function savePreferences() {
-  try {
-    localStorage.setItem(preferenceKey, JSON.stringify({
-      language,
-      largeText: $("#large-text").checked,
-      reducedMotion: $("#less-motion").checked,
-      quietView: $("#quiet-view").checked
-    }));
-  } catch {
-    // Preferences still work for this session if storage is unavailable.
+  const value = {
+    language,
+    largeText: $("#large-text").checked,
+    reducedMotion: $("#less-motion").checked,
+    quietView: $("#quiet-view").checked
+  };
+  const secure = window.ProjectN01Vault;
+  if (secure && secure.isUnlocked()) {
+    secure.saveAppPreferences(value).then(ok => {
+      const status = $("#settings-status");
+      if (status && !ok) status.textContent = "Instellingen konden niet veilig worden opgeslagen.";
+    });
+  } else {
+    const status = $("#settings-status");
+    if (status) status.textContent = "Instellingen gelden voor deze sessie. Ontgrendel Mijn leven om ze versleuteld te bewaren.";
   }
 }
 function applyPreferences() {
