@@ -33,19 +33,65 @@ function paintRounded(x, y, w, h, radius, colorFn) {
   }
 }
 
-paintRounded(0, 0, size, size, 48, () => [23, 27, 43, 255]);
-paintRounded(22, 22, 212, 212, 38, (x, y) => {
-  const t = Math.max(0, Math.min(1, (x + y - 44) / 424));
+paintRounded(0, 0, size, size, 48, () => [6, 17, 40, 255]);
+paintRounded(16, 16, 224, 224, 44, (x, y) => {
+  const t = Math.max(0, Math.min(1, (x + y - 32) / 448));
   return [
-    Math.round(185 * (1 - t) + 141 * t),
-    Math.round(167 * (1 - t) + 226 * t),
-    Math.round(255 * (1 - t) + 203 * t),
+    Math.round(16 * (1 - t) + 12 * t),
+    Math.round(43 * (1 - t) + 27 * t),
+    Math.round(99 * (1 - t) + 67 * t),
     255
   ];
 });
-for (const [x, y, w, h] of [[78, 102, 17, 52], [119, 74, 17, 108], [160, 92, 17, 72]]) {
-  paintRounded(x, y, w, h, 8, () => [23, 27, 43, 255]);
+
+function paintLine(x1, y1, x2, y2, width, colorFn) {
+  const minX = Math.max(0, Math.floor(Math.min(x1, x2) - width));
+  const maxX = Math.min(size - 1, Math.ceil(Math.max(x1, x2) + width));
+  const minY = Math.max(0, Math.floor(Math.min(y1, y2) - width));
+  const maxY = Math.min(size - 1, Math.ceil(Math.max(y1, y2) + width));
+  const vx = x2 - x1, vy = y2 - y1;
+  const lengthSquared = vx * vx + vy * vy;
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const t = Math.max(0, Math.min(1, ((x + 0.5 - x1) * vx + (y + 0.5 - y1) * vy) / lengthSquared));
+      const dx = x + 0.5 - (x1 + t * vx);
+      const dy = y + 0.5 - (y1 + t * vy);
+      if (dx * dx + dy * dy <= width * width / 4) setPixel(x, y, colorFn(t, x, y));
+    }
+  }
 }
+
+function fillPolygon(points, colorFn) {
+  const minX = Math.max(0, Math.floor(Math.min(...points.map(p => p[0]))));
+  const maxX = Math.min(size - 1, Math.ceil(Math.max(...points.map(p => p[0]))));
+  const minY = Math.max(0, Math.floor(Math.min(...points.map(p => p[1]))));
+  const maxY = Math.min(size - 1, Math.ceil(Math.max(...points.map(p => p[1]))));
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      let inside = false;
+      for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+        const [xi, yi] = points[i], [xj, yj] = points[j];
+        const crosses = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi);
+        if (crosses) inside = !inside;
+      }
+      if (inside) setPixel(x, y, colorFn(x, y));
+    }
+  }
+}
+
+paintLine(77, 184, 77, 75, 25, () => [45, 221, 245, 255]);
+paintLine(77, 75, 177, 184, 25, (t) => [
+  Math.round(38 * (1 - t) + 21 * t),
+  Math.round(183 * (1 - t) + 139 * t),
+  Math.round(255 * (1 - t) + 255 * t),
+  255
+]);
+paintLine(177, 184, 177, 75, 25, () => [146, 91, 255, 255]);
+fillPolygon([[151, 89], [163, 63], [185, 49], [211, 51], [205, 78], [188, 99], [166, 105], [156, 100]], (x, y) => {
+  const t = Math.max(0, Math.min(1, (y - 49) / 56));
+  return [Math.round(119 * (1 - t)), Math.round(255 * (1 - t) + 198 * t), Math.round(213 * (1 - t) + 170 * t), 255];
+});
+paintLine(164, 96, 201, 60, 4, () => [5, 67, 81, 255]);
 
 function crc32(buffer) {
   let crc = 0xffffffff;
