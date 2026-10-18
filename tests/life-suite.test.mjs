@@ -187,4 +187,18 @@ test("professional workspace is integrated with encrypted vault, account API and
   assert.match(api, /baseRevision/);
   assert.match(api, /team\/invite/);
   assert.match(api, /DELETE.*\/api\/account/);
+  assert.match(nativeBridge, /LocalNotifications\.schedule/);
+  assert.match(nativeBridge, /quietAdjusted/);
+  assert.match(nativeBridge, /snooze_10/);
+  assert.match(nativeBridge, /privatePreview/);
+  assert.match(nativeLoader, /isNativePlatform/);
+  assert.match(nativePermissionScript, /POST_NOTIFICATIONS/);
+  assert.match(nativePermissionScript, /SCHEDULE_EXACT_ALARM/);
+  assert.equal(packageConfig.dependencies["@capacitor/local-notifications"], "8.3.1");
+  assert.match(androidWorkflow, /ensure-android-notification-permissions\.mjs/);
+  assert.match(js, /appointmentRescheduled/);
+  assert.match(js, /allDay:allDay/);
+  assert.match(js, /travelMinutes/);
+  assert.match(js, /excludedDates/);
+  assert.match(js, /appointment-rescheduled/);
 });
