@@ -3,7 +3,7 @@
  *
  * Used by the optional encrypted routine vault and encrypted backup flow.
  * Preferences remain unencrypted; sensitive journal/voice data is not persisted.
- * Requires Web Crypto in a secure context.
+ * Requires Web Crypto in a secure context. Oversized ciphertext is rejected before Base64 decoding.
  */
 const FORMAT = "project-n-01-encrypted-json";
 const VERSION = 1;
