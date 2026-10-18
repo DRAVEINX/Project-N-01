@@ -55,17 +55,31 @@
     if(invitationToken) return '<section class="ap-card"><h3>Uitnodiging accepteren</h3><p>Log in met het uitgenodigde e-mailadres. De server controleert of de uitnodiging bij dit e-mailadres hoort.</p>'+button("Uitnodiging accepteren","accept-invite","primary-button")+'</section><section class="ap-card"><h3>Inloggen om de uitnodiging te accepteren</h3><form class="ap-form" data-ap-form="login">'+field("E-mailadres","email","email",'autocomplete="username"')+field("Wachtwoord","password","password",'autocomplete="current-password"')+field("Authenticatorcode","totp","text",'inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"')+'<button class="primary-button" type="submit">Inloggen</button></form><form class="ap-form" data-ap-form="register">'+field("Naam","displayName","text",'maxlength="80" autocomplete="name"')+field("E-mailadres","email","email",'autocomplete="email"')+field("Nieuw wachtwoord (14+ tekens)","password","password",'minlength="14" autocomplete="new-password"')+'<button class="secondary-button" type="submit">Account aanmaken</button></form></section>';
     return '<div class="ap-auth-grid"><section class="ap-card"><h3>Inloggen</h3><form class="ap-form" data-ap-form="login">'+field("E-mailadres","email","email",'autocomplete="username"')+field("Wachtwoord","password","password",'autocomplete="current-password"')+field("Authenticatorcode (indien ingeschakeld)","totp","text",'inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"')+'<button class="primary-button" type="submit">Inloggen</button></form><form class="ap-form ap-inline-form" data-ap-form="forgot">'+field("Wachtwoord vergeten — e-mailadres","email","email",'autocomplete="email"')+'<button class="secondary-button" type="submit">Herstelmail aanvragen</button></form></section><section class="ap-card"><h3>Nieuw account</h3><form class="ap-form" data-ap-form="register">'+field("Naam","displayName","text",'maxlength="80" autocomplete="name"')+field("E-mailadres","email","email",'autocomplete="email"')+field("Wachtwoord (minimaal 14 tekens)","password","password",'minlength="14" autocomplete="new-password"')+'<p class="ap-muted">Een verificatiemail is vereist. Kies een uniek wachtwoord; gebruik nooit je kluiswachtzin opnieuw.</p><button class="primary-button" type="submit">Account registreren</button></form><form class="ap-form ap-inline-form" data-ap-form="resend">'+field("Verificatiemail opnieuw sturen","email","email",'autocomplete="email"')+'<button class="secondary-button" type="submit">Verificatie opnieuw sturen</button></form></section></div>';
   }
+  function looksLikeEncryptedEnvelope(raw){
+    let value;
+    try { value=JSON.parse(raw); } catch { return false; }
+    if(!value||typeof value!=="object"||Array.isArray(value))return false;
+    const knownFormat=value.format==="project-n-01-life-v1"||value.format==="project-n-01-encrypted-json";
+    if(!knownFormat||value.version!==1||value.kdf!=="PBKDF2-SHA-256"||value.cipher!=="AES-256-GCM"||
+       !Number.isInteger(value.iterations)||value.iterations<100000||
+       typeof value.salt!=="string"||typeof value.iv!=="string"||typeof value.ciphertext!=="string")return false;
+    const base64=value=>/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value);
+    if(!base64(value.salt)||!base64(value.iv)||!base64(value.ciphertext))return false;
+    try { return atob(value.salt).length===16&&atob(value.iv).length===12&&atob(value.ciphertext).length>=16; }
+    catch { return false; }
+  }
   function localInventory(){
     const entries=[];
     for(let i=0;i<localStorage.length;i++){
       const key=localStorage.key(i);if(!key||!key.startsWith("project-n-01"))continue;
       const value=localStorage.getItem(key)||"";
-      const encrypted=/secure-life|encrypted-vault|life-history/i.test(key);
+      const encryptedKey=/secure-life|encrypted-vault|life-history/i.test(key);
+      const encrypted=encryptedKey&&looksLikeEncryptedEnvelope(value);
       const legacy=/daily-progress|custom-routines|accessibility|preferences/i.test(key);
-      entries.push({key,bytes:new TextEncoder().encode(value).length,encrypted,legacy});
+      entries.push({key,bytes:new TextEncoder().encode(value).length,encrypted,legacy:legacy||encryptedKey&&!encrypted});
     }
     if(!entries.length)return '<p class="ap-muted">Geen lokale Project N-01-sleutels gevonden in deze webopslag.</p>';
-    return '<div class="ap-inventory"><p class="ap-muted">Alleen sleutelnaam, grootte en technische classificatie worden getoond; opgeslagen inhoud wordt niet weergegeven.</p>'+entries.map(x=>'<div class="ap-inventory-row"><span><strong>'+esc(x.key)+'</strong><small>'+x.bytes.toLocaleString("nl-NL")+' bytes</small></span><span class="ap-tag '+(x.encrypted?'is-encrypted':x.legacy?'is-warning':'')+'">'+(x.encrypted?"Versleutelde envelop"+(x.key===HISTORY_KEY?" / eerdere versies":""):x.legacy?"Controle nodig":"Metadata / onbekend")+'</span></div>').join("")+'</div>';
+    return '<div class="ap-inventory"><p class="ap-muted">Alleen sleutelnaam, grootte en technische classificatie worden getoond; opgeslagen inhoud wordt niet weergegeven. Een sleutel wordt alleen als versleuteld gemarkeerd als de envelopstructuur geldig is; dit controleert niet of de wachtzin werkt of de inhoud authentiek kan worden ontsleuteld.</p>'+entries.map(x=>'<div class="ap-inventory-row"><span><strong>'+esc(x.key)+'</strong><small>'+x.bytes.toLocaleString("nl-NL")+' bytes</small></span><span class="ap-tag '+(x.encrypted?'is-encrypted':x.legacy?'is-warning':'')+'">'+(x.encrypted?"Versleutelde envelop"+(x.key===HISTORY_KEY?" / eerdere versies":""):x.legacy?"Controle nodig":"Metadata / onbekend")+'</span></div>').join("")+'</div>';
   }
   function cloudPanel(){
     const localExists=Boolean(localStorage.getItem(VAULT_KEY));
