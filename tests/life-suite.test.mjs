@@ -490,3 +490,19 @@ test("NovaLife goals support private milestones, completion and status history",
   assert.match(css, /\.ls-milestone-section\s*\{/);
   assert.match(css, /\.ls-milestone-form\s*\{/);
 });
+
+
+test("NovaInsights is opt-in, local-only, and summarizes counts without journal text", () => {
+  assert.match(js, /function insightsView\(\)/);
+  assert.match(js, /insightsEnabled:false/);
+  assert.match(js, /id="ls-insights-form"/);
+  assert.match(js, /activeTab === "insights" \? insightsView\(\)/);
+  assert.match(js, /visibleItems\("moods","mood"\)/);
+  assert.match(js, /visibleItems\("weeklyPlans","planning"\)/);
+  assert.match(js, /visibleItems\("goals","goals"\)/);
+  assert.match(js, /insights-preference-changed/);
+  assert.match(js, /These are counts from your own vault, not a diagnosis or prediction/);
+  assert.match(js, /Dit zijn alleen tellingen uit je eigen kluis, geen diagnose of voorspelling/);
+  assert.match(css, /\.ls-insights-grid\s*\{/);
+  assert.match(css, /@media \(max-width:760px\) \{ \.ls-insights-grid/);
+});
