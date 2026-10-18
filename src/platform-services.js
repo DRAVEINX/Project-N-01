@@ -23,6 +23,8 @@
   let isError = false;
   let busy = false;
   let enrolledFactor = null;
+  let mfaPending = false;
+  let mfaFactorId = "";
   let latestRemote = null;
   let careLinks = [];
   let lastSeenRemoteHash = "";
@@ -62,6 +64,7 @@
     const headers = {"apikey":config.anonKey,"Content-Type":"application/json"};
     const bearer = Object.prototype.hasOwnProperty.call(options,"token") ? options.token : session?.access_token;
     if (bearer) headers.Authorization = "Bearer " + bearer;
+    if (mfaPending && path.startsWith("/rest/v1/")) throw new Error("Bevestig eerst de authenticatorcode om accountgegevens te openen.");
     if (options.prefer) headers.Prefer = options.prefer;
     const response = await fetch(baseUrl()+path,{method:options.method||"GET",headers,body:options.body===undefined?undefined:JSON.stringify(options.body)});
     const text = await response.text();
