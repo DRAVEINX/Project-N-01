@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { execFileSync } from "node:child_process";
 
 const root = process.cwd();
 const read = (path) => readFile(resolve(root, path), "utf8");
@@ -52,7 +53,9 @@ test("sensitive life-suite storage keeps its established encrypted format", asyn
 
 test("application JavaScript parses without syntax errors", async () => {
   for (const file of ["src/app.js", "src/life-suite.js", "service-worker.js", "scripts/prepare-mobile.mjs"]) {
-    const source = await read(file);
-    assert.doesNotThrow(() => new Function(source), `Syntax error in ${file}`);
+    assert.doesNotThrow(
+      () => execFileSync(process.execPath, ["--check", file], { cwd: root, stdio: "pipe" }),
+      "Syntax error in " + file
+    );
   }
 });
