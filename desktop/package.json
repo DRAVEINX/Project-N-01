@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Windows desktop package for the NovaLife daily-life companion",
+  "author": "DRAVEINX",
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
