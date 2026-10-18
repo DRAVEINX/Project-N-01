@@ -6,16 +6,15 @@ const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8"
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
 
-test("daily task and built-in routine progress persists locally for the current day", () => {
+test("daily task progress and accessibility preferences require encrypted vault storage", () => {
   assert.match(js, /const dailyProgressKey = "project-n-01-daily-progress-v1"/);
   assert.match(js, /function localDateKey\(date = new Date\(\)\)/);
-  assert.match(js, /if \(!parsed \|\| parsed\.date !== localDateKey\(\)\) return null/);
-  assert.match(js, /localStorage\.setItem\(dailyProgressKey, JSON\.stringify\(progress\)\)/);
-  assert.match(js, /function restoreDailyProgress\(\)/);
-  assert.match(js, /saveDailyProgress\(\);/);
-  assert.match(js, /encryptedVaultStorageKey, dailyProgressKey/);
-  assert.match(js, /Today’s progress and accessibility preferences are stored unencrypted/);
-  assert.match(js, /De voortgang van vandaag en toegankelijkheidsvoorkeuren worden onversleuteld/);
+  assert.match(js, /secure\.getDailyProgress\(localDateKey\(\)\)/);
+  assert.match(js, /secure\.saveDailyProgress\(progress\)/);
+  assert.match(js, /secure\.saveAppPreferences\(value\)/);
+  assert.match(js, /migrateLegacyDataIntoVault/);
+  assert.match(js, /window\.addEventListener\("projectn-vault-state"/);
+  assert.doesNotMatch(js, /localStorage\.setItem\(dailyProgressKey, JSON\.stringify\(progress\)\)/);
 });
 
 test("PWA manifest is valid and points to the cached app icon", async () => {
