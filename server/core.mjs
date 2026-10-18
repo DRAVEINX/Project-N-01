@@ -79,6 +79,7 @@ function base32Decode(text) {
 export function newTotpSecret() { return base32Encode(randomBytes(20)); }
 function totpAt(secret, timeMs) {
   const counter = Math.floor(timeMs / 30000);
+  if (!Number.isSafeInteger(counter) || counter < 0) return "";
   const msg = Buffer.alloc(8); msg.writeBigUInt64BE(BigInt(counter));
   const hmac = createHmac("sha1", base32Decode(secret)).update(msg).digest();
   const offset = hmac[hmac.length - 1] & 15;
