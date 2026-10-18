@@ -20,7 +20,7 @@ Dit document is de werkende checklist voor de functies die eerder voor NovaLife 
 
 | Functie | Status | Wat nog nodig is |
 |---|---|---|
-| Command Center | Gedeeltelijk | Eén overzicht met de dag, volgende activiteit, taken, gevoel en maximaal vier snelkoppelingen. |
+| Command Center | In code uitgebreid; handmatige controle open | Dashboard toont dagstatistieken, eerstvolgende toekomstige afspraak (verlopen tijden vandaag uitgesloten), routines en gevoel; maximaal vier snelkoppelingen inclusief tijdlijn. Regressietest toegevoegd; toestel-/schermvalidatie blijft nodig. |
 | Smart Assistant | In uitvoering | Praktische lokale suggesties en een profielgebonden dagelijkse prioriteit zijn toegevoegd; de gebruiker bewaart of wist die zelf. Dit is geen externe generatieve AI-dienst. | Lokale, voorspelbare dagsuggesties zijn toegevoegd; echte gebruiks- en toegankelijkheidscontrole blijft nodig. |
 | Life Goals & Milestones | In uitvoering | Mijlpalen toevoegen/afvinken en statusgeschiedenis zijn toegevoegd; regressietests en handmatige gebruikscontrole nog uitvoeren. |
 | My Life Timeline | In uitvoering | Tijdlijn met categorie-, datumbereik- en tekstfilters plus lokale CSV-export van zichtbare gebeurtenissen zijn toegevoegd; regressietests staan erbij, schermvalidatie blijft open. |
