@@ -24,7 +24,7 @@ jobs:
       - name: Run automated smoke tests
         run: npm test
       - name: Check JavaScript syntax
-        run: node --check src/app.js && node --check src/life-suite.js && node --check desktop/main.cjs && node --check src/secure-storage.js && node --check src/encrypted-vault.js && node --check src/routine-migration.js && node --check scripts/serve.mjs && node --check scripts/prepare-mobile.mjs && node --check scripts/configure-android-signing.mjs && node --check scripts/configure-android-build-variants.mjs && node --check service-worker.js && node --check tests/smoke.test.mjs
+        run: node --check src/app.js && node --check src/life-suite.js && node --check src/professional-suite.js && node --check src/native-notifications-loader.js && node --check src/native-bridge-entry.js && node --check server/api.mjs && node --check scripts/ensure-android-notification-permissions.mjs && node --check desktop/main.cjs && node --check src/secure-storage.js && node --check src/encrypted-vault.js && node --check src/routine-migration.js && node --check scripts/serve.mjs && node --check scripts/prepare-mobile.mjs && node --check scripts/configure-android-signing.mjs && node --check scripts/configure-android-build-variants.mjs && node --check service-worker.js && node --check tests/smoke.test.mjs
       - name: Verify expected project files
         run: |
           test -f index.html
@@ -32,6 +32,13 @@ jobs:
           test -f src/app.js
           test -f src/life-suite.js
           test -f src/life-suite.css
+          test -f src/professional-suite.js
+          test -f src/professional-suite.css
+          test -f src/native-notifications-loader.js
+          test -f src/native-bridge-entry.js
+          test -f scripts/ensure-android-notification-permissions.mjs
+          test -f server/api.mjs
+          test -f tests/api.test.mjs
           test -f src/secure-storage.js
           test -f src/encrypted-vault.js
           test -f src/routine-migration.js

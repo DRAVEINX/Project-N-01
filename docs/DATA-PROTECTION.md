@@ -1,83 +1,51 @@
 # Data protection design — Project N-01
 
-## Current state (prototype)
+## Current development-branch behavior
 
-- When encrypted routine storage is not enabled, custom routines are stored in browser `localStorage` and are **not encrypted**. After the user enables the vault and optionally removes the old plaintext copy, custom routine templates are stored in an authenticated encrypted envelope. Accessibility preferences remain unencrypted in `localStorage`.
-- Routine JSON exports are plaintext and must be treated as readable by anyone who obtains the file.
-- Notes and drawings are currently temporary and are not persisted.
-- The experimental `src/secure-storage.js` module provides Web Crypto AES-256-GCM encryption with a random 128-bit salt, random 96-bit IV, PBKDF2-SHA-256 key derivation, and a 128-bit authentication tag.
-- The optional encrypted vault is connected to custom routine-template persistence. The user must unlock it with a passphrase on each page load; a derived `CryptoKey` is retained only in an in-memory closure while unlocked and is discarded on lock. The prototype auto-locks after five minutes without activity and when the page is hidden or navigated away from; there is no password-reset service and independent security review is still missing, so this is not yet a release-ready security guarantee. A separate encrypted recovery-file/code workflow is described below.
-- Browser encryption does not protect data from a compromised device, malicious browser extension, injected script, or someone with access to an unlocked app session.
+The app has two layers that must not be confused:
 
-## Proposed data categories
+1. A local personal vault used by the Life Suite to encrypt the personal records held inside it.
+2. A separate account API that can store and return only the encrypted vault envelope. The API does not know the vault passphrase and cannot decrypt mood entries, journal text, contacts, attachments or other vault records.
 
-| Category | Proposed handling |
-| --- | --- |
-| Accessibility preferences | Non-sensitive settings; persist locally and minimize collection |
-| Custom routine templates | Optional encrypted vault after passphrase unlock; old plaintext copy must be removed separately. Accessibility preferences remain unencrypted. |
-| Mood entries, journal text, drawings, voice recordings | Sensitive; do not persist until encryption, deletion, backup and consent flows are implemented |
-| Caregiver/guardian access | Explicit, revocable consent and separate authorization; never infer permission from device ownership |
-| Backups | Versioned encrypted envelope; never include passwords or raw derived keys |
+The local vault uses PBKDF2-SHA-256 with 310,000 iterations and AES-256-GCM. Its passphrase must be at least 12 characters. A derived Web Crypto key is held in memory while unlocked and is discarded on lock. The Life Suite locks after five minutes of inactivity and when the page becomes hidden. This behavior is a prototype, not a guarantee against device compromise, malicious extensions/injected scripts or access to an unlocked session.
 
-## Required integration before sensitive data is stored
+### What is protected by the local vault
 
-1. Agree a threat model and decide whether the app is single-user per device or supports multiple profiles.
-2. Design passphrase setup, unlock, lock timeout, password change and account/data deletion.
-3. Define recovery honestly: if a user loses the passphrase and has neither a usable encrypted backup nor its separate recovery code, encrypted data may be unrecoverable. Do not create a hidden server-side backdoor.
-4. Continue reviewing the versioned encrypted storage repository; existing plaintext routines are copied only after a deliberate user action. Keep the plaintext copy until the user explicitly deletes it after checking the encrypted vault and downloaded backup.
-5. Do not store the passphrase or derived key beside ciphertext. Keep keys in memory only for the minimum session and clear references on lock where feasible.
-6. Encrypt backups with a separate user-held passphrase or key; validate file size, schema and version before importing.
-7. Add cryptographic unit tests for round trip, wrong passphrase, modified ciphertext, invalid envelope, unsupported version, large payload and storage failure.
-8. Review key-derivation performance on lower-end Android devices and obtain expert review of parameters.
-9. Implement platform-native protection separately where appropriate: Android Keystore and Windows DPAPI/CNG. Browser storage encryption does not automatically cover native builds.
-10. Perform independent security/privacy review and accessibility testing before storing real mood, journal or support information.
+- Life Suite appointments, roster data, mood entries, journal text/audio, drawings, guides, trusted contacts and reminders.
+- New professional workspace goals, documents (including stored attachments within the size limit), handovers, absence notes, emergency plan and report preferences.
+- Daily task/routine progress and the additional accessibility preferences when the user has successfully created/unlocked the Life Suite vault.
+- Encrypted export, separate recovery-file/code flow, and the last ten professional-workspace data snapshots.
 
-## Encryption envelope
+When a vault is unlocked, the app attempts to migrate legacy daily progress and accessibility settings from the older local-storage keys into the vault; the old keys are removed only if the encrypted save succeeds. If a user never unlocks/creates the vault, or migration fails, older plain values may remain. The current implementation does not claim that every legacy/custom routine template and every setting is automatically encrypted without a migration step; review the routine-vault controls and remove plaintext copies only after verifying an encrypted backup.
 
-The experimental envelope includes `format`, `version`, `kdf`, `iterations`, `cipher`, `salt`, `iv` and `ciphertext`. The passphrase and derived key are not serialized. AES-GCM authentication failures reject decryption. Format/version checks are strict to avoid silently accepting unknown schemes.
+### Important limits still present
 
-This is an engineering plan, not a certification, legal assessment, or claim that the current application encrypts data.
+- Native Android Keystore / Apple's appropriate keychain APIs / Windows native secret protection are not yet integrated into the personal vault. The encryption key is derived from a user passphrase in the web layer, not a hardware-backed per-device key.
+- The server API is a separate, optional service. It stores a JSON file database and uses process-local throttling. It must be migrated to a transactional database and production security controls before handling sensitive data.
+- Account password reset does not recover or reset the local vault passphrase. If the passphrase is lost and there is no valid encrypted backup plus its separate recovery code, vault data may be unrecoverable.
+- The account API does not read or decrypt the vault, but the current invited caregiver/parent/guardian records do not yet receive access to another user's encrypted payload. Consent/scopes in local profiles are not a substitute for authenticated authorization.
+- Cross-device sync moves the whole encrypted vault envelope and uses revision checks. It does not merge individual records or reconcile offline edits item by item. The UI stops when the server revision differs and requires the user to make an explicit decision.
+- Downloaded backups and documents exported to the filesystem are outside the app's vault. The user must protect and delete those separately.
+- Routine progress is only persisted securely while the personal vault is unlocked. Until migration successfully finishes, legacy local-storage data may remain readable by other code running on the origin.
+- Native local notifications are scheduled by the Capacitor plugin only after the user opts in and grants permission. Android exact alarms can require explicit OS authorization; battery management can still delay notifications. Test on actual devices and current iOS/Android releases.
+- No independent security review, privacy assessment, production pentest or formal accessibility audit has been completed.
 
+## Password and key handling
 
-## Encrypted routine backup prototype
+- Account passwords are hashed using Node.js scrypt on the API server. The API returns a random bearer token and stores only its hash; the front-end keeps the token in memory and logs out its local UI after 15 minutes without interaction.
+- Optional account TOTP secrets are encrypted at rest using a server-side secret. Keep the server secret in a secret manager; do not commit it to source.
+- Password reset uses a short-lived token (30 minutes) that is sent through a configured delivery webhook. The endpoint returns a generic response whether or not an account exists. The email webhook is not supplied/configured by the repository itself.
+- Account deletion removes API account/session/reset/invite metadata and the server-side encrypted sync copy. It does not clear device-local vaults, browser caches, exported files, screenshots, native app data on other devices or any records held by an external email provider.
+- A remote sync payload is validated as the expected AES-GCM envelope format and is opaque to the server. TLS/HTTPS is still required in any deployed environment; encryption-at-rest on the server does not replace secure transport or access control.
 
-The routine screen now offers a separate encrypted JSON backup and restore flow. The user supplies a passphrase (minimum 12 characters); the passphrase field is cleared after the operation and is not written to the backup. The encrypted file is limited to 1 MiB on import and decrypted content is schema-checked before routines are added. Import merges routines and keeps the existing maximum of 50 templates.
+## Required before production
 
-**Important limitation:** the separate encrypted-backup import flow still merges restored routines into whichever routine store is currently active. If the vault is unlocked, the merge is encrypted; without the vault, the merge is stored in plaintext `localStorage`. The ordinary plaintext export remains available and is labelled unencrypted. Do not store sensitive journal or voice data in this prototype.
+1. Review and document a threat model, roles, sensitive data, device-loss and recovery scenarios.
+2. Migrate API persistence to a managed transactional database with unique constraints, transaction locks and tested backups; do not run multiple JSON-file API instances.
+3. Add a durable distributed rate limiter, audit/monitoring/alerts, abuse controls, server-secret rotation and a managed key service.
+4. Add native platform key handling, secure token storage, and a carefully designed session/logout model.
+5. Build real invitation-based sharing with key exchange, server-side scope enforcement, revocation and tests proving a caregiver cannot read unauthorized content.
+6. Test export/restore, wrong passphrase, tampered ciphertext, invalid envelope, large inputs, device restoration, DST and timezone behavior, and delete-all-data semantics.
+7. Complete independent security and privacy review plus hands-on accessibility testing before storing real journal, mood, support or other sensitive information.
 
-
-## Payload-size guard
-
-The experimental Web Crypto helper now rejects values that cannot be serialized as JSON and caps plaintext and decrypted data at 1,000,000 bytes. Encrypted input is rejected if its decoded ciphertext exceeds the corresponding limit plus the 16-byte AES-GCM authentication tag. This defensive resource limit is not a substitute for a security review.
-
-
-## Experimental encrypted vault adapter
-
-`src/encrypted-vault.js` adds a standalone storage adapter that stores one AES-GCM envelope under a dedicated storage key, requires an explicit unlock, clears its in-memory plaintext on lock, and verifies the supplied passphrase against the existing envelope before replacing data. Restore authenticates the incoming envelope before writing it. Automated tests cover persistence shape, wrong passphrases, save and restore behavior.
-
-The adapter is connected to the custom-routine editor after an explicit opt-in action. The user must enter the passphrase after each page load; while unlocked, creating, editing, deleting, and importing routine templates writes to the encrypted vault. The initial migration downloads an encrypted envelope and leaves the legacy plaintext copy in place until the user explicitly deletes it. Accessibility preferences still use ordinary unencrypted `localStorage`. First-time vault creation asks the user to enter the passphrase twice and refuses to create the vault if the entries differ; both input fields are cleared after the attempt. Existing-vault unlocks do not require confirmation. The UI updates its privacy notice for unlocked/locked vault states. The UI locks after five minutes without activity and when the page is hidden or navigated away from. The encrypted restore control accepts both versioned encrypted routine-backup payloads and the encrypted vault envelope exported by the app. If no vault exists, restoring an encrypted file initializes one; if a vault is already active, imported routines are merged into it. Recovery, device-level testing and independent security review are still missing. Do not store sensitive journal, mood, voice, or caregiver data in the prototype.
-
-
-## Non-destructive routine migration helper
-
-`src/routine-migration.js` can preview and normalize the existing plaintext custom-routine record, then copy valid routines into a new encrypted vault and verify the decrypted result. It deliberately preserves the original plaintext record and refuses to overwrite an existing vault or proceed when the legacy record is malformed. The UI now exposes a deliberate copy-and-download action. It checks for at least one valid legacy routine, verifies the encrypted copy through the helper, exports only the ciphertext envelope, and locks the helper in memory after the operation. It does not delete plaintext data automatically. After unlocking and checking the routines, the user can separately choose to delete the legacy plaintext copy. Normal routine changes use the encrypted vault while it is active; preferences remain plaintext. The inactivity/tab-hide lock is implemented, while password reset, safe rollback and independent review remain future work. Do not interpret this as full app-data encryption.
-
-
-## Daily Life Suite security boundary (browser prototype)
-
-The new src/life-suite.js stores its appointments, roster, mood check-ins, journal entries, drawings, guides, trusted contacts, local profiles, consent records, reminders and audit events together in a passphrase-protected local AES-256-GCM envelope. PBKDF2-SHA-256 derives a key using the envelope's random salt; each save uses a fresh random 96-bit GCM IV. The vault auto-locks after five minutes and on visibilitychange to hidden. The current implementation places a 2.5 MB plaintext JSON cap on the module's content and resizes uploaded images; large media may be rejected when the browser storage quota is reached.
-
-This does not encrypt the original prototype's daily checklist progress or accessibility preferences. They remain separate, unencrypted local-storage values. Do not represent this as encryption of every Project N data item.
-
-Profiles, consent and invite codes are currently **local workflow scaffolding**, not secure multi-user authentication. Anyone who knows the same vault passphrase and can use the unlocked page may access the stored suite state; role-based filtering in the UI must not be relied upon as an authorization boundary. Codes do not authorize access from a remote device. A real deployment needs authenticated identities, server-enforced per-resource permissions, revocation enforcement, session management and audit protection.
-
-The new reminder monitor evaluates items while the page is visible and unlocked. It does not guarantee alarms after the app closes or is suspended. Trusted-contact actions only open the phone or messaging app following confirmation; they do not send a message automatically or dispatch emergency services. Encrypted export/import is manual transfer, not cloud sync.
-
-Before production, test the envelope format and schema against malformed imports, exercise wrong-passphrase/tampered-ciphertext/storage-full cases, audit profile consent filtering, and obtain independent cryptographic, privacy and accessibility review.
-
-
-## Separate recovery-code backup
-
-The Daily Life Suite now provides a **separate encrypted recovery backup**. It creates a randomly generated recovery code, derives an AES-256-GCM key from that code and a fresh random salt, and downloads a recovery JSON file containing only the encrypted envelope. The code is shown in the open session and is not stored in the normal app data. Save the downloaded file and the code separately, such as in two different safe locations. Import the file using the displayed code in the normal encrypted-backup restore field. If either item is lost, that recovery copy cannot be opened.
-
-This is a manual file-based recovery aid, not password reset, cloud backup, account recovery, or synchronization. It does not recover the original browser's encrypted vault unless the user restores the exported file. The app cannot retrieve a forgotten passphrase or missing recovery code.
+This is an engineering design/status record, not a legal assessment, certification, or claim that the current prototype is production-ready.

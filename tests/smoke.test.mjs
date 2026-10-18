@@ -6,16 +6,15 @@ const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8"
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
 
-test("daily task and built-in routine progress persists locally for the current day", () => {
+test("daily task progress and accessibility preferences require encrypted vault storage", () => {
   assert.match(js, /const dailyProgressKey = "project-n-01-daily-progress-v1"/);
   assert.match(js, /function localDateKey\(date = new Date\(\)\)/);
-  assert.match(js, /if \(!parsed \|\| parsed\.date !== localDateKey\(\)\) return null/);
-  assert.match(js, /localStorage\.setItem\(dailyProgressKey, JSON\.stringify\(progress\)\)/);
-  assert.match(js, /function restoreDailyProgress\(\)/);
-  assert.match(js, /saveDailyProgress\(\);/);
-  assert.match(js, /encryptedVaultStorageKey, dailyProgressKey/);
-  assert.match(js, /Today’s progress and accessibility preferences are stored unencrypted/);
-  assert.match(js, /De voortgang van vandaag en toegankelijkheidsvoorkeuren worden onversleuteld/);
+  assert.match(js, /secure\.getDailyProgress\(localDateKey\(\)\)/);
+  assert.match(js, /secure\.saveDailyProgress\(progress\)/);
+  assert.match(js, /secure\.saveAppPreferences\(value\)/);
+  assert.match(js, /migrateLegacyDataIntoVault/);
+  assert.match(js, /window\.addEventListener\("projectn-vault-state"/);
+  assert.doesNotMatch(js, /localStorage\.setItem\(dailyProgressKey, JSON\.stringify\(progress\)\)/);
 });
 
 test("PWA manifest is valid and points to the cached app icon", async () => {
@@ -121,7 +120,7 @@ test("notes explicitly warn that the prototype does not save them", () => {
 const manifest = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 test("service worker cache version is bumped when shipping updated app assets", () => {
-  assert.match(serviceWorker, /project-n-01-prototype-v15/);
+  assert.match(serviceWorker, /project-n-01-prototype-v17/);
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v9/);
 });
 
@@ -197,14 +196,16 @@ test("service worker limits caching to same-origin GET requests", () => {
   assert.match(serviceWorker, /caches\.match\("\/index\.html"\)/);
 });
 
-test("preferences persist locally without persisting private notes", () => {
+test("accessibility preferences use the encrypted vault and private quick notes remain unsaved", () => {
   assert.match(js, /project-n-01-preferences-v1/);
-  assert.match(js, /localStorage\.setItem\(preferenceKey/);
+  assert.match(js, /secure\.saveAppPreferences\(value\)/);
+  assert.match(js, /secure\.getAppPreferences\(\)/);
   assert.ok(js.includes('largeText: $("#large-text").checked'));
   assert.ok(js.includes('reducedMotion: $("#less-motion").checked'));
   assert.ok(js.includes('quietView: $("#quiet-view").checked'));
-  assert.match(html, /voorkeuren worden lokaal in deze browser bewaard/i);
-  assert.match(html, /notities worden niet opgeslagen/i);
+  assert.match(js, /Voorkeuren worden in de versleutelde persoonlijke kluis opgeslagen/);
+  assert.match(js, /Preferences are stored in the encrypted personal vault/);
+  assert.doesNotMatch(js, /localStorage\.setItem\(preferenceKey/);
   assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
 });
 
@@ -683,7 +684,7 @@ test("tablet routine cards use two columns while phone layouts stay single-colum
 
 test("offline app shell cache version is refreshed and includes core app assets", async () => {
   const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(serviceWorker, /project-n-01-prototype-v15/);
+  assert.match(serviceWorker, /project-n-01-prototype-v17/);
   for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/manifest.webmanifest", "/assets/app-icon.svg", "/offline.html"]) {
     assert.ok(serviceWorker.includes(JSON.stringify(asset)), `offline shell missing ${asset}`);
   }
@@ -867,8 +868,11 @@ test("daily progress safely ignores corrupt or outdated local data", async () =>
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
   const reader = app.slice(start, end);
-  assert.match(reader, /const parsed = JSON\.parse\(raw\);\s*if \(!parsed \|\| parsed\.date !== localDateKey\(\)\) return null;\s*return parsed;/);
-  assert.match(reader, /catch \{\s*return null;\s*\}/);
+  assert.match(reader, /window\.ProjectN01Vault/);
+  assert.match(reader, /secure\.isUnlocked\(\)/);
+  assert.match(reader, /secure\.getDailyProgress\(localDateKey\(\)\)/);
+  assert.doesNotMatch(reader, /localStorage/);
+  assert.match(app, /function migrateLegacyDataIntoVault\(\)/);
   assert.match(app, /function restoreDailyProgress\(\) \{\s*const progress = readDailyProgress\(\);\s*if \(!progress\) return;/);
 });
 

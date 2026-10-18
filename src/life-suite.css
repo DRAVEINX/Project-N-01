@@ -142,3 +142,12 @@
 .ls-plan-summary small { color:var(--mint); }
 @media(min-width:760px) { .ls-weekplan-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(min-width:1180px) { .ls-weekplan-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+
+/* Calendar drag-and-drop, all-day and travel-time fields */
+.ls-item[draggable="true"]{cursor:grab}
+.ls-item[draggable="true"]:active{cursor:grabbing}
+.ls-day-block[data-drop-date]{border:1px dashed transparent;border-radius:14px;padding:.65rem;transition:border-color .12s,background .12s}
+.ls-day-block[data-drop-date].ls-drop-active,.ls-calendar-day.ls-drop-active{border-color:var(--mint);background:rgba(141,226,203,.08)}
+.ls-drop-hint{font-size:.76rem;color:var(--muted);opacity:.75;margin:.35rem 0}
+.ls-check-field{display:flex;align-items:center;gap:.65rem;min-height:42px}
+.ls-check-field input{width:1.2rem;height:1.2rem;accent-color:var(--lilac)}

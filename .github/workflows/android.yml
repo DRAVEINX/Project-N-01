@@ -12,11 +12,17 @@ on:
       - "assets/**"
       - "scripts/prepare-mobile.mjs"
       - "scripts/ensure-android-microphone-permission.mjs"
+      - "scripts/ensure-android-notification-permissions.mjs"
+      - "src/native-bridge-entry.js"
+      - "src/native-notifications-loader.js"
       - "scripts/configure-android-signing.mjs"
       - "scripts/configure-android-build-variants.mjs"
       - "package.json"
       - "capacitor.config.json"
       - ".github/workflows/android.yml"
+  pull_request:
+    branches: [main]
+
   workflow_dispatch:
 
 permissions:
@@ -72,6 +78,9 @@ jobs:
 
       - name: Enable Android microphone permission
         run: node scripts/ensure-android-microphone-permission.mjs
+
+      - name: Enable Android local notification permissions
+        run: node scripts/ensure-android-notification-permissions.mjs
 
       - name: Synchronize the native project
         run: npx cap sync android

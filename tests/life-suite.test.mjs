@@ -15,6 +15,9 @@ const desktopPackage = JSON.parse(await readFile(new URL("../desktop/package.jso
 const windowsWorkflow = await readFile(new URL("../.github/workflows/windows.yml", import.meta.url), "utf8");
 const iosWorkflow = await readFile(new URL("../.github/workflows/ios.yml", import.meta.url), "utf8");
 const packageConfig = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+const nativeBridge = await readFile(new URL("../src/native-bridge-entry.js", import.meta.url), "utf8");
+const nativeLoader = await readFile(new URL("../src/native-notifications-loader.js", import.meta.url), "utf8");
+const nativePermissionScript = await readFile(new URL("../scripts/ensure-android-notification-permissions.mjs", import.meta.url), "utf8");
 
 test("life suite is wired into the existing app without replacing its core views", () => {
   assert.match(html, /data-view="life"/);
@@ -120,7 +123,7 @@ test("mobile-first accessible styling and offline cache include the new module",
   assert.match(css, /ls-high-contrast/);
   assert.match(css, /ls-large-text/);
   assert.match(css, /ls-reduced-motion/);
-  assert.match(serviceWorker, /project-n-01-prototype-v15/);
+  assert.match(serviceWorker, /project-n-01-prototype-v17/);
   assert.match(serviceWorker, /"\/src\/life-suite\.js"/);
   assert.match(serviceWorker, /"\/src\/life-suite\.css"/);
   assert.match(workflow, /node --check src\/life-suite\.js/);
@@ -159,4 +162,44 @@ test("Windows desktop MSI and iOS archive pipelines are configured separately", 
   assert.match(iosWorkflow, /CODE_SIGNING_ALLOWED=NO/);
   assert.match(iosWorkflow, /project-n-01-ios-unsigned-archive/);
   assert.equal(packageConfig.devDependencies["@capacitor/ios"], "8.5.3");
+});
+
+test("professional workspace is integrated with encrypted vault, account API and extra tools", async () => {
+  const professional = await readFile(new URL("../src/professional-suite.js", import.meta.url), "utf8");
+  const professionalCss = await readFile(new URL("../src/professional-suite.css", import.meta.url), "utf8");
+  const api = await readFile(new URL("../server/api.mjs", import.meta.url), "utf8");
+  assert.match(html, /id="professional-suite-root"/);
+  assert.match(html, /src\/professional-suite\.js/);
+  assert.match(html, /src\/professional-suite\.css/);
+  assert.match(serviceWorker, /project-n-01-prototype-v17/);
+  assert.match(serviceWorker, /"\/src\/professional-suite\.js"/);
+  for (const feature of ["goalsView", "emergencyView", "supportView", "documentsView", "reportsView", "accessibilityView", "versionsView", "accountsView"]) {
+    assert.match(professional, new RegExp("function " + feature + "\\("));
+  }
+  assert.match(professional, /exportCalendar/);
+  assert.match(professional, /SpeechRecognition/);
+  assert.match(professional, /exportEncryptedEnvelope/);
+  assert.match(professional, /syncPush/);
+  assert.match(api, /sync-conflict/);
+  assert.match(professionalCss, /pn-large-controls/);
+  assert.match(api, /scryptCallback/);
+  assert.match(api, /twoFactorEnabled/);
+  assert.match(api, /password-reset\/request/);
+  assert.match(api, /baseRevision/);
+  assert.match(api, /team\/invite/);
+  assert.match(api, /DELETE.*\/api\/account/);
+  assert.match(nativeBridge, /LocalNotifications\.schedule/);
+  assert.match(nativeBridge, /quietAdjusted/);
+  assert.match(nativeBridge, /snooze_10/);
+  assert.match(nativeBridge, /privatePreview/);
+  assert.match(nativeLoader, /isNativePlatform/);
+  assert.match(nativePermissionScript, /POST_NOTIFICATIONS/);
+  assert.match(nativePermissionScript, /SCHEDULE_EXACT_ALARM/);
+  assert.equal(packageConfig.dependencies["@capacitor/local-notifications"], "8.3.1");
+  assert.match(androidWorkflow, /ensure-android-notification-permissions\.mjs/);
+  assert.match(js, /data-drop-date/);
+  assert.match(js, /allDay:allDay/);
+  assert.match(js, /travelMinutes/);
+  assert.match(js, /excludedDates/);
+  assert.match(js, /appointment-rescheduled/);
 });

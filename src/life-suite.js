@@ -118,7 +118,7 @@
     return {
       schema:1, createdAt:new Date().toISOString(), currentProfileId:"self",
       profiles:[{id:"self",name:lang === "nl" ? "Mijn profiel" : "My profile",role:"self",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}],
-      appointments:[], workers:[], shifts:[], weeklyPlans:[], moods:[], journal:[], drawings:[], guides:[], contacts:[], reminders:[], consents:[], invites:[], audit:[], notificationLog:[], preferences:{largeText:false,highContrast:false,reducedMotion:false}
+      appointments:[], workers:[], shifts:[], weeklyPlans:[], moods:[], journal:[], drawings:[], guides:[], contacts:[], reminders:[], consents:[], invites:[], audit:[], notificationLog:[], preferences:{largeText:false,highContrast:false,reducedMotion:false}, professional:{goals:[],documents:[],versions:[],handovers:[],absences:[],dailyProgress:null,accessibility:{largeText:false,reducedMotion:false,quietView:false,language:"nl"},emergencyPlan:{instructions:"",supportNeeds:"",preferredHelp:"",updatedAt:""},reportPreferences:{includeMood:true,includeRoutineProgress:true,includeAppointments:true}}
     };
   }
   function normalizeState(raw) {
@@ -130,6 +130,18 @@
     blank.createdAt = typeof raw.createdAt === "string" ? raw.createdAt : blank.createdAt;
     blank.currentProfileId = typeof raw.currentProfileId === "string" ? raw.currentProfileId : "self";
     blank.preferences = Object.assign(blank.preferences, raw.preferences && typeof raw.preferences === "object" ? raw.preferences : {});
+    const p = raw.professional && typeof raw.professional === "object" ? raw.professional : {};
+    blank.professional = {
+      goals:Array.isArray(p.goals)?p.goals.filter(x=>x&&typeof x==="object").slice(-200):[],
+      documents:Array.isArray(p.documents)?p.documents.filter(x=>x&&typeof x==="object").slice(-100):[],
+      versions:Array.isArray(p.versions)?p.versions.filter(x=>x&&typeof x==="object").slice(-10):[],
+      handovers:Array.isArray(p.handovers)?p.handovers.filter(x=>x&&typeof x==="object").slice(-200):[],
+      absences:Array.isArray(p.absences)?p.absences.filter(x=>x&&typeof x==="object").slice(-200):[],
+      dailyProgress:p.dailyProgress&&typeof p.dailyProgress==="object"?p.dailyProgress:null,
+      accessibility:Object.assign(blank.professional.accessibility,p.accessibility&&typeof p.accessibility==="object"?p.accessibility:{}),
+      emergencyPlan:Object.assign(blank.professional.emergencyPlan,p.emergencyPlan&&typeof p.emergencyPlan==="object"?p.emergencyPlan:{}),
+      reportPreferences:Object.assign(blank.professional.reportPreferences,p.reportPreferences&&typeof p.reportPreferences==="object"?p.reportPreferences:{})
+    };
     if (!blank.profiles.length) blank.profiles.push({id:"self",name:"My profile",role:"self",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
     if (!blank.profiles.some(p => p.id === blank.currentProfileId)) blank.currentProfileId = blank.profiles[0].id;
     return blank;
@@ -183,6 +195,7 @@
       envelope = await encryptState(state, sessionKey, b64ToBytes(saltB64));
       const raw = JSON.stringify(envelope);
       localStorage.setItem(STORAGE_KEY, raw);
+      window.dispatchEvent(new CustomEvent("projectn-vault-saved",{detail:{updatedAt:new Date().toISOString()}}));
       if (message !== false) setStatus(message || t("saved"));
       startAutoLock();
       return true;
@@ -207,6 +220,7 @@
     }
     sessionKey = null; saltB64 = null; state = null; draftPhoto = ""; draftGuideAudio = ""; draftJournalAudio = ""; pendingRecoveryCode = "";
     renderLocked(false, showMessage ? t("closed") : "");
+    window.dispatchEvent(new CustomEvent("projectn-vault-state",{detail:{unlocked:false}}));
   }
   function renderLocked(createMode, extra) {
     root.innerHTML = '<div class="ls-locked"><div class="ls-lock-mark" aria-hidden="true">🔐</div><p class="ls-kicker">PROJECT N-01</p><h3>' + esc(t("lockedTitle")) + '</h3><p>' + esc(t("lockedIntro")) + '</p><form id="ls-unlock-form" class="ls-form"><label for="ls-pass">' + esc(t("passphrase")) + '</label><input id="ls-pass" type="password" minlength="12" autocomplete="current-password" required><div id="ls-confirm-wrap"' + (createMode ? "" : " hidden") + '><label for="ls-pass-confirm">' + esc(t("confirmPass")) + '</label><input id="ls-pass-confirm" type="password" minlength="12" autocomplete="new-password"' + (createMode ? " required" : "") + '></div><p class="ls-muted">' + esc(createMode ? t("setupHint") : t("lockedHint")) + '</p><button class="primary-button" type="submit">' + esc(createMode ? t("createVault") : t("unlock")) + '</button><p class="ls-status" id="ls-lock-status" role="status" aria-live="polite">' + esc(extra || "") + '</p></form></div>';
@@ -287,11 +301,29 @@
     return visibleItems("appointments", "calendar").filter(a => a.date === date).sort((a,b) => a.start.localeCompare(b.start));
   }
   function appointmentCard(a) {
-    return '<article class="ls-item"><div class="ls-item-top"><div><strong>' + esc(a.start + "–" + a.end + " · " + a.title) + '</strong><p>' + esc((a.location || "") + (a.location && a.preparation ? " · " : "") + (a.preparation || "")) + '</p></div><div class="ls-actions">' + button(t("edit"), "edit-appointment", "secondary-button", 'data-id="' + esc(a.id) + '"') + button(t("delete"), "delete-appointment", "secondary-button danger-button", 'data-id="' + esc(a.id) + '"') + '</div></div>' + (a.notes ? '<p class="ls-muted">' + esc(a.notes) + '</p>' : "") + '<small>' + esc(prettyDate(a.date)) + (a.reminderMins ? " · " + esc(a.reminderMins) + " min" : "") + (a.repeat && a.repeat !== "none" ? " · " + esc(t(a.repeat)) : "") + '</small></article>';
+    const timeLabel = a.allDay ? (lang === "nl" ? "Hele dag" : "All day") : (a.start + "–" + a.end);
+    const travel = Number(a.travelMinutes) > 0 ? " · " + (lang === "nl" ? "reistijd" : "travel") + " " + esc(a.travelMinutes) + " min" : "";
+    return '<article class="ls-item" draggable="true" data-appointment-drag="' + esc(a.id) + '"><div class="ls-item-top"><div><strong>' + esc(timeLabel + " · " + a.title) + '</strong><p>' + esc((a.location || "") + (a.location && a.preparation ? " · " : "") + (a.preparation || "")) + '</p></div><div class="ls-actions">' + button(t("edit"), "edit-appointment", "secondary-button", 'data-id="' + esc(a.id) + '"') + button(t("delete"), "delete-appointment", "secondary-button danger-button", 'data-id="' + esc(a.id) + '"') + '</div></div>' + (a.notes ? '<p class="ls-muted">' + esc(a.notes) + '</p>' : "") + '<small>' + esc(prettyDate(a.date)) + (a.reminderMins ? " · " + esc(a.reminderMins) + " min" : "") + travel + (a.repeat && a.repeat !== "none" ? " · " + esc(t(a.repeat)) : "") + '</small></article>';
   }
   function appointmentForm(a) {
     a = a || {};
-    return '<form id="ls-appointment-form" class="ls-form ls-grid">' + field(t("title"),"title","text",a.title,"required maxlength='120'") + field(t("date"),"date","date",a.date || selectedDate,"required") + field(t("start"),"start","time",a.start || "09:00","required") + field(t("end"),"end","time",a.end || "09:30","required") + field(t("location"),"location","text",a.location,"maxlength='160'") + select(t("reminder"),"reminderMins",[{value:"0",label:t("none")},{value:"5",label:t("fiveMin")},{value:"10",label:t("tenMin")},{value:"30",label:t("thirtyMin")},{value:"60",label:t("oneHour")}],a.reminderMins || "10") + select(t("repeat"),"repeat",[{value:"none",label:t("noRepeat")},{value:"weekly",label:t("weekly")}],a.repeat || "none") + textarea(t("preparation"),"preparation",a.preparation,2,"maxlength='1200'") + textarea(t("notes"),"notes",a.notes,2,"maxlength='2000'") + '<input type="hidden" name="id" value="' + esc(a.id || "") + '"><div class="ls-form-actions"><button class="primary-button" type="submit">' + esc(t("save")) + '</button>' + (a.id ? button(t("cancel"),"cancel-edit","secondary-button") : "") + '</div><p class="ls-status" id="ls-appointment-status" role="status" aria-live="polite"></p></form>';
+    const allDay = a.allDay === true;
+    const startAttrs = allDay ? "disabled" : "required";
+    const excluded = Array.isArray(a.excludedDates) ? a.excludedDates.join(", ") : (a.excludedDates || "");
+    return '<form id="ls-appointment-form" class="ls-form ls-grid">' +
+      field(t("title"),"title","text",a.title,"required maxlength='120'") +
+      field(t("date"),"date","date",a.date || selectedDate,"required") +
+      '<label class="ls-field ls-check-field"><input type="checkbox" name="allDay" value="on" ' + (allDay ? "checked" : "") + '><span>' + (lang === "nl" ? "Hele dag" : "All day") + '</span></label>' +
+      field(t("start"),"start","time",allDay ? "" : (a.start || "09:00"),startAttrs) +
+      field(t("end"),"end","time",allDay ? "" : (a.end || "09:30"),startAttrs) +
+      field(t("location"),"location","text",a.location,"maxlength='160'") +
+      field(lang === "nl" ? "Reistijd (minuten)" : "Travel time (minutes)","travelMinutes","number",String(a.travelMinutes || 0),"min='0' max='240' step='5'") +
+      select(t("reminder"),"reminderMins",[{value:"0",label:t("none")},{value:"5",label:t("fiveMin")},{value:"10",label:t("tenMin")},{value:"30",label:t("thirtyMin")},{value:"60",label:t("oneHour")}],a.reminderMins || "10") +
+      select(t("repeat"),"repeat",[{value:"none",label:t("noRepeat")},{value:"weekly",label:t("weekly")}],a.repeat || "none") +
+      field(lang === "nl" ? "Uitzonderingsdatums (YYYY-MM-DD, komma's)" : "Excluded dates (YYYY-MM-DD, commas)","excludedDates","text",excluded,"maxlength='300'") +
+      textarea(t("preparation"),"preparation",a.preparation,2,"maxlength='1200'") +
+      textarea(t("notes"),"notes",a.notes,2,"maxlength='2000'") +
+      '<input type="hidden" name="id" value="' + esc(a.id || "") + '"><div class="ls-form-actions"><button class="primary-button" type="submit">' + esc(t("save")) + '</button>' + (a.id ? button(t("cancel"),"cancel-edit","secondary-button") : "") + '</div><p class="ls-status" id="ls-appointment-status" role="status" aria-live="polite"></p></form>';
   }
   function monthCalendar() {
     const first = dateAt(selectedDate);
@@ -321,13 +353,14 @@
       for (let i=0;i<count;i++) {
         const day = shiftDate(base, i);
         const events = visibleAppointmentList(day);
-        dates.push('<div class="ls-day-block"><h4>' + esc(prettyDate(day,{weekday:"long",day:"numeric",month:"short"})) + (day === localDate(new Date()) ? " · " + esc(t("today")) : "") + '</h4>' + (events.length ? events.map(appointmentCard).join("") : '<p class="ls-empty">' + esc(t("noAppointments")) + '</p>') + '</div>');
+        dates.push('<div class="ls-day-block" data-drop-date="' + esc(day) + '"><h4>' + esc(prettyDate(day,{weekday:"long",day:"numeric",month:"short"})) + (day === localDate(new Date()) ? " · " + esc(t("today")) : "") + '</h4>' + (events.length ? events.map(appointmentCard).join("") : '<p class="ls-empty">' + esc(t("noAppointments")) + '</p>') + '<p class="ls-drop-hint">' + (lang === "nl" ? "Sleep een afspraak hierheen om de datum te wijzigen" : "Drop an appointment here to change its date") + '</p></div>');
       }
       list = dates.join("");
     }
     const weeksummary = '<div class="ls-inline"><label class="ls-field"><span>' + esc(t("selectDate")) + '</span><input id="ls-selected-date" type="date" value="' + esc(selectedDate) + '"></label><div class="ls-actions">' + button(t("dayView"),"mode-day",calendarMode === "day" ? "primary-button" : "secondary-button") + button(t("weekView"),"mode-week",calendarMode === "week" ? "primary-button" : "secondary-button") + button(t("monthView"),"mode-month",calendarMode === "month" ? "primary-button" : "secondary-button") + '</div></div>';
     const editing = editingAppointmentId ? state.appointments.find(a => a.id === editingAppointmentId) : null;
-    return panel(t("upcoming"), weeksummary + (calendarMode === "month" ? list : '<div class="ls-day-list">' + list + '</div>'), "ls-calendar-panel") + panel(editing ? t("editAppointment") : t("addAppointment"),appointmentForm(editing), "ls-form-panel");
+    const auditItems = state.audit.filter(item => /^appointment-/.test(item.action) && (!item.profileId || item.profileId === state.currentProfileId)).slice(0,8).map(item => '<article class="ls-item"><strong>' + esc(item.details || item.action) + '</strong><p>' + esc(({ "appointment-created":lang==="nl"?"Afspraak toegevoegd":"Appointment added","appointment-updated":lang==="nl"?"Afspraak gewijzigd":"Appointment changed","appointment-deleted":lang==="nl"?"Afspraak verwijderd":"Appointment deleted","appointment-rescheduled":lang==="nl"?"Afspraak verplaatst":"Appointment moved" })[item.action] || item.action) + '</p><small>' + esc(item.at ? new Date(item.at).toLocaleString() : "") + '</small></article>').join("");
+    return panel(t("upcoming"), weeksummary + (calendarMode === "month" ? list : '<div class="ls-day-list">' + list + '</div>'), "ls-calendar-panel") + panel(editing ? t("editAppointment") : t("addAppointment"),appointmentForm(editing), "ls-form-panel") + panel(lang === "nl" ? "Wijzigingsgeschiedenis" : "Change history", auditItems || '<p class="ls-empty">' + (lang === "nl" ? "Nog geen wijzigingen in de agenda." : "No calendar changes yet.") + '</p>', "ls-audit-panel");
   }
   function dashboardView() {
     const today = localDate(new Date());
@@ -447,6 +480,7 @@
     bindEvents();
     applyPreferences();
     startAutoLock();
+    window.dispatchEvent(new CustomEvent("projectn-vault-state",{detail:{unlocked:true}}));
   }
   function applyPreferences() {
     if (!state) return;
@@ -476,7 +510,9 @@
     return (parts[0] || 0) * 60 + (parts[1] || 0);
   }
   function overlap(a,b) {
-    return a.date === b.date && minutes(a.start) < minutes(b.end) && minutes(b.start) < minutes(a.end);
+    if(a.date !== b.date) return false;
+    if(a.allDay === true || b.allDay === true) return true;
+    return minutes(a.start) < minutes(b.end) && minutes(b.start) < minutes(a.end);
   }
   function appointmentConflict(candidate, pool) {
     const candidates = Array.isArray(pool) ? pool : visibleItems("appointments","calendar");
@@ -498,15 +534,13 @@
     if (seriesId) base.seriesId = seriesId;
     const result = [base];
     if (appt.repeat === "weekly") {
-      // Keep a bounded eight-occurrence preview series; copies do not themselves recur.
+      const excluded=new Set(Array.isArray(appt.excludedDates)?appt.excludedDates:[]);
       for (let i=1;i<8;i++) {
+        const date=shiftDate(appt.date,i*7);
+        if(excluded.has(date)) continue;
         result.push(Object.assign({}, appt, {
-          id:uid("appointment"),
-          seriesId:seriesId,
-          repeat:"none",
-          date:shiftDate(appt.date,i*7),
-          createdAt:new Date().toISOString(),
-          updatedAt:new Date().toISOString()
+          id:uid("appointment"), seriesId:seriesId, repeat:"none", date:date,
+          createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
         }));
       }
     }
@@ -522,17 +556,26 @@
     if (selected) selected.addEventListener("change",()=>{selectedDate=selected.value || localDate(new Date());renderApp();});
     $$("[data-ls-date]").forEach(el=>el.addEventListener("click",()=>{selectedDate=el.dataset.lsDate;calendarMode="day";renderApp();}));
     const appointmentFormEl = $("#ls-appointment-form");
-    if (appointmentFormEl) appointmentFormEl.addEventListener("submit", async event=>{
+    if (appointmentFormEl) {
+      const allDayToggle=appointmentFormEl.elements.allDay;
+      const startInput=appointmentFormEl.elements.start;
+      const endInput=appointmentFormEl.elements.end;
+      const syncAllDayFields=()=>{const disabled=allDayToggle.checked;startInput.disabled=disabled;endInput.disabled=disabled;startInput.required=!disabled;endInput.required=!disabled;};
+      allDayToggle.addEventListener("change",syncAllDayFields);
+      syncAllDayFields();
+      appointmentFormEl.addEventListener("submit", async event=>{
       event.preventDefault();
       const v = formData(appointmentFormEl);
-      if (!v.title.trim() || !v.date || !v.start || !v.end || minutes(v.end)<=minutes(v.start)) {setStatus(t("invalid"),true);return;}
+      const allDay=v.allDay==="on";
+      if (!v.title.trim() || !v.date || (!allDay && (!v.start || !v.end || minutes(v.end)<=minutes(v.start)))) {setStatus(t("invalid"),true);return;}
       const existing = v.id ? state.appointments.find(a=>a.id===v.id) : null;
       if(existing && !requireModify("calendar",existing)) return;
       const now = new Date().toISOString();
       const oldSeries = existing ? (existing.seriesId || (existing.repeat==="weekly" ? existing.id : "")) : "";
       const id = v.id || uid("appointment");
       const repeat = v.repeat || "none";
-      const a = {id:id,profileId:existing?existing.profileId:state.currentProfileId,title:v.title.trim(),date:v.date,start:v.start,end:v.end,location:v.location.trim(),notes:v.notes.trim(),preparation:v.preparation.trim(),reminderMins:Number(v.reminderMins)||0,repeat:repeat,createdAt:existing?existing.createdAt:now,updatedAt:now};
+      const excludedDates=String(v.excludedDates||"").split(/[;,\s]+/).filter(date=>/^\d{4}-\d{2}-\d{2}$/.test(date));
+      const a = {id:id,profileId:existing?existing.profileId:state.currentProfileId,title:v.title.trim(),date:v.date,start:allDay?"":v.start,end:allDay?"":v.end,allDay:allDay,travelMinutes:Math.max(0,Math.min(240,Number(v.travelMinutes)||0)),excludedDates:excludedDates,location:(v.location||"").trim(),notes:(v.notes||"").trim(),preparation:(v.preparation||"").trim(),reminderMins:Number(v.reminderMins)||0,repeat:repeat,createdAt:existing?existing.createdAt:now,updatedAt:now};
       if(repeat==="weekly") {
         const editingSeriesRoot=existing && existing.repeat==="weekly" && (!existing.seriesId || existing.seriesId===existing.id);
         a.seriesId=editingSeriesRoot ? (oldSeries || id) : id;
@@ -560,7 +603,8 @@
       recordAudit(existing?"appointment-updated":"appointment-created",a.title);
       const ok=await saveState(false);if(ok){selectedDate=a.date;renderApp();setStatus(t("saved"));}
     });
-        const workerForm = $("#ls-worker-form");
+    }
+    const workerForm = $("#ls-worker-form");
     if (workerForm) workerForm.addEventListener("submit",async event=>{
       event.preventDefault();const v=formData(workerForm);if(!v.name.trim()){setStatus(t("invalid"),true);return;}
       try {
@@ -737,7 +781,7 @@
     if(action==="cancel-contact-edit"){editingContactId="";renderApp();return;}
     if(action==="edit-plan"){const item=state.weeklyPlans.find(p=>p.id===id);if(!item||!requireModify("planning",item))return;editingPlanId=id;activeTab="weekplan";renderApp();const title=$("#ls-plan-form input[name=\"title\"]");if(title)title.focus();return;}
     if(action==="cancel-plan-edit"){editingPlanId="";renderApp();return;}
-    if(action==="delete-appointment"){const target=state.appointments.find(x=>x.id===id);if(!target||!requireModify("calendar",target))return;if(!window.confirm(t("deleteItem")))return;const seriesRoot=target.repeat==="weekly"&&(!target.seriesId||target.seriesId===target.id);state.appointments=state.appointments.filter(x=>seriesRoot?(x.id!==target.id&&x.seriesId!==target.id):x.id!==id);recordAudit("appointment-deleted",id);if(await saveState(false))renderApp();return;}
+    if(action==="delete-appointment"){const target=state.appointments.find(x=>x.id===id);if(!target||!requireModify("calendar",target))return;if(!window.confirm(t("deleteItem")))return;const seriesRoot=target.repeat==="weekly"&&(!target.seriesId||target.seriesId===target.id);if(!seriesRoot&&target.seriesId){const parent=state.appointments.find(x=>x.id===target.seriesId&&x.repeat==="weekly");if(parent){parent.excludedDates=Array.isArray(parent.excludedDates)?parent.excludedDates:[];if(!parent.excludedDates.includes(target.date))parent.excludedDates.push(target.date);parent.updatedAt=new Date().toISOString();}}state.appointments=state.appointments.filter(x=>seriesRoot?(x.id!==target.id&&x.seriesId!==target.id):x.id!==id);recordAudit("appointment-deleted",id);if(await saveState(false))renderApp();return;}
     if(action==="edit-worker"){const w=state.workers.find(x=>x.id===id);if(!w||!requireModify("roster",w))return;const f=$("#ls-worker-form");if(w&&f){f.elements.name.value=w.name;f.elements.role.value=w.role||"";f.dataset.editId=w.id;f.querySelector("button[type=submit]").textContent=t("edit");f.scrollIntoView({behavior:"auto",block:"center"});}return;}
     if(action==="delete-worker"){const target=state.workers.find(x=>x.id===id);if(!target||!requireModify("roster",target))return;if(!window.confirm(t("deleteItem")))return;state.workers=state.workers.filter(x=>x.id!==id);state.shifts=state.shifts.filter(x=>x.workerId!==id);recordAudit("worker-deleted",id);if(await saveState(false))renderApp();return;}
     if(action==="edit-shift"){const s=state.shifts.find(x=>x.id===id);if(!s||!requireModify("roster",s))return;const f=$("#ls-shift-form");if(f){f.elements.workerId.value=s.workerId;f.elements.date.value=s.date;f.elements.start.value=s.start;f.elements.end.value=s.end;f.dataset.editId=s.id;f.querySelector("button[type=submit]").textContent=t("edit");f.scrollIntoView({behavior:"auto",block:"center"});}return;}
@@ -827,6 +871,59 @@
     if(state&&sessionKey)renderApp();
     else renderLocked(localStorage.getItem(STORAGE_KEY)===null,"");
   }
+  
+  root.addEventListener("dragstart", event => {
+    const card = event.target && event.target.closest ? event.target.closest("[data-appointment-drag]") : null;
+    if(!card || !sessionKey) return;
+    if(event.dataTransfer) {
+      event.dataTransfer.setData("text/plain", card.dataset.appointmentDrag);
+      event.dataTransfer.effectAllowed = "move";
+    }
+  });
+  root.addEventListener("dragover", event => {
+    const target = event.target && event.target.closest ? event.target.closest("[data-drop-date], [data-ls-date]") : null;
+    if(!target || !sessionKey) return;
+    event.preventDefault();
+    if(event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    target.classList.add("ls-drop-active");
+  });
+  root.addEventListener("dragleave", event => {
+    const target = event.target && event.target.closest ? event.target.closest("[data-drop-date], [data-ls-date]") : null;
+    if(target) target.classList.remove("ls-drop-active");
+  });
+  root.addEventListener("drop", async event => {
+    const target = event.target && event.target.closest ? event.target.closest("[data-drop-date], [data-ls-date]") : null;
+    if(!target || !sessionKey || !event.dataTransfer) return;
+    event.preventDefault();
+    target.classList.remove("ls-drop-active");
+    const id=event.dataTransfer.getData("text/plain");
+    const date=target.dataset.dropDate || target.dataset.lsDate;
+    const appointment=state && state.appointments.find(item=>item.id===id);
+    if(!appointment || !date || appointment.date===date) return;
+    if(appointment.repeat==="weekly" && (!appointment.seriesId || appointment.seriesId===appointment.id)) {
+      setStatus(lang==="nl"?"Bewerk de wekelijkse reeks om de basisdatum te wijzigen. Je kunt losse afspraken uit die reeks hierheen slepen.":"Edit the weekly series to change its base date. Individual occurrences can be moved here.",true);
+      return;
+    }
+    if(!requireModify("calendar",appointment)) return;
+    const next=Object.assign({},appointment,{date:date,updatedAt:new Date().toISOString()});
+    const pool=state.appointments.filter(item=>item.id!==appointment.id);
+    const conflict=appointmentConflict(next,pool);
+    if(conflict && conflict.start===next.start){setStatus(t("exactDuplicate"),true);return;}
+    if(conflict && !window.confirm(t("overlap")+" "+t("overlapInfo")))return;
+    const previousDate=appointment.date;
+    if(appointment.seriesId){
+      const seriesRoot=state.appointments.find(item=>item.id===appointment.seriesId && item.repeat==="weekly");
+      if(seriesRoot){
+        seriesRoot.excludedDates=Array.isArray(seriesRoot.excludedDates)?seriesRoot.excludedDates:[];
+        if(!seriesRoot.excludedDates.includes(previousDate))seriesRoot.excludedDates.push(previousDate);
+        seriesRoot.updatedAt=new Date().toISOString();
+      }
+    }
+    Object.assign(appointment,next);
+    recordAudit("appointment-rescheduled",appointment.title+" · "+previousDate+" → "+date);
+    if(await saveState(false)){selectedDate=date;calendarMode="week";renderApp();setStatus(t("saved"));}
+  });
+
   root.addEventListener("click",event=>{if(event.target && event.target.matches('input[type="file"]'))filePickerPending=true;});
   document.addEventListener("change",event=>{
     if(event.target && event.target.matches && event.target.matches('input[type="file"]'))filePickerPending=false;
@@ -840,6 +937,122 @@
   window.addEventListener("pagehide",()=>{stopAutoLock();if(reminderTimer)clearInterval(reminderTimer);if(mediaRecorder&&mediaRecorder.state!=="inactive")try{mediaRecorder.stop();}catch{};});
   window.addEventListener("online",()=>{const n=$("#ls-connectivity");if(n)n.textContent=t("online");});
   window.addEventListener("offline",()=>{const n=$("#ls-connectivity");if(n)n.textContent=t("offline");});
+
+  function professionalBlank() {
+    return {goals:[],documents:[],versions:[],handovers:[],absences:[],dailyProgress:null,accessibility:{largeText:false,reducedMotion:false,quietView:false,language:"nl"},
+      emergencyPlan:{instructions:"",supportNeeds:"",preferredHelp:"",updatedAt:""},
+      reportPreferences:{includeMood:true,includeRoutineProgress:true,includeAppointments:true}};
+  }
+  function professionalSnapshot(value) {
+    const copy=JSON.parse(JSON.stringify(value||professionalBlank()));
+    delete copy.versions;
+    return copy;
+  }
+  window.ProjectN01Vault = {
+    isUnlocked:()=>Boolean(state&&sessionKey&&saltB64),
+    readProfessional:()=>state&&sessionKey?JSON.parse(JSON.stringify(state.professional||professionalBlank())):null,
+    readSnapshot:()=>state&&sessionKey?JSON.parse(JSON.stringify({
+      appointments:state.appointments,workers:state.workers,shifts:state.shifts,weeklyPlans:state.weeklyPlans,
+      moods:state.moods,journal:state.journal,guides:state.guides,contacts:state.contacts,reminders:state.reminders,
+      profiles:state.profiles,currentProfileId:state.currentProfileId,professional:state.professional||professionalBlank()
+    })):null,
+    saveProfessional:async(value,label)=>{
+      if(!state||!sessionKey||!saltB64) return false;
+      const previous=state.professional||professionalBlank();
+      const snapshot=professionalSnapshot(previous);
+      const versions=Array.isArray(previous.versions)?previous.versions.slice():[];
+      versions.push({id:uid("version"),at:new Date().toISOString(),label:String(label||"Gewijzigde persoonlijke gegevens").slice(0,100),snapshot:snapshot});
+      const next=Object.assign(professionalBlank(),value&&typeof value==="object"?value:{});
+      next.versions=versions.slice(-10);
+      state.professional=next;
+      recordAudit("professional-data-updated",String(label||"").slice(0,100));
+      const saved=await saveState(false);
+      if(saved) renderApp();
+      return saved;
+    },
+    restoreVersion:async(versionId)=>{
+      if(!state||!sessionKey||!state.professional) return false;
+      const version=(state.professional.versions||[]).find(v=>v.id===versionId);
+      if(!version||!version.snapshot) return false;
+      const existing=state.professional;
+      const history=(existing.versions||[]).slice();
+      history.push({id:uid("version"),at:new Date().toISOString(),label:"Herstelpunt vóór terugzetten",snapshot:professionalSnapshot(existing)});
+      state.professional=Object.assign(professionalBlank(),version.snapshot,{versions:history.slice(-10)});
+      recordAudit("professional-version-restored",String(version.label||""));
+      const saved=await saveState(false);
+      if(saved) renderApp();
+      return saved;
+    },
+    saveDailyProgress:async(progress)=>{
+      if(!state||!sessionKey) return false;
+      state.professional=Object.assign(professionalBlank(),state.professional||{});
+      state.professional.dailyProgress=JSON.parse(JSON.stringify(progress));
+      recordAudit("daily-progress-saved","Encrypted in personal vault");
+      return saveState(false);
+    },
+    getDailyProgress:(date)=>{
+      if(!state||!sessionKey||!state.professional||!state.professional.dailyProgress) return null;
+      const value=state.professional.dailyProgress;
+      return value.date===date?JSON.parse(JSON.stringify(value)):null;
+    },
+    importLegacyDailyProgress:async(progress)=>{
+      if(!state||!sessionKey||!progress||typeof progress!=="object")return false;
+      state.professional=Object.assign(professionalBlank(),state.professional||{});
+      if(!state.professional.dailyProgress)state.professional.dailyProgress=JSON.parse(JSON.stringify(progress));
+      const saved=await saveState(false);if(saved)localStorage.removeItem("project-n-01-daily-progress-v1");return saved;
+    },
+    getAppPreferences:()=>state&&sessionKey?JSON.parse(JSON.stringify((state.professional&&state.professional.accessibility)||professionalBlank().accessibility)):null,
+    saveAppPreferences:async(value)=>{
+      if(!state||!sessionKey)return false;
+      state.professional=Object.assign(professionalBlank(),state.professional||{});
+      state.professional.accessibility=Object.assign(professionalBlank().accessibility,value&&typeof value==="object"?value:{});
+      recordAudit("accessibility-preferences-saved","Encrypted in personal vault");
+      const saved=await saveState(false);if(saved)localStorage.removeItem("project-n-01-preferences-v1");return saved;
+    },
+    importLegacyAppPreferences:async(value)=>{
+      if(!state||!sessionKey||!value||typeof value!=="object")return false;
+      state.professional=Object.assign(professionalBlank(),state.professional||{});
+      const current=state.professional.accessibility||professionalBlank().accessibility;
+      state.professional.accessibility=Object.assign({},current,value);
+      const saved=await saveState(false);if(saved)localStorage.removeItem("project-n-01-preferences-v1");return saved;
+    },
+    exportEncryptedEnvelope:async()=>{
+      if(!state||!sessionKey||!saltB64) return null;
+      return encryptState(state,sessionKey,b64ToBytes(saltB64));
+    },
+    importEncryptedEnvelope:async(envelope,passphrase)=>{
+      try {
+        const opened=await decryptEnvelope(envelope,passphrase);
+        const next=opened.state;
+        const localEnvelope=await encryptState(next,opened.key,opened.salt);
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(localEnvelope));
+        stopAutoLock();state=next;sessionKey=opened.key;saltB64=bytesToB64(opened.salt);
+        startAutoLock();renderApp();
+        window.dispatchEvent(new CustomEvent("projectn-vault-state",{detail:{unlocked:true,imported:true}}));
+        return true;
+      } catch { return false; }
+    },
+    replaceWithEncryptedEnvelope:async(envelope)=>{
+      if(!envelope||envelope.format!==FORMAT||envelope.version!==1||envelope.cipher!=="AES-256-GCM"||envelope.kdf!=="PBKDF2-SHA-256") return false;
+      try {
+        const salt=b64ToBytes(envelope.salt),iv=b64ToBytes(envelope.iv),cipher=b64ToBytes(envelope.ciphertext);
+        if(salt.length!==16||iv.length!==12||cipher.length>MAX_PLAINTEXT_BYTES+16) return false;
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(envelope));
+        lockVault(false);renderLocked(false,"Versleutelde kluis gedownload. Ontgrendel met de wachtzin die bij deze kluis hoort.");
+        window.dispatchEvent(new CustomEvent("projectn-vault-state",{detail:{unlocked:false,remoteReady:true}}));
+        return true;
+      } catch { return false; }
+    },
+    storageOverview:()=>{
+      let localBytes=0;try{localBytes=String(localStorage.getItem(STORAGE_KEY)||"").length;}catch{}
+      return {unlocked:Boolean(state&&sessionKey),encryptedVaultPresent:localStorage.getItem(STORAGE_KEY)!==null,encryptedEnvelopeCharacters:localBytes,records:state&&sessionKey?{
+        appointments:state.appointments.length,roster:state.shifts.length,moods:state.moods.length,journal:state.journal.length,
+        routines:state.weeklyPlans.length,goals:(state.professional&&state.professional.goals||[]).length,
+        documents:(state.professional&&state.professional.documents||[]).length
+      }:null,legacyPlaintextKeys:["project-n-01-daily-progress-v1","project-n-01-preferences-v1"]};
+    }
+  };
+
   if(!window.crypto||!crypto.subtle){renderLocked(true,t("unsupported"));return;}
   let hasVault=false;try{hasVault=localStorage.getItem(STORAGE_KEY)!==null;}catch{}
   renderLocked(!hasVault,"");
