@@ -159,6 +159,77 @@ test("backup merge keeps the newest conflicting version and shows a content-free
   assert.match(js, /function mergeStates\(current, incoming\)/);
 });
 
+
+test("backup merge keeps the newest record and adds non-conflicting records", () => {
+  const merge = getMergeStates();
+  const current = {
+    profiles: [{ id: "self" }],
+    currentProfileId: "self",
+    preferences: { textSize: "large", contrast: true },
+    journal: [
+      { id: "entry-1", text: "current", updatedAt: "2026-10-01T10:00:00Z" },
+      { id: "entry-2", text: "keep", updatedAt: "2026-10-01T09:00:00Z" },
+    ],
+  };
+  const incoming = {
+    profiles: [{ id: "self" }],
+    currentProfileId: "self",
+    preferences: { textSize: "small", language: "en" },
+    journal: [
+      { id: "entry-1", text: "newer", updatedAt: "2026-10-02T10:00:00Z" },
+      { id: "entry-3", text: "added", updatedAt: "2026-10-03T10:00:00Z" },
+    ],
+  };
+  const merged = merge(current, incoming);
+  assert.deepEqual(
+    merged.journal.map(item => item.id).sort(),
+    ["entry-1", "entry-2", "entry-3"],
+  );
+  assert.equal(merged.journal.find(item => item.id === "entry-1").text, "newer");
+  assert.equal(merged.journal.find(item => item.id === "entry-2").text, "keep");
+  assert.equal(merged.preferences.textSize, "large");
+  assert.equal(merged.preferences.language, "en");
+});
+
+test("backup merge records conflicts without copying record content into the report", () => {
+  const { merge, getReport } = getMergeStatesWithReport();
+  const current = {
+    profiles: [{ id: "self" }],
+    currentProfileId: "self",
+    journal: [{ id: "entry-1", text: "PRIVATE_CURRENT", updatedAt: "2026-10-01T10:00:00Z" }],
+  };
+  const incoming = {
+    profiles: [{ id: "self" }],
+    currentProfileId: "self",
+    journal: [{ id: "entry-1", text: "PRIVATE_INCOMING", updatedAt: "2026-10-02T10:00:00Z" }],
+  };
+  merge(current, incoming);
+  const report = getReport();
+  assert.equal(report.length, 1);
+  assert.equal(report[0].category, "journal");
+  assert.equal(report[0].source, "incoming");
+  assert.doesNotMatch(JSON.stringify(report), /PRIVATE_CURRENT|PRIVATE_INCOMING/);
+});
+
+function getMergeStates() {
+  return getMergeStatesWithReport().merge;
+}
+
+function getMergeStatesWithReport() {
+  const start = js.indexOf("  function mergeStates(current, incoming) {");
+  const end = js.indexOf("  function updateDrawingCanvas()", start);
+  assert.notEqual(start, -1, "backup merge helper should exist");
+  assert.notEqual(end, -1, "backup merge helper boundary should exist");
+  const source = js.slice(start, end);
+  return vm.runInNewContext(
+    `let lastConflictReport = [];
+     function normalizeState(value) { return value; }
+     ${source}
+     ({ merge: mergeStates, getReport: () => lastConflictReport });`,
+    {},
+  );
+}
+
 test("encrypted backup merge/replace and destructive deletion are available", () => {
   assert.match(js, /export-backup/);
   assert.match(js, /export-recovery-backup/);
