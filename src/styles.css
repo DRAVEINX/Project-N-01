@@ -125,3 +125,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @keyframes splash-rise{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes splash-progress{0%{transform:translateX(-110%)}100%{transform:translateX(300%)}}
 @media(prefers-reduced-motion:reduce){.startup-splash,.startup-splash__icon{animation:none;transition:none}.startup-splash__loader span{animation:none;width:65%}}
+
+
+/* NovaLife Personal Studio: user-selectable accent palettes */
+body[data-accent-theme="ocean"] { --lilac:#83caff; --mint:#7ce8dc; --pink:#b4c9ff; }
+body[data-accent-theme="rose"] { --lilac:#f3a8d0; --mint:#ffc6d8; --pink:#ffd1e8; }
+body[data-accent-theme="emerald"] { --lilac:#8ce0b2; --mint:#a5f0d2; --pink:#bce9ce; }
