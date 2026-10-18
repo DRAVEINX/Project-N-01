@@ -117,6 +117,7 @@ declare v_token text; v_email text;
 begin
   if auth.uid() is null then raise exception 'Authentication required'; end if;
   if not public.project_n01_mfa_ok() then raise exception 'Second factor verification required'; end if;
+  if not public.project_n01_mfa_ok() then raise exception 'Second factor verification required'; end if;
   v_email:=lower(trim(coalesce(p_email,'')));
   if length(v_email)<5 or position('@' in v_email)<2 then raise exception 'Valid invite email required'; end if;
   if p_role not in ('caregiver','parent','guardian') then raise exception 'Invalid role'; end if;
@@ -138,6 +139,7 @@ as $$
 declare v_invite public.care_invites%rowtype; v_link uuid;
 begin
   if auth.uid() is null then raise exception 'Authentication required'; end if;
+  if not public.project_n01_mfa_ok() then raise exception 'Second factor verification required'; end if;
   select * into v_invite from public.care_invites
   where token_hash=encode(extensions.digest(convert_to(trim(coalesce(p_token,'')),'UTF8'),'sha256'),'hex')
     and used_at is null and expires_at>now()
