@@ -4,7 +4,7 @@
 
 - When encrypted routine storage is not enabled, custom routines are stored in browser `localStorage` and are **not encrypted**. After the user enables the vault and optionally removes the old plaintext copy, custom routine templates are stored in an authenticated encrypted envelope. Accessibility preferences remain unencrypted in `localStorage`.
 - Routine JSON exports are plaintext and must be treated as readable by anyone who obtains the file.
-- Notes and drawings are currently temporary and are not persisted.
+- **Correction to older prototype notes:** the Daily Life Suite in `src/life-suite.js` now persists appointments, roster, mood check-ins, journal entries, drawings, guides, trusted contacts, local profiles, consent records, reminders and audit events inside its local AES-GCM encrypted envelope. This does not mean every Project N module is encrypted; the original daily checklist/routine progress and accessibility preferences remain outside this suite vault.
 - The experimental `src/secure-storage.js` module provides Web Crypto AES-256-GCM encryption with a random 128-bit salt, random 96-bit IV, PBKDF2-SHA-256 key derivation, and a 128-bit authentication tag.
 - The optional encrypted vault is connected to custom routine-template persistence. The user must unlock it with a passphrase on each page load; a derived `CryptoKey` is retained only in an in-memory closure while unlocked and is discarded on lock. The prototype auto-locks after five minutes without activity and when the page is hidden or navigated away from; there is no password-reset service and independent security review is still missing, so this is not yet a release-ready security guarantee. A separate encrypted recovery-file/code workflow is described below.
 - Browser encryption does not protect data from a compromised device, malicious browser extension, injected script, or someone with access to an unlocked app session.
@@ -15,7 +15,7 @@
 | --- | --- |
 | Accessibility preferences | Non-sensitive settings; persist locally and minimize collection |
 | Custom routine templates | Optional encrypted vault after passphrase unlock; old plaintext copy must be removed separately. Accessibility preferences remain unencrypted. |
-| Mood entries, journal text, drawings, voice recordings | Sensitive; do not persist until encryption, deletion, backup and consent flows are implemented |
+| Mood entries, journal text, drawings, voice recordings | The Daily Life Suite persists these within its encrypted local envelope and offers encrypted backup/restore. Keep the prototype limitations below in scope; native platform protection, authenticated multi-user access and independent review are not complete. |
 | Caregiver/guardian access | Explicit, revocable consent and separate authorization; never infer permission from device ownership |
 | Backups | Versioned encrypted envelope; never include passwords or raw derived keys |
 
@@ -36,7 +36,7 @@
 
 The experimental envelope includes `format`, `version`, `kdf`, `iterations`, `cipher`, `salt`, `iv` and `ciphertext`. The passphrase and derived key are not serialized. AES-GCM authentication failures reject decryption. Format/version checks are strict to avoid silently accepting unknown schemes.
 
-This is an engineering plan, not a certification, legal assessment, or claim that the current application encrypts data.
+This is an engineering plan, not a certification or legal assessment. Encryption coverage is module-specific; do not infer that every Project N data item is encrypted.
 
 
 ## Encrypted routine backup prototype
