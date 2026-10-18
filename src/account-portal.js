@@ -14,6 +14,8 @@
   let activeHousehold = "";
   let householdMembers = [];
   let idleTimer = 0;
+  let syncTimer = 0;
+  let syncQueue = Promise.resolve();
   let mfaPending = false;
   let statusText = "";
   let statusError = false;
@@ -104,7 +106,7 @@
   async function authAction(formName, data){
     if(formName==="server"){setApiBase(data.apiBase);setStatus("Serveradres opgeslagen.");render();return;}
     if(formName==="register"){if(data.password.length<14)throw new Error("Gebruik minimaal 14 tekens voor het wachtwoord.");const r=await request("/v1/auth/register",{method:"POST",body:body({displayName:data.displayName,email:data.email,password:data.password})});setStatus(r.message||"Registratie verwerkt.");return;}
-    if(formName==="login"){const r=await request("/v1/auth/login",{method:"POST",body:body({email:data.email,password:data.password,totp:data.totp})});token=r.accessToken;user=r.user;statusText="Ingelogd. De accountsessie verloopt na 30 minuten en wordt eerder gesloten na 15 minuten inactiviteit.";statusError=false;resetIdle();render();await checkCloud();return;}
+    if(formName==="login"){const r=await request("/v1/auth/login",{method:"POST",body:body({email:data.email,password:data.password,totp:data.totp})});token=r.accessToken;user=r.user;statusText="Ingelogd. De accountsessie verloopt na 30 minuten en wordt eerder gesloten na 15 minuten inactiviteit.";statusError=false;resetIdle();render();await checkCloud();startSyncMonitor();return;}
     if(formName==="forgot"){const r=await request("/v1/auth/forgot-password",{method:"POST",body:body({email:data.email})});setStatus(r.message);return;}
     if(formName==="resend"){const r=await request("/v1/auth/resend-verification",{method:"POST",body:body({email:data.email})});setStatus(r.message);return;}
     if(formName==="reset"){const params=new URLSearchParams(location.search);if(data.password!==data.confirmPassword)throw new Error("De wachtwoorden komen niet overeen.");const r=await request("/v1/auth/reset-password",{method:"POST",body:body({token:params.get("resetPassword"),password:data.password})});history.replaceState(null,"",location.pathname);setStatus(r.message);render();return;}
@@ -119,7 +121,39 @@
     const out={};for(const [key,value] of new FormData(form).entries()){if(Object.prototype.hasOwnProperty.call(out,key)){out[key]=Array.isArray(out[key])?out[key].concat(value):[out[key],value];}else out[key]=value;}return out;
   }
   async function syncCheck(){const r=await request("/v1/sync/vault");cloudVersion=r.version;cloudEnvelope=r.envelope;const v=root.querySelector("#cloud-status");if(v)v.textContent="Cloudversie: "+r.version+(r.updatedAt?" · laatst gewijzigd "+new Date(r.updatedAt).toLocaleString():" · nog geen cloudback-up");}
-  async function checkCloud(){try{await syncCheck();}catch(e){setStatus("Account aangemeld, maar cloudstatus niet beschikbaar: "+e.message,true);}}
+  async function checkCloud(){try{await syncCheck();const stored=localStorage.getItem(VERSION_KEY)||"";const known=stored.startsWith(user.id+":")?Number(stored.slice(user.id.length+1)):null;if(cloudVersion>0&&known!==cloudVersion)setStatus("Cloudversie "+cloudVersion+" wijkt af van de laatst bekende lokale versie. Controleer de versies en kies bewust of je de cloudkluis wilt herstellen.",true);}catch(e){setStatus("Account aangemeld, maar cloudstatus niet beschikbaar: "+e.message,true);}}
+  async function syncVaultEnvelope(envelope){
+    if(!token||!user)return {synced:false,reason:"not-authenticated"};
+    const run=async()=>{
+      await syncCheck();
+      const raw=localStorage.getItem(VERSION_KEY)||"";
+      const known=raw.startsWith(user.id+":")?Number(raw.slice(user.id.length+1)):null;
+      if(cloudVersion>0&&known===null)throw new Error("Er bestaat al een cloudversie maar dit apparaat heeft geen bevestigde baserversie. Kies eerst Cloudkluis herstellen of bekijk de versies.");
+      if(known!==null&&known!==cloudVersion)throw new Error("Synchronisatieconflict: de cloudversie is veranderd. Je lokale gegevens zijn bewaard; bekijk de cloudversies voordat je verdergaat.");
+      const result=await request("/v1/sync/vault",{method:"PUT",body:body({baseVersion:known===null?0:known,envelope})});
+      cloudVersion=result.version;
+      localStorage.setItem(VERSION_KEY,user.id+":"+result.version);
+      const status=root.querySelector("#cloud-status");if(status)status.textContent="Automatisch gesynchroniseerd · cloudversie "+result.version;
+      return {synced:true,version:result.version};
+    };
+    syncQueue=syncQueue.catch(()=>{}).then(run);
+    return syncQueue;
+  }
+  async function syncLatestLocal(){
+    if(!token||!user||!navigator.onLine)return;
+    const raw=localStorage.getItem(VAULT_KEY);if(!raw)return;
+    let envelope;try{envelope=JSON.parse(raw);}catch{return;}
+    try{await syncVaultEnvelope(envelope);}catch(error){setStatus("Lokaal opgeslagen; online synchronisatie vraagt aandacht: "+error.message,true);}
+  }
+  function startSyncMonitor(){
+    clearInterval(syncTimer);syncTimer=window.setInterval(async()=>{
+      if(!token||!user||!navigator.onLine)return;
+      const old=cloudVersion;
+      try{await syncCheck();const versionData=localStorage.getItem(VERSION_KEY)||"";const known=versionData.startsWith(user.id+":")?Number(versionData.slice(user.id.length+1)):null;if(known!==null&&cloudVersion!==known)setStatus("Er is een andere cloudversie beschikbaar. Kies ‘Cloudkluis herstellen’ om deze versie na controle op dit apparaat te gebruiken.",true);}catch{}
+    },60000);
+  }
+  window.addEventListener("online",()=>syncLatestLocal());
+  window.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&token&&user)syncLatestLocal();});
   async function pushLocal(){
     const raw=localStorage.getItem(VAULT_KEY);
     if(!raw)throw new Error("Er staat geen lokale versleutelde kluis op dit apparaat.");
@@ -194,7 +228,7 @@
   function downloadText(content,type,name){const blob=new Blob([content],{type});const href=URL.createObjectURL(blob);const a=document.createElement("a");a.href=href;a.download=name;a.hidden=true;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),1500);}
   function resetIdle(){clearTimeout(idleTimer);if(token)idleTimer=setTimeout(()=>logout(true),15*60*1000);}
   async function logout(expired=false){
-    clearTimeout(idleTimer);if(token)try{await request("/v1/auth/logout",{method:"POST",body:"{}"});}catch{}
+    clearTimeout(idleTimer);clearInterval(syncTimer);clearInterval(syncTimer);if(token)try{await request("/v1/auth/logout",{method:"POST",body:"{}"});}catch{}
     token="";user=null;cloudVersion=null;cloudEnvelope=null;householdMembers=[];mfaPending=false;
     setStatus(expired?"Je bent automatisch uitgelogd na inactiviteit.":"Je bent uitgelogd.");render();
   }
@@ -232,8 +266,8 @@
     if(event.target?.name==="scopes"){const edit=root.querySelectorAll('[data-ap-form="consent"] input[name="editScopes"]');edit.forEach(box=>{if(box.value===event.target.value&& !event.target.checked)box.checked=false;});}
   });
   ["pointerdown","keydown","touchstart"].forEach(name=>document.addEventListener(name,()=>resetIdle(),{passive:true}));
-  window.addEventListener("pagehide",()=>{clearTimeout(idleTimer);token="";user=null;});
-  window.ProjectN01AccountPortal=Object.freeze({clearSession:()=>logout(false)});
+  window.addEventListener("pagehide",()=>{clearTimeout(idleTimer);clearInterval(syncTimer);token="";user=null;});
+  window.ProjectN01AccountPortal=Object.freeze({clearSession:()=>logout(false),syncVaultEnvelope,isSignedIn:()=>Boolean(token&&user)});
   const params=new URLSearchParams(location.search);
   render();
   if(params.get("verifyEmail"))setStatus("Klik op E-mailadres bevestigen om het account te activeren.");
