@@ -382,7 +382,7 @@ $("#export-encrypted-routines").addEventListener("click", async () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "project-n-01-routines-encrypted.json";
+    link.download = "novalife-routines-encrypted.json";
     document.body.append(link);
     link.click();
     link.remove();
@@ -524,7 +524,7 @@ $("#migrate-routines-to-vault").addEventListener("click", async () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "project-n-01-encrypted-vault.json";
+    link.download = "novalife-encrypted-vault.json";
     document.body.append(link);
     link.click();
     link.remove();
@@ -560,7 +560,7 @@ $("#export-custom-routines").addEventListener("click", () => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "project-n-01-routines.json";
+  link.download = "novalife-routines.json";
   document.body.append(link);
   link.click();
   link.remove();
