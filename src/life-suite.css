@@ -219,3 +219,15 @@
 .ls-health-warn { color:#dca85d; }
 .ls-health-info { color:var(--text); }
 .ls-health-disclaimer { margin-top:1rem; }
+
+
+/* NovaFlow: user-controlled shortcuts with clear enabled state and mobile wrapping. */
+.ls-flow-list { display:grid; gap:.8rem; margin-top:1rem; }
+.ls-flow-rule { min-width:0; padding:1rem; border:1px solid var(--line); border-radius:14px; background:#ffffff04; }
+.ls-flow-rule-main { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; }
+.ls-flow-rule-main strong { overflow-wrap:anywhere; }
+.ls-flow-toggle { display:flex; align-items:center; gap:.45rem; flex-shrink:0; font-size:.85rem; }
+.ls-flow-toggle input { width:1.1rem; height:1.1rem; accent-color:var(--mint); }
+.ls-flow-rule .ls-actions { margin-top:.8rem; }
+.ls-flow-privacy { margin-top:1rem; padding:.85rem; border:1px solid var(--line); border-radius:12px; line-height:1.55; overflow-wrap:anywhere; }
+@media(max-width:520px) { .ls-flow-rule-main { flex-direction:column; } .ls-flow-toggle { align-self:flex-start; } .ls-flow-rule .ls-actions > button { flex:1 1 auto; } }
