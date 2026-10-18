@@ -397,3 +397,12 @@ test("NovaLife dashboard lets users complete today's weekly-plan items without o
   assert.match(js, /data-plan-date=/);
   assert.match(js, /\$\$\("\[data-plan-complete\]"\)\.forEach/);
 });
+
+ 
+test("browser reminder notifications hide private titles unless the user explicitly enables details", () => {
+  assert.match(js, /showReminderDetails===true\?a\.title:t\("appointmentPrivate"\)/);
+  assert.match(js, /showReminderDetails===true\?r\.title:t\("reminderPrivate"\)/);
+  assert.match(js, /appointmentPrivate:"Je hebt een afspraak gepland\."/);
+  assert.match(js, /reminderPrivate:"Je hebt een herinnering\."/);
+  assert.match(js, /showReminderDetails:false/);
+});
