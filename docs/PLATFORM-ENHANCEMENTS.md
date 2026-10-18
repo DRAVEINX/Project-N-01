@@ -20,7 +20,7 @@ Use the same personal vault passphrase on each device that needs to decrypt the 
 The migration creates short-lived, one-use invite codes bound to the intended e-mail address. The recipient must sign in with that address. The schema enforces read/write scopes in the database for future shared-record endpoints. The owner can revoke an access link. The app currently does not e-mail invitations automatically, and it does not share/decrypt the owner's main vault with caregivers. The vault passphrase is never placed in an invitation. Do not treat a local profile as a separate authenticated identity.
 
 ## Native notifications
-A native Local Notifications plugin bridge is built into the Android/iOS package by \`npm run build:mobile\`. Native reminders schedule from locally unlocked app data and require permission from the operating system. Android/iOS behavior must be tested on physical devices, including after reboot, permission denial and time-zone/daylight-saving transitions. Scheduling is only refreshed when the app is open with its vault unlocked; a background/server push service is not included.
+A native Local Notifications plugin bridge is built into the Android/iOS package by \`npm run build:mobile\`. Native reminders schedule from locally unlocked app data and require permission from the operating system. Android/iOS behavior needs real-device testing on physical devices, including after reboot, permission denial and time-zone/daylight-saving transitions. Scheduling is only refreshed when the app is open with its vault unlocked; a background/server push service is not included.
 
 ## Data protection and operations
 - New goals, documents, handovers, absences, checkpoints and support records use the encrypted life-suite vault.
