@@ -30,7 +30,7 @@ const rateBuckets = new Map();
 
 if (!DATABASE_URL) throw new Error("DATABASE_URL must be configured before starting the API.");
 if (Buffer.byteLength(JWT_SECRET) < 32) throw new Error("JWT_SECRET must be at least 32 bytes of a unique random secret.");
-if (!ALLOWED_ORIGINS.length || ALLOWED_ORIGINS.some(origin=>{try{const parsed=new URL(origin);return parsed.origin!==origin || !(parsed.protocol==="https:" || parsed.protocol==="capacitor:" && parsed.hostname==="localhost" || parsed.protocol==="http:" && ["localhost","127.0.0.1"].includes(parsed.hostname));}catch{return true;}})) throw new Error("APP_ORIGINS must contain exact HTTPS origins (or localhost/capacitor://localhost for development).");
+if (!ALLOWED_ORIGINS.length || ALLOWED_ORIGINS.some(origin=>{if(origin==="capacitor://localhost")return false;try{const parsed=new URL(origin);return parsed.origin!==origin || !(parsed.protocol==="https:" || parsed.protocol==="http:" && ["localhost","127.0.0.1"].includes(parsed.hostname));}catch{return true;}})) throw new Error("APP_ORIGINS must contain exact HTTPS origins (or localhost/capacitor://localhost for development).");
 if (!PUBLIC_APP_URL) throw new Error("PUBLIC_APP_URL must point to the app's public URL.");
 
 const dummyHash = await hashPassword("InvalidDummyPasswordForTimingOnly9182");
