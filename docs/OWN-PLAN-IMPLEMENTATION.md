@@ -22,9 +22,9 @@ Dit document is de werkende checklist voor de functies die eerder voor NovaLife 
 |---|---|---|
 | Command Center | Gedeeltelijk | Eén overzicht met de dag, volgende activiteit, taken, gevoel en maximaal vier snelkoppelingen. |
 | Smart Assistant | Open | Privé, voorspelbare suggesties uit lokale gegevens; geen medische claims en geen automatische externe gegevensdeling. |
-| Life Goals & Milestones | Gedeeltelijk | Doelen bestaan; mijlpalen, voortgangsgeschiedenis en viering van behaalde stappen toevoegen. |
-| My Life Timeline | In uitvoering | Tijdlijn van bestaande afspraken, gevoelens, dagboekmomenten, doelen en activiteiten; daarna datafiltering en gedrag testen. |
-| Personal Studio | Gedeeltelijk | Thema's Nova-paars, Oceaanblauw, Roze en Smaragdgroen bestaan; contrast, alle schermen en voorkeurbehoud testen. |
+| Life Goals & Milestones | In uitvoering | Mijlpalen toevoegen/afvinken en statusgeschiedenis zijn toegevoegd; regressietests en handmatige gebruikscontrole nog uitvoeren. |
+| My Life Timeline | In uitvoering | Eerste tijdlijn met bestaande afspraken, gevoelens, dagboekmomenten, doelen en activiteiten is toegevoegd; filtering en schermvalidatie blijven open. |
+| Personal Studio | In uitvoering | Keuze voor Nova-paars, Oceaanblauw, Roze en Smaragdgroen is toegevoegd; contrast, alle schermen en voorkeurbehoud nog valideren. |
 | Private Vault | Gedeeltelijk | Lokale AES-GCM-kluis en back-up bestaan; resterende oude routinevoortgang en toegankelijkheidsvoorkeuren veilig migreren en testen. |
 | NovaFlow-automatisering | Open | Door gebruiker ingestelde regels, bevestiging, herroepbaarheid en controleerbare acties toevoegen. |
 | Offline Mode & Sync Center | Gedeeltelijk | Offline lokale gegevens bestaan; echte accountgekoppelde synchronisatie, conflictkeuze per item en herstelgedrag valideren. |
