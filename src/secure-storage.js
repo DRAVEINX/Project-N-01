@@ -34,6 +34,7 @@ function fromBase64(value, expectedLength) {
   }
   let binary;
   try { binary = atob(value); } catch { throw new Error("Invalid encrypted data format."); }
+  if (btoa(binary) !== value) throw new Error("Invalid encrypted data format.");
   const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
   if (expectedLength !== undefined && bytes.length !== expectedLength) {
     throw new Error("Invalid encrypted data format.");
