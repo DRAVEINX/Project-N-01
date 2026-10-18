@@ -29,12 +29,15 @@ Then open http://localhost:4173. The serve script uses Node's built-in modules a
 - Agenda/roster, mood/journal/drawings, guides, contacts, local consent, reminders, search, and encrypted import/export now have a first implementation. See [feature status and limitations](docs/FEATURES-AND-LIMITATIONS.md).
 - Automated checks cover the module's wiring and privacy-sensitive storage rules. A green CI run is still required after the latest change, followed by real-device and accessibility testing.
 
-## Remaining milestones
-1. Run CI and fix every failing test; validate phone/tablet layout manually.
-2. Add authenticated accounts and a secure server-side invitation/consent flow before claiming remote caregiver access.
-3. Implement native background reminders and platform key storage where appropriate.
-4. Implement authenticated cross-device sync with conflict review, then test Android phone/tablet, Windows packaging and any iOS target separately.
-5. Complete independent security, privacy and accessibility reviews before storing real sensitive data.
+## Current professional expansion branch
+The branch feat/professional-complete-suite adds the account API foundation, revisioned encrypted sync, optional TOTP, password-reset webhook flow, new encrypted workspace records (goals, emergency plan, documents, handovers, absence notes, reports and version snapshots), all-day appointments, travel time, recurrence date exceptions, drag/drop rescheduling, calendar history and a Capacitor local-notification bridge.
+
+These are implementation milestones, not yet a production-ready release. Current blockers/verification tasks:
+1. Configure and deploy the API with HTTPS, persistent production database, secret manager and email delivery webhook; see docs/ACCOUNT-SYNC-SETUP.md.
+2. Complete CI and Android/iOS build checks and physically test notifications, reboot behavior, permissions, accessibility and installation.
+3. Implement shared-vault key exchange and server-enforced per-scope access before promising remote caregiver/parent/guardian data sharing.
+4. Migrate API JSON-file storage to a transactional database, native key/token storage, production rate limits and monitoring.
+5. Complete independent security, privacy and accessibility review before storing real sensitive data.
 
 ## Project boundaries
 This repository is separate from MoodPress, KlaarKompas, and CreatorNexus. Do not copy over or modify those projects as part of this work.
@@ -43,7 +46,7 @@ This repository is separate from MoodPress, KlaarKompas, and CreatorNexus. Do no
 **Local data controls:** Settings provides a confirmation-gated way to clear the app's local routine data, accessibility preferences and encrypted vault. This does not clear browser caches, exported files, or data outside this app.
 
 
-**Encrypted routine storage:** `src/secure-storage.js` and `src/encrypted-vault.js` provide PBKDF2-SHA-256/AES-256-GCM encryption and an in-memory derived-key session. The optional vault is connected to custom routine create/delete/import persistence. The passphrase and derived key are not written to storage; the in-memory session is dropped on lock. The original app’s daily progress and accessibility preferences remain unencrypted. The suite offers a separate encrypted recovery-file/code workflow, but there is no password reset or account recovery service and no independent security review. See [`docs/DATA-PROTECTION.md`](docs/DATA-PROTECTION.md) before treating this as suitable for sensitive data.
+**Encrypted routine storage:** `src/secure-storage.js` and `src/encrypted-vault.js` provide PBKDF2-SHA-256/AES-256-GCM encryption and an in-memory derived-key session. The optional vault is connected to custom routine create/delete/import persistence. The passphrase and derived key are not written to storage; the in-memory session is dropped on lock. Daily progress and added accessibility preferences are migrated into the vault after the user unlocks it; legacy keys may remain if the vault is never unlocked or migration fails. Native platform key storage has not been integrated. The suite offers a separate encrypted recovery-file/code workflow, but there is no password reset or account recovery service and no independent security review. See [`docs/DATA-PROTECTION.md`](docs/DATA-PROTECTION.md) before treating this as suitable for sensitive data.
 
 
 **Routine migration:** `src/routine-migration.js` validates and copies existing routines into the vault without deleting the plaintext source. The UI supports vault setup/unlock, lock, encrypted downloads and a separate confirmation-gated plaintext cleanup action. Five-minute inactivity auto-lock and lock-on-hidden are implemented; recovery requires keeping both the downloaded encrypted recovery file and its separate recovery code. Password reset, real-device verification and independent security review remain open.
@@ -55,3 +58,10 @@ This repository is separate from MoodPress, KlaarKompas, and CreatorNexus. Do no
 - iOS: [iOS archive workflow](.github/workflows/ios.yml). It produces an unsigned Xcode archive, not a signed IPA and not an App Store release.
 
 These workflows still need to complete successfully for the current source revision, and generated packages must be installed and tested on real devices. A successful build is not the same as a production-ready, signed release.
+
+
+## Account API and sync deployment
+See [Account API & encrypted sync setup](docs/ACCOUNT-SYNC-SETUP.md) for local startup, environment variables, webhooks, CORS/HTTPS, revision conflicts and production limitations. The current API runs as a separate service and uses a single-instance JSON-file database intended only for development. Invite roles/scopes are metadata only until shared-encryption key exchange and access enforcement are complete.
+
+## Native reminders
+The mobile build bundles Capacitor Local Notifications, requests OS permission, schedules a rolling set of reminders and supports quiet hours/private notification previews. Android exact alarms require OS permission in relevant Android versions and are still subject to power-management delays. Test delivery on physical devices before relying on reminders.
