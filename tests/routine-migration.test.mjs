@@ -54,7 +54,7 @@ test("invalid legacy JSON is rejected without changing the source or initializin
   const before = storage.getItem(legacyRoutineStorageKey);
   const vault = mockVault();
 
-  assert.throws(() => readLegacyRoutines(storage), /invalid-json/);
+  assert.deepEqual(readLegacyRoutines(storage).warnings, ["invalid-json"]);
   await assert.rejects(
     migrateLegacyRoutines({ storage, vault, passphrase }),
     /original data was left untouched/
