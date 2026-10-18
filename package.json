@@ -2,7 +2,7 @@
   "name": "project-n-01",
   "version": "0.1.0",
   "private": true,
-  "description": "Accessible daily-life companion prototype",
+  "description": "NovaLife: toegankelijk persoonlijk leef- en zorgplatform. Browserprototype met lokale versleutelde opslag.",
   "type": "module",
   "scripts": {
     "test": "node --test",
