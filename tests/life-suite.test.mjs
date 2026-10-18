@@ -390,3 +390,10 @@ test("native notifications request permission only after explicit user action", 
   assert.match(scheduleSource, /permission\.display !== "granted"\) return \{ native: true, permission: permission\.display, count: 0 \}/);
   assert.match(explicitPermissionSource, /LocalNotifications\.requestPermissions\(\)/);
 });
+
+
+test("NovaLife dashboard lets users complete today's weekly-plan items without opening the planner", () => {
+  assert.match(js, /todayPlans\.map\(p=>'<div class="ls-plan-summary"><label class="ls-plan-done"><input type="checkbox" data-plan-complete=/);
+  assert.match(js, /data-plan-date="\'+today\+'/);
+  assert.match(js, /\$\$\("\[data-plan-complete\]"\)\.forEach/);
+});
