@@ -156,6 +156,6 @@ window.ProjectN01NativeNotifications = {
     if (notifications.length) await LocalNotifications.schedule({ notifications });
     return { count: notifications.length, next: notifications[0] && notifications[0].schedule.at };
   },
-  async cancelManaged,
+  cancelManaged,
   upcomingItems
 };
