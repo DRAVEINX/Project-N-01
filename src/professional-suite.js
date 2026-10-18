@@ -210,12 +210,17 @@
     if(!appointments.length){status("Er zijn geen afspraken om te exporteren.");return;}
     const escIcs=v=>String(v||"").replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");
     const datePart=(date,time)=>String(date||"").replace(/-/g,"")+"T"+String(time||"0000").replace(/:/g,"").padEnd(6,"0").slice(0,6);
+    const calendarDate=date=>String(date||"").replace(/-/g,"");
+    const nextCalendarDate=date=>{const d=new Date(String(date)+"T12:00:00");d.setDate(d.getDate()+1);return d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");};
     const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Project N-01//NL","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
     appointments.forEach(a=>{
       const end=a.end || a.start || "0000";
+      const dates=a.allDay===true
+        ? ["DTSTART;VALUE=DATE:"+calendarDate(a.date),"DTEND;VALUE=DATE:"+nextCalendarDate(a.date)]
+        : ["DTSTART:"+datePart(a.date,a.start),"DTEND:"+datePart(a.date,end)];
       lines.push("BEGIN:VEVENT","UID:"+escIcs(a.id||uid())+"@project-n-01","DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,""),
-        "DTSTART:"+datePart(a.date,a.start),"DTEND:"+datePart(a.date,end),"SUMMARY:"+escIcs(a.title),
-        "LOCATION:"+escIcs(a.location),"END:VEVENT");
+        ...dates,"SUMMARY:"+escIcs(a.title),"LOCATION:"+escIcs(a.location),
+        "DESCRIPTION:"+escIcs([a.preparation,a.notes,Number(a.travelMinutes)>0?"Travel time / reistijd: "+a.travelMinutes+" min":""].filter(Boolean).join("\n")),"END:VEVENT");
     });
     lines.push("END:VCALENDAR");
     saveDownload("project-n-01-agenda.ics",lines.join("\r\n"),"text/calendar;charset=utf-8");
