@@ -574,6 +574,16 @@ test("My Life Timeline searches event titles, categories and details with a boun
   assert.match(js, /timelineFilters=\{type:"all",from:"",to:"",search:""\}/);
 });
 
+test("My Life Timeline exports visible filtered events to a safe local CSV", () => {
+  assert.match(js, /data-ls-action="timeline-export"/);
+  assert.match(js, /timelineExport:"Zichtbare gebeurtenissen exporteren \(CSV\)"/);
+  assert.match(js, /timelineExport:"Export visible events \(CSV\)"/);
+  assert.match(js, /URL\.createObjectURL\(new Blob\(\[csv\],\{type:"text\/csv;charset=utf-8"\}\)\)/);
+  assert.match(js, /textValue\.replace\(\/"/g,'""'\)/);
+  assert.match(js, /link\.download="novalife-tijdlijn-/);
+  assert.match(js, /recordAudit\("timeline-exported"/);
+});
+
 test("My Life Timeline filters events by category and inclusive date range", () => {
   assert.match(js, /timelineFilters = \{type:"all",from:"",to:"",search:""\}/);
   assert.match(js, /id="ls-timeline-filter-form"/);
