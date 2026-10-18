@@ -28,15 +28,18 @@ function toBase64(bytes) {
   return btoa(binary);
 }
 
-function fromBase64(value, expectedLength) {
-  if (typeof value !== "string" || value.length > 2_000_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) {
+function fromBase64(value, expectedLength, maxLength) {
+  if (typeof value !== "string" || value.length > 2_000_000 ||
+      (maxLength !== undefined && value.length > Math.ceil(maxLength / 3) * 4) ||
+      !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) {
     throw new Error("Invalid encrypted data format.");
   }
   let binary;
   try { binary = atob(value); } catch { throw new Error("Invalid encrypted data format."); }
   if (btoa(binary) !== value) throw new Error("Invalid encrypted data format.");
   const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
-  if (expectedLength !== undefined && bytes.length !== expectedLength) {
+  if ((expectedLength !== undefined && bytes.length !== expectedLength) ||
+      (maxLength !== undefined && bytes.length > maxLength)) {
     throw new Error("Invalid encrypted data format.");
   }
   return bytes;
@@ -99,7 +102,7 @@ export async function decryptJson(envelope, passphrase) {
   }
   const salt = fromBase64(envelope.salt, SALT_BYTES);
   const iv = fromBase64(envelope.iv, IV_BYTES);
-  const ciphertext = fromBase64(envelope.ciphertext);
+  const ciphertext = fromBase64(envelope.ciphertext, undefined, MAX_CIPHERTEXT_BYTES);
   if (ciphertext.length > MAX_CIPHERTEXT_BYTES) throw new Error("Encrypted data exceeds the 1 MB limit.");
   if (ciphertext.length < 16) throw new Error("Invalid encrypted data format.");
   const key = await deriveKey(passphrase, salt);
