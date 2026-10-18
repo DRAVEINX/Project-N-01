@@ -18,7 +18,7 @@
 - [x] Custom routine templates can be exported/imported as JSON with file-size and item-count limits; exports are disclosed as unencrypted
 - [x] Users can clear all custom routine templates after a confirmation; storage failures are reported
 - [x] Basic CI smoke tests
-- [ ] Verify GitHub Actions result and fix any failures (not confirmed from this session)
+- [x] Verify latest GitHub Actions result: regression tests, Android build, Windows MSI build and iOS archive all succeeded on source commit `d43f216642c4745b3c8e3592a8c9d4abe87472c0` (CI only; see `docs/PLATFORM-RELEASE-CHECKLIST.md` for manual acceptance)
 - [ ] Manual keyboard, screen-reader and mobile/tablet viewport review
 
 ## Phase 2 — Make the prototype more robust
@@ -52,13 +52,19 @@
 - [ ] Android accessibility checks and TalkBack testing
 - [ ] Offline-first data and recovery
 - [ ] Unit and UI tests
-- [ ] Signed APK/AAB artifacts from verified CI builds
+- [x] CI generates separate phone/tablet release APK and AAB candidates; release signing is optional and must be verified before distribution
 
 ## Phase 5 — Windows
 - [ ] Keyboard-first desktop UI
 - [ ] High-DPI and resize testing
 - [ ] Installer, upgrade and uninstall validation
-- [ ] Signed installer where feasible
+- [ ] Signed installer where feasible (current CI artifact is explicitly unsigned)
+
+## Phase 6 — iOS
+- [x] CI builds an unsigned iOS archive candidate
+- [ ] Configure Apple signing and provisioning
+- [ ] Install and test a signed build on a physical iPhone
+- [ ] Validate VoiceOver, safe areas, permissions, offline behavior and data recovery
 
 ## Definition of done
-A green workflow is necessary but not sufficient. Each feature must be exercised, accessibility reviewed, and platform-specific release artifacts tested before being described as complete.
+A green workflow is necessary but not sufficient. Each feature must be exercised, accessibility reviewed, and platform-specific release artifacts tested before being described as complete. Use `docs/PLATFORM-RELEASE-CHECKLIST.md` to record actual-device and security/privacy sign-off. CI artifacts currently include unsigned Windows MSI and unsigned iOS archive; Android release signing is optional.
