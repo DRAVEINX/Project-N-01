@@ -874,3 +874,14 @@ test("daily progress restoration accepts only explicit completed booleans", asyn
   assert.match(restore, /if \(!Array\.isArray\(saved\)\) continue/);
   assert.match(restore, /input\.checked = saved\[index\] === true/);
 });
+
+
+test("local storage inventory validates encrypted envelope shape before labeling it encrypted", async () => {
+  const portalSource = await readFile(new URL("../src/account-portal.js", import.meta.url), "utf8");
+  assert.match(portalSource, /function looksLikeEncryptedEnvelope\(raw\)/);
+  assert.match(portalSource, /value\.format==="project-n-01-life-v1"\|\|value\.format==="project-n-01-encrypted-json"/);
+  assert.match(portalSource, /value\.cipher!=="AES-256-GCM"/);
+  assert.match(portalSource, /atob\(value\.salt\)\.length===16&&atob\(value\.iv\)\.length===12&&atob\(value\.ciphertext\)\.length>=16/);
+  assert.match(portalSource, /encryptedKey&&looksLikeEncryptedEnvelope\(value\)/);
+  assert.match(portalSource, /controleert niet of de wachtzin werkt of de inhoud authentiek kan worden ontsleuteld/);
+});
