@@ -549,3 +549,16 @@ test("NovaFlow stores profile-scoped, opt-in manual shortcuts with enable/disabl
   assert.match(css, /\.ls-flow-rule\s*\{/);
   assert.match(css, /\.ls-flow-toggle\s*\{/);
 });
+
+
+test("Smart Assistant supports a profile-scoped private daily intention", () => {
+  assert.match(js, /dailyIntentions:\[\]/);
+  assert.match(js, /"dailyIntentions"/);
+  assert.match(js, /id="ls-assistant-focus-form"/);
+  assert.match(js, /assistantFocusHint/);
+  assert.match(js, /daily-intention-saved/);
+  assert.match(js, /profileId:state.currentProfileId,date:today,text:textValue/);
+  assert.match(js, /textValue=String\(values\.focus\|\|""\)\.trim\(\)\.slice\(0,500\)/);
+  assert.match(js, /assistantFocusSaved/);
+  assert.match(css, /\.ls-assistant-focus\s*\{/);
+});
