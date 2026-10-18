@@ -18,6 +18,7 @@ on:
       - "scripts/configure-android-build-variants.mjs"
       - "docs/GOOGLE-PLAY-SUBMISSION-CHECKLIST.md"
       - "tests/life-suite.test.mjs"
+      - "tests/smoke.test.mjs"
       - "package.json"
       - "capacitor.config.json"
       - ".github/workflows/android.yml"
