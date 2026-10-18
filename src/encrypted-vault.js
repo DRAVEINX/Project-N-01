@@ -3,7 +3,7 @@
  * The derived CryptoKey is retained only inside an in-memory session while unlocked.
  * Locking drops that session and its plaintext cache; neither passphrase nor key is stored.
  */
-import { encryptJson, openEncryptedJsonSession } from "./secure-storage.js";
+import { encryptJson, encryptedJsonFormat, openEncryptedJsonSession } from "./secure-storage.js";
 
 function cloneJson(value) {
   const serialized = JSON.stringify(value);
@@ -124,7 +124,15 @@ export class EncryptedVault {
     } catch {
       throw new Error("Stored vault is invalid.");
     }
-    if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)) {
+    if (!envelope || typeof envelope !== "object" || Array.isArray(envelope) ||
+        envelope.format !== encryptedJsonFormat.format ||
+        envelope.version !== encryptedJsonFormat.version ||
+        envelope.kdf !== encryptedJsonFormat.kdf ||
+        envelope.iterations !== encryptedJsonFormat.iterations ||
+        envelope.cipher !== encryptedJsonFormat.cipher ||
+        typeof envelope.salt !== "string" ||
+        typeof envelope.iv !== "string" ||
+        typeof envelope.ciphertext !== "string") {
       throw new Error("Stored vault is invalid.");
     }
     return cloneJson(envelope);
