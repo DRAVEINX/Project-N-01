@@ -87,6 +87,7 @@ jobs:
           set -euo pipefail
           grep -F 'applicationIdSuffix ".phone"' android/app/build.gradle
           grep -F 'applicationIdSuffix ".tablet"' android/app/build.gradle
+          grep -E 'targetSdkVersion 36|targetSdk 36' android/app/build.gradle
           test -s android/app/src/phone/res/values/strings.xml
           test -s android/app/src/tablet/res/values/strings.xml
 
