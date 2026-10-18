@@ -353,13 +353,14 @@
       for (let i=0;i<count;i++) {
         const day = shiftDate(base, i);
         const events = visibleAppointmentList(day);
-        dates.push('<div class="ls-day-block"><h4>' + esc(prettyDate(day,{weekday:"long",day:"numeric",month:"short"})) + (day === localDate(new Date()) ? " · " + esc(t("today")) : "") + '</h4>' + (events.length ? events.map(appointmentCard).join("") : '<p class="ls-empty">' + esc(t("noAppointments")) + '</p>') + '</div>');
+        dates.push('<div class="ls-day-block" data-drop-date="' + esc(day) + '"><h4>' + esc(prettyDate(day,{weekday:"long",day:"numeric",month:"short"})) + (day === localDate(new Date()) ? " · " + esc(t("today")) : "") + '</h4>' + (events.length ? events.map(appointmentCard).join("") : '<p class="ls-empty">' + esc(t("noAppointments")) + '</p>') + '<p class="ls-drop-hint">' + (lang === "nl" ? "Sleep een afspraak hierheen om de datum te wijzigen" : "Drop an appointment here to change its date") + '</p></div>');
       }
       list = dates.join("");
     }
     const weeksummary = '<div class="ls-inline"><label class="ls-field"><span>' + esc(t("selectDate")) + '</span><input id="ls-selected-date" type="date" value="' + esc(selectedDate) + '"></label><div class="ls-actions">' + button(t("dayView"),"mode-day",calendarMode === "day" ? "primary-button" : "secondary-button") + button(t("weekView"),"mode-week",calendarMode === "week" ? "primary-button" : "secondary-button") + button(t("monthView"),"mode-month",calendarMode === "month" ? "primary-button" : "secondary-button") + '</div></div>';
     const editing = editingAppointmentId ? state.appointments.find(a => a.id === editingAppointmentId) : null;
-    return panel(t("upcoming"), weeksummary + (calendarMode === "month" ? list : '<div class="ls-day-list">' + list + '</div>'), "ls-calendar-panel") + panel(editing ? t("editAppointment") : t("addAppointment"),appointmentForm(editing), "ls-form-panel");
+    const auditItems = state.audit.filter(item => /^appointment-/.test(item.action) && (!item.profileId || item.profileId === state.currentProfileId)).slice(0,8).map(item => '<article class="ls-item"><strong>' + esc(item.details || item.action) + '</strong><p>' + esc(({ "appointment-created":lang==="nl"?"Afspraak toegevoegd":"Appointment added","appointment-updated":lang==="nl"?"Afspraak gewijzigd":"Appointment changed","appointment-deleted":lang==="nl"?"Afspraak verwijderd":"Appointment deleted","appointment-rescheduled":lang==="nl"?"Afspraak verplaatst":"Appointment moved" })[item.action] || item.action) + '</p><small>' + esc(item.at ? new Date(item.at).toLocaleString() : "") + '</small></article>').join("");
+    return panel(t("upcoming"), weeksummary + (calendarMode === "month" ? list : '<div class="ls-day-list">' + list + '</div>'), "ls-calendar-panel") + panel(editing ? t("editAppointment") : t("addAppointment"),appointmentForm(editing), "ls-form-panel") + panel(lang === "nl" ? "Wijzigingsgeschiedenis" : "Change history", auditItems || '<p class="ls-empty">' + (lang === "nl" ? "Nog geen wijzigingen in de agenda." : "No calendar changes yet.") + '</p>', "ls-audit-panel");
   }
   function dashboardView() {
     const today = localDate(new Date());
@@ -870,6 +871,51 @@
     if(state&&sessionKey)renderApp();
     else renderLocked(localStorage.getItem(STORAGE_KEY)===null,"");
   }
+  
+  root.addEventListener("dragstart", event => {
+    const card = event.target && event.target.closest ? event.target.closest("[data-appointment-drag]") : null;
+    if(!card || !sessionKey) return;
+    if(event.dataTransfer) {
+      event.dataTransfer.setData("text/plain", card.dataset.appointmentDrag);
+      event.dataTransfer.effectAllowed = "move";
+    }
+  });
+  root.addEventListener("dragover", event => {
+    const target = event.target && event.target.closest ? event.target.closest("[data-drop-date], [data-ls-date]") : null;
+    if(!target || !sessionKey) return;
+    event.preventDefault();
+    if(event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    target.classList.add("ls-drop-active");
+  });
+  root.addEventListener("dragleave", event => {
+    const target = event.target && event.target.closest ? event.target.closest("[data-drop-date], [data-ls-date]") : null;
+    if(target) target.classList.remove("ls-drop-active");
+  });
+  root.addEventListener("drop", async event => {
+    const target = event.target && event.target.closest ? event.target.closest("[data-drop-date], [data-ls-date]") : null;
+    if(!target || !sessionKey || !event.dataTransfer) return;
+    event.preventDefault();
+    target.classList.remove("ls-drop-active");
+    const id=event.dataTransfer.getData("text/plain");
+    const date=target.dataset.dropDate || target.dataset.lsDate;
+    const appointment=state && state.appointments.find(item=>item.id===id);
+    if(!appointment || !date || appointment.date===date) return;
+    if(appointment.repeat==="weekly" && (!appointment.seriesId || appointment.seriesId===appointment.id)) {
+      setStatus(lang==="nl"?"Bewerk de wekelijkse reeks om de basisdatum te wijzigen. Je kunt losse afspraken uit die reeks hierheen slepen.":"Edit the weekly series to change its base date. Individual occurrences can be moved here.",true);
+      return;
+    }
+    if(!requireModify("calendar",appointment)) return;
+    const next=Object.assign({},appointment,{date:date,updatedAt:new Date().toISOString()});
+    const pool=state.appointments.filter(item=>item.id!==appointment.id);
+    const conflict=appointmentConflict(next,pool);
+    if(conflict && conflict.start===next.start){setStatus(t("exactDuplicate"),true);return;}
+    if(conflict && !window.confirm(t("overlap")+" "+t("overlapInfo")))return;
+    const previousDate=appointment.date;
+    Object.assign(appointment,next);
+    recordAudit("appointment-rescheduled",appointment.title+" · "+previousDate+" → "+date);
+    if(await saveState(false)){selectedDate=date;calendarMode="week";renderApp();setStatus(t("saved"));}
+  });
+
   root.addEventListener("click",event=>{if(event.target && event.target.matches('input[type="file"]'))filePickerPending=true;});
   document.addEventListener("change",event=>{
     if(event.target && event.target.matches && event.target.matches('input[type="file"]'))filePickerPending=false;
