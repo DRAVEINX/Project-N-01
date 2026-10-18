@@ -159,7 +159,7 @@ await writeFile(join(drawableDir, "novalife_splash_background.xml"), splashBackg
 const stylesPath = join(valuesDir, "styles.xml");
 let stylesXml;
 try { stylesXml = await readFile(stylesPath, "utf8"); }
-catch { stylesXml = '<?xml version="1.0" encoding="utf-8"?>\\n<resources>\\n</resources>\\n'; }
+catch { stylesXml = ["<?xml version=\"1.0\" encoding=\"utf-8\"?>", "<resources>", "</resources>", ""].join("\n"); }
 const launchStyle = `    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:windowBackground">@drawable/novalife_splash_background</item>
         <item name="windowSplashScreenBackground">@color/novalife_splash_background</item>
