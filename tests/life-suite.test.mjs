@@ -252,7 +252,7 @@ test("mobile-first accessible styling and offline cache include the new module",
   assert.match(css, /ls-high-contrast/);
   assert.match(css, /ls-large-text/);
   assert.match(css, /ls-reduced-motion/);
-  assert.match(serviceWorker, /project-n-01-prototype-v18/);
+  assert.match(serviceWorker, /project-n-01-prototype-v19/);
   assert.match(serviceWorker, /"\/src\/life-suite\.js"/);
   assert.match(serviceWorker, /"\/src\/life-suite\.css"/);
   assert.match(workflow, /node --check src\/life-suite\.js/);
