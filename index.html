@@ -18,6 +18,15 @@
 </head>
 <body>
   <a class="skip-link" href="#main" data-i18n="skip">Ga naar de inhoud</a>
+  <div class="startup-splash" id="novalife-splash" role="status" aria-label="NovaLife wordt gestart">
+    <div class="startup-splash__content">
+      <img class="startup-splash__icon" src="/assets/app-icon.svg" alt="" width="104" height="104">
+      <div class="startup-splash__wordmark">Nova<span>Life</span></div>
+      <p class="startup-splash__tagline">Ruimte voor jouw dag</p>
+      <div class="startup-splash__loader" aria-hidden="true"><span></span></div>
+    </div>
+    <span class="startup-splash__footnote">GEZONDER <i>•</i> SIMPEL <i>•</i> SAMEN</span>
+  </div>
   <div class="app-shell">
     <aside class="sidebar" aria-label="Hoofdnavigatie" data-i18n-aria-label="mainNavigationLabel">
       <a class="brand" href="#home" aria-label="NovaLife startpagina">
@@ -225,5 +234,20 @@
 </main>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const splash = document.getElementById("novalife-splash");
+      if (!splash) return;
+      let dismissed = false;
+      const dismiss = () => {
+        if (dismissed) return;
+        dismissed = true;
+        splash.classList.add("is-leaving");
+        window.setTimeout(() => splash.remove(), 460);
+      };
+      window.addEventListener("load", () => window.setTimeout(dismiss, 820), { once: true });
+      window.setTimeout(dismiss, 3500);
+    })();
+  </script>
 </body>
 </html>
