@@ -456,3 +456,21 @@ test("NovaLife Personal Studio persists four selectable color themes", () => {
   assert.match(css, /ls-theme-pink \.ls-tab\.active/);
   assert.match(css, /ls-theme-emerald \.ls-tab\.active/);
 });
+
+
+test("NovaLife Smart Assistant provides local, privacy-conscious daily suggestions", () => {
+  assert.match(js, /function assistantView\(\)/);
+  assert.match(js, /\["assistant","assistant"\]/);
+  assert.match(js, /activeTab === "assistant" \? assistantView\(\)/);
+  assert.match(js, /assistant:"Slimme assistent"/);
+  assert.match(js, /assistant:"Smart assistant"/);
+  assert.match(js, /visibleItems\("appointments","calendar"\)\.filter\(a => a\.date === today\)/);
+  assert.match(js, /visibleItems\("moods","mood"\)\.some\(m => m\.date === today\)/);
+  assert.match(js, /visibleItems\("weeklyPlans","planning"\)/);
+  assert.match(js, /visibleItems\("goals","goals"\)/);
+  assert.match(js, /These suggestions are derived locally from your saved data/);
+  assert.match(js, /Deze suggesties worden lokaal afgeleid van je opgeslagen gegevens/);
+  assert.match(js, /ls-assistant-grid/);
+  assert.match(css, /\.ls-assistant-grid\s*\{/);
+  assert.match(css, /@media \(max-width:560px\) \{ \.ls-assistant-grid/);
+});
