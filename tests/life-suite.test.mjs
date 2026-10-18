@@ -474,3 +474,19 @@ test("NovaLife Smart Assistant provides local, privacy-conscious daily suggestio
   assert.match(css, /\.ls-assistant-grid\s*\{/);
   assert.match(css, /@media \(max-width:560px\) \{ \.ls-assistant-grid/);
 });
+
+
+test("NovaLife goals support private milestones, completion and status history", () => {
+  assert.match(js, /milestones:"Mijlpalen"/);
+  assert.match(js, /milestones:"Milestones"/);
+  assert.match(js, /data-milestone-form=/);
+  assert.match(js, /data-milestone-toggle=/);
+  assert.match(js, /goal\.milestones=Array\.isArray\(goal\.milestones\)\?goal\.milestones:\[\]/);
+  assert.match(js, /milestone\.completedAt=el\.checked\?new Date\(\)\.toISOString\(\):""/);
+  assert.match(js, /recordAudit\("milestone-created"/);
+  assert.match(js, /recordAudit\(el\.checked\?"milestone-completed":"milestone-reopened"/);
+  assert.match(js, /item\.statusHistory=Array\.isArray\(item\.statusHistory\)\?item\.statusHistory:\[\]/);
+  assert.match(js, /goalCelebration:/);
+  assert.match(css, /\.ls-milestone-section\s*\{/);
+  assert.match(css, /\.ls-milestone-form\s*\{/);
+});
