@@ -143,7 +143,7 @@ test("trusted contact safety card export and copy actions require explicit user 
   assert.match(js, /data-ls-action="download-safety-card"/);
   assert.match(js, /safetyCardPrivacy/);
   assert.match(js, /safety-card-exported/);
-  assert.match(js, /navigator\\.clipboard\\?\\.writeText/);
+  assert.match(js, /navigator\.clipboard\?\.writeText/);
   assert.match(js, /contact-details-copied/);
 });
 
