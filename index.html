@@ -10,8 +10,10 @@
   <title>Project N-01 — jouw dag, op jouw manier</title>
   <link rel="stylesheet" href="src/styles.css">
   <link rel="stylesheet" href="src/life-suite.css">
+  <link rel="stylesheet" href="src/account-portal.css">
   <script src="src/app.js" defer></script>
   <script src="src/life-suite.js" defer></script>
+  <script src="src/account-portal.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main" data-i18n="skip">Ga naar de inhoud</a>
@@ -25,6 +27,7 @@
         <button class="nav-item active" data-view="home" aria-current="page"><span aria-hidden="true">◈</span><span data-i18n="navToday">Mijn dag</span></button>
         <button class="nav-item" data-view="routines"><span aria-hidden="true">◷</span><span data-i18n="navRoutines">Routines</span></button>
         <button class="nav-item" data-view="life"><span aria-hidden="true">✦</span><span data-i18n="navLife">Mijn leven</span></button>
+        <button class="nav-item" data-view="account"><span aria-hidden="true">🔒</span><span data-i18n="navAccount">Account & apparaten</span></button>
         <button class="nav-item" data-view="calm"><span aria-hidden="true">✧</span><span data-i18n="navCalm">Rustmoment</span></button>
         <button class="nav-item" data-view="communicate"><span aria-hidden="true">☏</span><span data-i18n="navCommunicate">Communicatie</span></button>
         <button class="nav-item" data-view="notes"><span aria-hidden="true">▤</span><span data-i18n="navNotes">Mijn notities</span></button>
@@ -213,6 +216,10 @@
           <section class="view" id="view-life" aria-labelledby="life-title">
         <div class="section-heading"><div><p class="eyebrow">PROJECT N-01</p><h2 id="life-title" data-i18n="navLife">Mijn leven</h2><p class="section-subtitle" data-i18n="lifeSuiteIntro">Agenda, begeleiders, stemming, hulp en veilige persoonlijke gegevens.</p></div></div>
         <div id="life-suite-root"><p class="inline-status" role="status">Persoonlijke module wordt geladen…</p></div>
+      </section>
+      <section class="view" id="view-account" aria-labelledby="account-title">
+        <div class="section-heading"><div><p class="eyebrow">PROJECT N-01</p><h2 id="account-title" data-i18n="navAccount">Account & apparaten</h2><p class="section-subtitle" data-i18n="accountIntro">Beveiligde accounts, synchronisatie, toestemming en herstel.</p></div></div>
+        <div id="account-portal-root"><p class="inline-status" role="status">Accountbeheer wordt geladen…</p></div>
       </section>
 </main>
   </div>
