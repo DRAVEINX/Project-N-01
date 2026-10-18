@@ -68,10 +68,16 @@ export async function migrateLegacyRoutines({ storage, vault, passphrase, legacy
     throw new Error("Legacy routine data is invalid; original data was left untouched.");
   }
   const expected = { routines: preview.routines };
-  await vault.initialize(passphrase, expected);
-  const verified = vault.read();
-  if (JSON.stringify(verified) !== JSON.stringify(expected)) {
-    vault.lock();
+  try {
+    await vault.initialize(passphrase, expected);
+    const verified = vault.read();
+    if (JSON.stringify(verified) !== JSON.stringify(expected)) {
+      throw new Error("verification-mismatch");
+    }
+  } catch {
+    // If initialization or read-back fails, do not leave a partially initialized
+    // vault session open and never remove or modify the legacy plaintext source.
+    try { vault.lock?.(); } catch { /* Preserve the original migration failure. */ }
     throw new Error("Encrypted migration verification failed; original data was left untouched.");
   }
   return {
