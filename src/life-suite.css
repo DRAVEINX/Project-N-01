@@ -231,3 +231,10 @@
 .ls-flow-rule .ls-actions { margin-top:.8rem; }
 .ls-flow-privacy { margin-top:1rem; padding:.85rem; border:1px solid var(--line); border-radius:12px; line-height:1.55; overflow-wrap:anywhere; }
 @media(max-width:520px) { .ls-flow-rule-main { flex-direction:column; } .ls-flow-toggle { align-self:flex-start; } .ls-flow-rule .ls-actions > button { flex:1 1 auto; } }
+
+
+/* Daily intention in the private Smart Assistant panel. */
+.ls-assistant-focus { display:grid; gap:.8rem; max-width:48rem; }
+.ls-assistant-focus textarea { width:100%; min-height:5rem; resize:vertical; }
+.ls-assistant-focus button { justify-self:start; }
+@media(max-width:520px) { .ls-assistant-focus button { width:100%; } }
