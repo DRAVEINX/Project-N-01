@@ -781,7 +781,7 @@
     if(action==="cancel-contact-edit"){editingContactId="";renderApp();return;}
     if(action==="edit-plan"){const item=state.weeklyPlans.find(p=>p.id===id);if(!item||!requireModify("planning",item))return;editingPlanId=id;activeTab="weekplan";renderApp();const title=$("#ls-plan-form input[name=\"title\"]");if(title)title.focus();return;}
     if(action==="cancel-plan-edit"){editingPlanId="";renderApp();return;}
-    if(action==="delete-appointment"){const target=state.appointments.find(x=>x.id===id);if(!target||!requireModify("calendar",target))return;if(!window.confirm(t("deleteItem")))return;const seriesRoot=target.repeat==="weekly"&&(!target.seriesId||target.seriesId===target.id);state.appointments=state.appointments.filter(x=>seriesRoot?(x.id!==target.id&&x.seriesId!==target.id):x.id!==id);recordAudit("appointment-deleted",id);if(await saveState(false))renderApp();return;}
+    if(action==="delete-appointment"){const target=state.appointments.find(x=>x.id===id);if(!target||!requireModify("calendar",target))return;if(!window.confirm(t("deleteItem")))return;const seriesRoot=target.repeat==="weekly"&&(!target.seriesId||target.seriesId===target.id);if(!seriesRoot&&target.seriesId){const parent=state.appointments.find(x=>x.id===target.seriesId&&x.repeat==="weekly");if(parent){parent.excludedDates=Array.isArray(parent.excludedDates)?parent.excludedDates:[];if(!parent.excludedDates.includes(target.date))parent.excludedDates.push(target.date);parent.updatedAt=new Date().toISOString();}}state.appointments=state.appointments.filter(x=>seriesRoot?(x.id!==target.id&&x.seriesId!==target.id):x.id!==id);recordAudit("appointment-deleted",id);if(await saveState(false))renderApp();return;}
     if(action==="edit-worker"){const w=state.workers.find(x=>x.id===id);if(!w||!requireModify("roster",w))return;const f=$("#ls-worker-form");if(w&&f){f.elements.name.value=w.name;f.elements.role.value=w.role||"";f.dataset.editId=w.id;f.querySelector("button[type=submit]").textContent=t("edit");f.scrollIntoView({behavior:"auto",block:"center"});}return;}
     if(action==="delete-worker"){const target=state.workers.find(x=>x.id===id);if(!target||!requireModify("roster",target))return;if(!window.confirm(t("deleteItem")))return;state.workers=state.workers.filter(x=>x.id!==id);state.shifts=state.shifts.filter(x=>x.workerId!==id);recordAudit("worker-deleted",id);if(await saveState(false))renderApp();return;}
     if(action==="edit-shift"){const s=state.shifts.find(x=>x.id===id);if(!s||!requireModify("roster",s))return;const f=$("#ls-shift-form");if(f){f.elements.workerId.value=s.workerId;f.elements.date.value=s.date;f.elements.start.value=s.start;f.elements.end.value=s.end;f.dataset.editId=s.id;f.querySelector("button[type=submit]").textContent=t("edit");f.scrollIntoView({behavior:"auto",block:"center"});}return;}
@@ -911,6 +911,14 @@
     if(conflict && conflict.start===next.start){setStatus(t("exactDuplicate"),true);return;}
     if(conflict && !window.confirm(t("overlap")+" "+t("overlapInfo")))return;
     const previousDate=appointment.date;
+    if(appointment.seriesId){
+      const seriesRoot=state.appointments.find(item=>item.id===appointment.seriesId && item.repeat==="weekly");
+      if(seriesRoot){
+        seriesRoot.excludedDates=Array.isArray(seriesRoot.excludedDates)?seriesRoot.excludedDates:[];
+        if(!seriesRoot.excludedDates.includes(previousDate))seriesRoot.excludedDates.push(previousDate);
+        seriesRoot.updatedAt=new Date().toISOString();
+      }
+    }
     Object.assign(appointment,next);
     recordAudit("appointment-rescheduled",appointment.title+" · "+previousDate+" → "+date);
     if(await saveState(false)){selectedDate=date;calendarMode="week";renderApp();setStatus(t("saved"));}
