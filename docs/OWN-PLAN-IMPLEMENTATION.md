@@ -28,7 +28,7 @@ Dit document is de werkende checklist voor de functies die eerder voor NovaLife 
 | Private Vault | Gedeeltelijk | Lokale AES-GCM-kluis en back-up bestaan; resterende oude routinevoortgang en toegankelijkheidsvoorkeuren veilig migreren en testen. |
 | NovaFlow-automatisering | Open | Door gebruiker ingestelde regels, bevestiging, herroepbaarheid en controleerbare acties toevoegen. |
 | Offline Mode & Sync Center | Gedeeltelijk | Offline lokale gegevens bestaan; echte accountgekoppelde synchronisatie, conflictkeuze per item en herstelgedrag valideren. |
-| NovaInsights | Open | Begrijpelijke trends voor stemming, routines en doelen; opt-in, privé en zonder diagnose of onbewezen conclusies. |
+| NovaInsights | In uitvoering | Opt-in tellingen over stemming, routine-afronding en doelen/mijlpalen zijn toegevoegd; regressietests en handmatige privacy-/schermvalidatie blijven nodig. |
 | Health Check | Gedeeltelijk | App-/gegevensstatus bestaat op onderdelen; een begrijpelijke controle voor back-up, opslag, synchronisatie, meldingen en toegankelijkheid toevoegen. |
 
 ## Account-, privacy- en platformwerk
