@@ -368,3 +368,19 @@ test("export rejects JSON objects that are not valid encrypted envelopes", async
   assert.throws(() => vault.exportEnvelope(), /Stored vault is invalid/);
 });
 
+test("export rejects invalid base64 fields and impossible encrypted data sizes", async () => {
+  const storage = new MemoryStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { private: "keep" });
+  const valid = JSON.parse(storage.getItem("test-vault"));
+
+  storage.setItem("test-vault", JSON.stringify({ ...valid, salt: "not-base64!" }));
+  assert.throws(() => vault.exportEnvelope(), /Stored vault is invalid/);
+
+  storage.setItem("test-vault", JSON.stringify({ ...valid, iv: "AAAAAAAAAAAAAAAA" }));
+  assert.throws(() => vault.exportEnvelope(), /Stored vault is invalid/);
+
+  storage.setItem("test-vault", JSON.stringify({ ...valid, ciphertext: "AAAAAAAAAAAAAAAAAAAAAA==" }));
+  assert.throws(() => vault.exportEnvelope(), /Stored vault is invalid/);
+});
+
