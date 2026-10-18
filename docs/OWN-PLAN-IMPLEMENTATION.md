@@ -26,7 +26,7 @@ Dit document is de werkende checklist voor de functies die eerder voor NovaLife 
 | My Life Timeline | In uitvoering | Eerste tijdlijn met bestaande afspraken, gevoelens, dagboekmomenten, doelen en activiteiten is toegevoegd; filtering en schermvalidatie blijven open. |
 | Personal Studio | In uitvoering | Keuze voor Nova-paars, Oceaanblauw, Roze en Smaragdgroen is toegevoegd; contrast, alle schermen en voorkeurbehoud nog valideren. |
 | Private Vault | Gedeeltelijk | Lokale AES-GCM-kluis en back-up bestaan; resterende oude routinevoortgang en toegankelijkheidsvoorkeuren veilig migreren en testen. |
-| NovaFlow-automatisering | Open | Door gebruiker ingestelde regels, bevestiging, herroepbaarheid en controleerbare acties toevoegen. |
+| NovaFlow-automatisering | In uitvoering | Handmatig startbare, profielgebonden snelkoppelingen naar weekplanning, agenda, gevoelscheck of assistent zijn toegevoegd; uitschakelen, verwijderen en auditlog zijn beschikbaar. Achtergrondregels en externe acties zijn bewust niet actief; echte platformautomatisering en handmatige schermvalidatie blijven open. |
 | Offline Mode & Sync Center | Gedeeltelijk | Offline lokale gegevens bestaan; echte accountgekoppelde synchronisatie, conflictkeuze per item en herstelgedrag valideren. |
 | NovaInsights | In uitvoering | Opt-in tellingen over stemming, routine-afronding en doelen/mijlpalen zijn toegevoegd; regressietests en handmatige privacy-/schermvalidatie blijven nodig. |
 | Health Check | In uitvoering | Een lokale statuspagina voor kluis, opslag, verbinding, meldingsondersteuning en toegankelijkheidsinstellingen is toegevoegd; echte apparaten en schermlezers nog handmatig valideren. |
