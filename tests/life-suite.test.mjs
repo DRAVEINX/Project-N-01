@@ -139,7 +139,7 @@ test("vault does not relock immediately on a brief background switch and keeps t
   assert.match(js, /backgroundLockTimer=window\.setTimeout/);
   assert.match(js, /if\(document\.visibilityState==="hidden"&&sessionKey&&!filePickerPending\)lockVault\(true\)/);
   assert.match(js, /if\(backgroundLockTimer\)clearTimeout\(backgroundLockTimer\)/);
-  assert.doesNotMatch(js, /if\(document\.visibilityState==="hidden"&&sessionKey&&!filePickerPending\)lockVault\(true\);/);
+  assert.match(js, /backgroundLockTimer=window\.setTimeout\(\(\)=>\{[\s\S]*?lockVault\(true\);[\s\S]*?\},BACKGROUND_LOCK_GRACE_MS\)/);
   assert.match(js, /Keep the last selected section when re-unlocking after an automatic lock/);
   assert.doesNotMatch(js, /activeTab = "dashboard";\s*renderApp\(\);/);
 });
