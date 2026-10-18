@@ -151,3 +151,9 @@
 .ls-portal-card p{margin:.35rem 0 0;color:var(--muted);font-size:.82rem;line-height:1.5}
 .ls-portal-card button{grid-column:2;justify-self:start}
 @media(max-width:650px){.ls-portal-grid{grid-template-columns:1fr}.ls-portal-card{padding:.9rem}.ls-portal-card button{width:100%;justify-self:stretch}}
+
+/* Compact, accessible jump links for the long care workspace */
+.ls-care-shortcuts{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:.85rem}
+.ls-care-shortcuts a{display:inline-flex;align-items:center;min-height:42px;padding:.65rem .85rem;border:1px solid var(--line);border-radius:11px;background:#ffffff06;color:var(--text);text-decoration:none;font-size:.82rem;font-weight:650}
+.ls-care-shortcuts a:hover,.ls-care-shortcuts a:focus-visible{border-color:var(--lilac);background:#b9a7ff16;outline-offset:2px}
+.ls-care-shortcuts a:focus-visible{outline:2px solid var(--lilac)}
