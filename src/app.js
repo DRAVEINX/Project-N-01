@@ -1128,6 +1128,10 @@ window.addEventListener("project-n01-vault-unlocked", () => {
   });
 });
 
+// Email verification, password reset and household links should open the account screen directly.
+const accountDeepLink = new URLSearchParams(location.search);
+if (accountDeepLink.has("verifyEmail") || accountDeepLink.has("resetPassword") || accountDeepLink.has("acceptInvite")) setView("account");
+
 // Offline support is enabled only on secure origins or localhost.
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
   window.addEventListener("load", () => {
