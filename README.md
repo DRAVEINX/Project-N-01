@@ -1,6 +1,6 @@
-# Project N-01
+# NovaLife
 
-An independent, accessibility-first daily-life companion for Android phones, Android tablets, and Windows. This is a temporary project codename; the public product name will be selected after trademark, app-store, and domain checks.
+An independent, accessibility-first daily-life companion for Android phones, Android tablets, and Windows. NovaLife is the selected provisional public product name. Complete trademark, app-store, and domain checks before public release. The repository name and technical identifiers remain unchanged during this safe display-name rebrand.
 
 ## Principles
 - Calm, predictable interfaces with adjustable density and text size.
