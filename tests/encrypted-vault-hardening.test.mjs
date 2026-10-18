@@ -305,3 +305,28 @@ test("passphrase save reports malformed stored JSON clearly", async () => {
   assert.equal(storage.getItem("test-vault"), "{malformed");
   assert.deepEqual(vault.read(), { current: "keep" });
 });
+
+
+test("failed passphrase-save storage write preserves the active session and data", async () => {
+  class FailingStorage extends MemoryStorage {
+    constructor() { super(); this.failWrites = false; }
+    setItem(key, value) {
+      if (this.failWrites) throw new Error("simulated storage quota failure");
+      super.setItem(key, value);
+    }
+  }
+
+  const storage = new FailingStorage();
+  const vault = new EncryptedVault(storage, "test-vault");
+  await vault.initialize(passphrase, { current: "keep" });
+  const before = storage.getItem("test-vault");
+  storage.failWrites = true;
+
+  await assert.rejects(
+    vault.saveWithPassphrase(passphrase, { current: "replacement" }),
+    /storage quota failure/
+  );
+  assert.equal(storage.getItem("test-vault"), before);
+  assert.deepEqual(vault.read(), { current: "keep" });
+  assert.equal(vault.isUnlocked, true);
+});
