@@ -220,7 +220,7 @@
         : ["DTSTART:"+datePart(a.date,a.start),"DTEND:"+datePart(a.date,end)];
       lines.push("BEGIN:VEVENT","UID:"+escIcs(a.id||uid())+"@project-n-01","DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,""),
         ...dates,"SUMMARY:"+escIcs(a.title),"LOCATION:"+escIcs(a.location),
-        "DESCRIPTION:"+escIcs([a.preparation,a.notes,Number(a.travelMinutes)>0?"Travel time / reistijd: "+a.travelMinutes+" min":""].filter(Boolean).join("\n")),"END:VEVENT");
+        "DESCRIPTION:"+escIcs(Number(a.travelMinutes)>0?"Travel time / reistijd: "+a.travelMinutes+" min":""),"END:VEVENT");
     });
     lines.push("END:VCALENDAR");
     saveDownload("project-n-01-agenda.ics",lines.join("\r\n"),"text/calendar;charset=utf-8");
