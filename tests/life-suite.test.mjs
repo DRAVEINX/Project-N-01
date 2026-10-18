@@ -395,6 +395,9 @@ test("native notifications request permission only after explicit user action", 
 test("NovaLife care workspace includes staff portal and care network workflows", () => {
   assert.match(js, /carePortal:"Zorgnetwerk & werkportaal"/);
   assert.match(js, /carePortal:"Care network & staff portal"/);
+  assert.match(js, /employee:"Medewerker"/);
+  assert.match(js, /employee:"Staff member"/);
+  assert.match(js, /value:"employee",label:t\("employee"\)/);
   assert.match(js, /\["careportal","carePortal"\]/);
   assert.match(js, /id="ls-availability-form"/);
   assert.match(js, /id="ls-workstate-form"/);
