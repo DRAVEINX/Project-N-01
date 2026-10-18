@@ -17,7 +17,7 @@ test("web entry point references existing local assets", async () => {
     "assets/app-icon.svg",
   ];
   for (const asset of localAssets) {
-    await assert.doesNotReject(access(resolve(root, asset)), `Missing local asset: ${asset}`);
+    await assert.doesNotReject(() => access(resolve(root, asset)), `Missing local asset: ${asset}`);
     assert.ok(html.includes(asset), `index.html should reference ${asset}`);
   }
   assert.match(html, /<html lang="(nl|en)">/);
@@ -48,4 +48,11 @@ test("sensitive life-suite storage keeps its established encrypted format", asyn
   assert.match(source, /PBKDF2_ITERATIONS\s*=\s*310000/, "Passphrase derivation work factor changed unexpectedly");
   assert.match(source, /project-n-01-secure-life-v1/, "Existing storage key must remain stable for compatibility");
   assert.match(source, /project-n-01-life-v1/, "Existing data format ID must remain stable for compatibility");
+});
+
+test("application JavaScript parses without syntax errors", async () => {
+  for (const file of ["src/app.js", "src/life-suite.js", "service-worker.js", "scripts/prepare-mobile.mjs"]) {
+    const source = await read(file);
+    assert.doesNotThrow(() => new Function(source), `Syntax error in ${file}`);
+  }
 });
