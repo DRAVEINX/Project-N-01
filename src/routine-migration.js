@@ -74,7 +74,10 @@ export async function migrateLegacyRoutines({ storage, vault, passphrase, legacy
     if (JSON.stringify(verified) !== JSON.stringify(expected)) {
       throw new Error("verification-mismatch");
     }
-  } catch {
+  } catch (error) {
+    // An existing vault is a precondition failure, not a failed migration:
+    // never lock or otherwise disturb the user's already-open vault.
+    if (error?.message === "Encrypted vault already exists.") throw error;
     // If initialization or read-back fails, do not leave a partially initialized
     // vault session open and never remove or modify the legacy plaintext source.
     try { vault.lock?.(); } catch { /* Preserve the original migration failure. */ }
