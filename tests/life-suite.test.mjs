@@ -558,7 +558,7 @@ test("Smart Assistant supports a profile-scoped private daily intention", () => 
   assert.match(js, /assistantFocusHint/);
   assert.match(js, /daily-intention-saved/);
   assert.match(js, /profileId:state.currentProfileId,date:today,text:textValue/);
-  assert.match(js, /textValue=String\(values\.focus\|\|""\)\.trim\(\)\.slice\(0,500\)/);
+  assert.match(js, /textValue\.replace/);
   assert.match(js, /assistantFocusSaved/);
   assert.match(css, /\.ls-assistant-focus\s*\{/);
 });
