@@ -1,4 +1,4 @@
-name: Project N-01 CI
+name: NovaLife CI
 
 on:
   push:
