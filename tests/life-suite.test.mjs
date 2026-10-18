@@ -575,7 +575,7 @@ test("My Life Timeline searches event titles, categories and details with a boun
 });
 
 test("My Life Timeline filters events by category and inclusive date range", () => {
-  assert.match(js, /timelineFilters = \{type:"all",from:"",to:""\}/);
+  assert.match(js, /timelineFilters = \{type:"all",from:"",to:"",search:""\}/);
   assert.match(js, /id="ls-timeline-filter-form"/);
   assert.match(js, /timelineFilters\.type === "all" \|\| e\.category === timelineFilters\.type/);
   assert.match(js, /e\.date >= timelineFilters\.from/);
