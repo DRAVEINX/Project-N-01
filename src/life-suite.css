@@ -238,3 +238,9 @@
 .ls-assistant-focus textarea { width:100%; min-height:5rem; resize:vertical; }
 .ls-assistant-focus button { justify-self:start; }
 @media(max-width:520px) { .ls-assistant-focus button { width:100%; } }
+
+
+/* Timeline filters: dates and event types stay usable on narrow screens. */
+.ls-timeline-filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr)); align-items:end; gap:.8rem; margin:1rem 0; }
+.ls-timeline-filters .ls-actions { display:flex; flex-wrap:wrap; gap:.5rem; }
+.ls-timeline-filters .ls-actions button { flex:1 1 auto; }
