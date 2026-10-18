@@ -1,8 +1,8 @@
-name: Project N-01 Windows MSI
+name: NovaLife Windows MSI
 
 on:
   push:
-    branches: [main, "feature/professional-suite-priority-1"]
+    branches: [main, "feature/professional-suite-priority-1", "feature/novalife-rebrand"]
     paths:
       - "index.html"
       - "offline.html"
