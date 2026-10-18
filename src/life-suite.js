@@ -8,6 +8,9 @@
   if (!root) return;
 
   const STORAGE_KEY = "project-n-01-secure-life-v1";
+  const LEGACY_PROGRESS_KEY = "project-n-01-daily-progress-v1";
+  const LEGACY_PREFERENCES_KEY = "project-n-01-preferences-v1";
+  const LEGACY_MIGRATION_KEY = "project-n-01-legacy-data-migrated-v1";
   const FORMAT = "project-n-01-life-v1";
   const PBKDF2_ITERATIONS = 310000;
   const MAX_PLAINTEXT_BYTES = 2500000;
@@ -118,7 +121,7 @@
     return {
       schema:1, createdAt:new Date().toISOString(), currentProfileId:"self",
       profiles:[{id:"self",name:lang === "nl" ? "Mijn profiel" : "My profile",role:"self",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}],
-      appointments:[], workers:[], shifts:[], weeklyPlans:[], moods:[], journal:[], drawings:[], guides:[], contacts:[], reminders:[], goals:[], documents:[], handoverNotes:[], absences:[], appointmentHistory:[], checkpoints:[], consents:[], invites:[], audit:[], notificationLog:[], emergencyPlan:{summary:"",steps:"",location:"",medicalNotes:"",lastUpdated:""}, preferences:{largeText:false,highContrast:false,reducedMotion:false,simpleMode:false,readAloud:false,quietStart:"21:00",quietEnd:"08:00"}
+      appointments:[], workers:[], shifts:[], weeklyPlans:[], moods:[], journal:[], drawings:[], guides:[], contacts:[], reminders:[], goals:[], documents:[], handoverNotes:[], absences:[], appointmentHistory:[], checkpoints:[], consents:[], invites:[], audit:[], notificationLog:[], emergencyPlan:{summary:"",steps:"",location:"",medicalNotes:"",lastUpdated:""}, legacyData:{dailyProgress:null,preferences:null,migratedAt:""}, preferences:{largeText:false,highContrast:false,reducedMotion:false,simpleMode:false,readAloud:false,quietStart:"21:00",quietEnd:"08:00"}
     };
   }
   function normalizeState(raw) {
@@ -131,6 +134,7 @@
     blank.currentProfileId = typeof raw.currentProfileId === "string" ? raw.currentProfileId : "self";
     blank.preferences = Object.assign(blank.preferences, raw.preferences && typeof raw.preferences === "object" ? raw.preferences : {});
     blank.emergencyPlan = Object.assign(blank.emergencyPlan, raw.emergencyPlan && typeof raw.emergencyPlan === "object" ? raw.emergencyPlan : {});
+    blank.legacyData = Object.assign(blank.legacyData, raw.legacyData && typeof raw.legacyData === "object" ? raw.legacyData : {});
     if (!blank.profiles.length) blank.profiles.push({id:"self",name:"My profile",role:"self",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
     if (!blank.profiles.some(p => p.id === blank.currentProfileId)) blank.currentProfileId = blank.profiles[0].id;
     return blank;
@@ -208,6 +212,7 @@
       try { mediaRecorder.stop(); } catch {}
     }
     sessionKey = null; saltB64 = null; state = null; draftPhoto = ""; draftGuideAudio = ""; draftJournalAudio = ""; pendingRecoveryCode = "";
+    window.dispatchEvent(new CustomEvent("project-n01-secure-data-locked"));
     renderLocked(false, showMessage ? t("closed") : "");
   }
   function renderLocked(createMode, extra) {
@@ -450,12 +455,67 @@
     }
     return panel(t("weekplan"),'<div class="ls-inline"><label class="ls-field"><span>'+esc(t("selectDate"))+'</span><input id="ls-selected-date" type="date" value="'+esc(selectedDate)+'"></label><div class="ls-actions">'+button("‹","week-plan-prev","secondary-button",'aria-label="Previous week"')+'<strong>'+esc(prettyDate(start,{day:"numeric",month:"short"})+" – "+prettyDate(end,{day:"numeric",month:"short",year:"numeric"}))+'</strong>'+button("›","week-plan-next","secondary-button",'aria-label="Next week"')+'</div></div><p class="ls-muted">'+esc(t("dayPlanner"))+'</p><div class="ls-weekplan-grid">'+dayPanels.join("")+'</div>')+panel(editing?t("editPlan"):t("planTitle"),planForm);
   }
+  function safelyReadLegacy(key) {
+    try { const raw=localStorage.getItem(key); return raw===null?null:JSON.parse(raw); } catch { return null; }
+  }
+  function legacyStoreAvailable() {
+    return Boolean(state && sessionKey && state.legacyData);
+  }
+  function copySafe(value) {
+    if(value===null||value===undefined)return value;
+    return JSON.parse(JSON.stringify(value));
+  }
+  async function saveLegacyEncrypted(kind,value) {
+    if(!legacyStoreAvailable() || !state.legacyData.migratedAt)return false;
+    if(kind!=="dailyProgress"&&kind!=="preferences")return false;
+    state.legacyData[kind]=copySafe(value);
+    state.legacyData.updatedAt=new Date().toISOString();
+    try { return await saveState(false); } catch { return false; }
+  }
+  async function migrateLegacyData() {
+    if(currentProfile()?.role!=="self"||!legacyStoreAvailable()) {
+      setStatus("Ontgrendel eerst de persoonlijke kluis om gegevens veilig te migreren.",true);
+      return false;
+    }
+    if(state.legacyData.migratedAt || localStorage.getItem(LEGACY_MIGRATION_KEY)==="true") {
+      setStatus("De oude gegevens zijn al gemigreerd of gemarkeerd als gemigreerd.");
+      return false;
+    }
+    const oldProgress=safelyReadLegacy(LEGACY_PROGRESS_KEY);
+    const oldPreferences=safelyReadLegacy(LEGACY_PREFERENCES_KEY);
+    if(!window.confirm("Ik zet de bestaande dagvoortgang en voorkeuren eerst in de versleutelde kluis. Alleen wanneer versleuteld opslaan lukt, verwijder ik de oude leesbare kopieën. Doorgaan?"))return false;
+    const previous=copySafe(state.legacyData);
+    state.legacyData=Object.assign({},state.legacyData,{
+      dailyProgress:oldProgress && typeof oldProgress==="object"?oldProgress:null,
+      preferences:oldPreferences && typeof oldPreferences==="object"?oldPreferences:null,
+      migratedAt:new Date().toISOString(),
+      updatedAt:new Date().toISOString()
+    });
+    if(!await saveState(false)) {
+      state.legacyData=previous;
+      setStatus("Migratie is niet opgeslagen. De oude gegevens zijn niet verwijderd.",true);
+      return false;
+    }
+    try {
+      localStorage.removeItem(LEGACY_PROGRESS_KEY);
+      localStorage.removeItem(LEGACY_PREFERENCES_KEY);
+      localStorage.setItem(LEGACY_MIGRATION_KEY,"true");
+    } catch {
+      setStatus("De versleutelde kopie is veilig opgeslagen, maar de oude browserkopie kon niet worden verwijderd. Verwijder deze handmatig via appgegevens nadat je de back-up hebt gecontroleerd.",true);
+      renderApp();
+      return false;
+    }
+    window.dispatchEvent(new CustomEvent("project-n01-secure-data-ready"));
+    setStatus("Dagvoortgang en voorkeuren zijn versleuteld opgeslagen; de oude leesbare kopieën zijn verwijderd.");
+    renderApp();
+    return true;
+  }
   function dataView() {
     const backupPanel=currentProfile()?.role==="self"
       ? panel(t("backupTitle"),'<p class="ls-muted">' + esc(t("importHint")) + '</p><div class="ls-actions">' + button(t("exportBackup"),"export-backup","primary-button") + button(t("recoveryBackup"),"export-recovery-backup","secondary-button") + '</div><p class="ls-muted">' + esc(t("recoveryHint")) + '</p><div id="ls-recovery-panel" class="ls-item"' + (pendingRecoveryCode?'':' hidden') + '><strong>' + esc(t("recoveryCode")) + '</strong><p><code id="ls-recovery-code">' + esc(pendingRecoveryCode) + '</code></p>' + button(t("copyRecovery"),"copy-recovery-code","secondary-button") + '</div><form id="ls-import-form" class="ls-form"><label class="ls-field"><span>' + esc(t("chooseFile")) + '</span><input type="file" name="file" accept=".json,application/json" required></label>' + field(t("backupPass"),"passphrase","password","","required minlength='12' autocomplete='current-password'") + select(t("importMode"),"mode",[{value:"merge",label:t("merge")},{value:"replace",label:t("replace")}],"merge") + '<button class="secondary-button" type="submit">' + esc(t("importBackup")) + '</button></form>' + '<p class="ls-muted">' + esc(t("localOnly")) + '</p>' + button(t("deleteData"),"delete-all-data","secondary-button danger-button"))
       : panel(t("backupTitle"),'<p class="ls-muted">' + esc(t("noPermission")) + '</p>');
     const conflictPanel=lastConflictReport.length?panel(t("conflictTitle")+" ("+lastConflictReport.length+")",'<p class="ls-muted">' + esc(t("conflictHint")) + '</p><div class="ls-card-list">' + lastConflictReport.map(conflict=>'<article class="ls-item"><strong>' + esc(({appointments:t("agenda"),weeklyPlans:t("weekplan"),workers:t("roster"),shifts:t("roster"),moods:t("mood"),journal:t("journalTitle"),drawings:t("drawingTitle"),guides:t("guides"),contacts:t("help"),reminders:t("reminders"),profiles:t("roles"),consents:t("roles"),invites:t("roles"),audit:t("data"),notificationLog:t("reminders")})[conflict.category]||conflict.category) + '</strong><p>' + esc(t(conflict.source==="incoming"?"importedKept":"currentKept")) + '</p><small>' + esc(conflict.at) + '</small></article>').join("") + '</div>'):"";
-    return panel(t("accessibilitySettings"),'<form id="ls-preferences-form" class="ls-form"><div class="ls-check-grid"><label><input type="checkbox" name="largeText"' + (state.preferences.largeText?'checked':'') + '> ' + esc(t("largeTextSetting")) + '</label><label><input type="checkbox" name="highContrast"' + (state.preferences.highContrast?'checked':'') + '> ' + esc(t("highContrastSetting")) + '</label><label><input type="checkbox" name="reducedMotion"' + (state.preferences.reducedMotion?'checked':'') + '> ' + esc(t("reducedMotionSetting")) + '</label><label><input type="checkbox" name="simpleMode"' + (state.preferences.simpleMode?'checked':'') + '> Eenvoudige modus</label><label><input type="checkbox" name="readAloud"' + (state.preferences.readAloud?'checked':'') + '> Tekst voorlezen inschakelen</label></div><div class="ls-grid"><label class="ls-field"><span>Stille uren vanaf</span><input type="time" name="quietStart" value="' + esc(state.preferences.quietStart||"21:00") + '"></label><label class="ls-field"><span>Stille uren tot</span><input type="time" name="quietEnd" value="' + esc(state.preferences.quietEnd||"08:00") + '"></label></div></form>') + panel(t("searchTitle"),'<form id="ls-search-form" class="ls-form"><label class="ls-field"><span>' + esc(t("searchTitle")) + '</span><input name="query" type="search" placeholder="' + esc(t("searchPlaceholder")) + '" required></label><button class="primary-button" type="submit">' + esc(t("search")) + '</button></form><div id="ls-search-results" class="ls-card-list"></div>') + backupPanel + conflictPanel;
+    return panel("Beveiligde opslag voor oude voortgang en voorkeuren",'<p class="ls-muted">De oude dagaftekenlijst en toegankelijkheidsvoorkeuren kunnen nog in browseropslag staan. Zet ze in de versleutelde kluis om ze daarna uit de oude opslag te verwijderen.</p><p class="ls-muted">'+(state.legacyData?.migratedAt?"Migratie afgerond op "+esc(state.legacyData.migratedAt)+".":"Nog niet gemigreerd.")+'</p>'+button(state.legacyData?.migratedAt?"Gegevens zijn al gemigreerd":"Migreer bestaande gegevens naar de versleutelde kluis","migrate-legacy-data","primary-button")+'<p class="ls-muted">Deze stap vereist de ontgrendelde kluis. Als opslaan mislukt, blijven de originele gegevens behouden.</p>') + panel(t("accessibilitySettings"),'<form id="ls-preferences-form" class="ls-form"><div class="ls-check-grid"><label><input type="checkbox" name="largeText"' + (state.preferences.largeText?'checked':'') + '> ' + esc(t("largeTextSetting")) + '</label><label><input type="checkbox" name="highContrast"' + (state.preferences.highContrast?'checked':'') + '> ' + esc(t("highContrastSetting")) + '</label><label><input type="checkbox" name="reducedMotion"' + (state.preferences.reducedMotion?'checked':'') + '> ' + esc(t("reducedMotionSetting")) + '</label><label><input type="checkbox" name="simpleMode"' + (state.preferences.simpleMode?'checked':'') + '> Eenvoudige modus</label><label><input type="checkbox" name="readAloud"' + (state.preferences.readAloud?'checked':'') + '> Tekst voorlezen inschakelen</label></div><div class="ls-grid"><label class="ls-field"><span>Stille uren vanaf</span><input type="time" name="quietStart" value="' + esc(state.preferences.quietStart||"21:00") + '"></label><label class="ls-field"><span>Stille uren tot</span><input type="time" name="quietEnd" value="' + esc(state.preferences.quietEnd||"08:00") + '"></label></div></form>') + panel(t("searchTitle"),'<form id="ls-search-form" class="ls-form"><label class="ls-field"><span>' + esc(t("searchTitle")) + '</span><input name="query" type="search" placeholder="' + esc(t("searchPlaceholder")) + '" required></label><button class="primary-button" type="submit">' + esc(t("search")) + '</button></form><div id="ls-search-results" class="ls-card-list"></div>') + backupPanel + conflictPanel;
   }
     function enhancementsView() {
     const workers=visibleItems("workers","roster");
@@ -770,6 +830,7 @@
     lastConflictReport=lastConflictReport.slice(0,100);
     merged.preferences=Object.assign({},incoming.preferences||{},current.preferences||{});
     merged.emergencyPlan=Object.assign({},incoming.emergencyPlan||{},current.emergencyPlan||{});
+    merged.legacyData=Object.assign({},incoming.legacyData||{},current.legacyData||{});
     if(!merged.profiles.some(p=>p.id===merged.currentProfileId))merged.currentProfileId=merged.profiles[0]?.id||"self";
     return normalizeState(merged);
   }
@@ -788,6 +849,7 @@
   }
   async function handleAction(action,id,el) {
     if(action==="lock"){lockVault(true);return;}
+    if(action==="migrate-legacy-data"){await migrateLegacyData();return;}
     if(action==="go-weekplan"){activeTab="weekplan";renderApp();return;}if(action==="go-agenda"){activeTab="agenda";renderApp();return;}if(action==="go-roster"){activeTab="roster";renderApp();return;}if(action==="go-mood"){activeTab="mood";renderApp();return;}if(action==="go-guides"){activeTab="guides";renderApp();return;}
     if(action==="cancel-edit"){editingAppointmentId="";renderApp();return;}
     if(action==="edit-appointment"){const item=state.appointments.find(x=>x.id===id);if(!item||!requireModify("calendar",item))return;editingAppointmentId=id;selectedDate=item.date;activeTab="agenda";renderApp();const title=$("#ls-appointment-form input[name=\"title\"]");if(title)title.focus();return;}
@@ -960,7 +1022,15 @@
   window.addEventListener("pagehide",()=>{stopAutoLock();if(reminderTimer)clearInterval(reminderTimer);if(mediaRecorder&&mediaRecorder.state!=="inactive")try{mediaRecorder.stop();}catch{};});
   window.addEventListener("online",()=>{const n=$("#ls-connectivity");if(n)n.textContent=t("online");});
   window.addEventListener("offline",()=>{const n=$("#ls-connectivity");if(n)n.textContent=t("offline");});
-  if(!window.crypto||!crypto.subtle){renderLocked(true,t("unsupported"));return;}
+  window.ProjectN01LifeSuiteBridge = {
+    isUnlocked: legacyStoreAvailable,
+    isMigrationEnabled: () => { try { return localStorage.getItem(LEGACY_MIGRATION_KEY)==="true"; } catch { return false; } },
+    getDailyProgress: () => legacyStoreAvailable() && state.legacyData.migratedAt ? copySafe(state.legacyData.dailyProgress) : null,
+    getPreferences: () => legacyStoreAvailable() && state.legacyData.migratedAt ? copySafe(state.legacyData.preferences) : null,
+    saveDailyProgress: value => saveLegacyEncrypted("dailyProgress",value),
+    savePreferences: value => saveLegacyEncrypted("preferences",value)
+  };
+    if(!window.crypto||!crypto.subtle){renderLocked(true,t("unsupported"));return;}
   let hasVault=false;try{hasVault=localStorage.getItem(STORAGE_KEY)!==null;}catch{}
   renderLocked(!hasVault,"");
 })();
