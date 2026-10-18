@@ -9,8 +9,9 @@ const permissions = [
 for (const permission of permissions) {
   const tag = '<uses-permission android:name="' + permission + '" />';
   if (content.includes('android:name="' + permission + '"')) continue;
-  if (!content.includes("<manifest")) throw new Error("Android manifest opening tag is missing");
-  content = content.replace("<manifest", "<manifest\n    " + tag);
+  const manifestTagEnd = content.indexOf(">");
+  if (manifestTagEnd < 0 || !content.slice(0, manifestTagEnd).includes("<manifest")) throw new Error("Android manifest opening tag is missing");
+  content = content.slice(0, manifestTagEnd + 1) + "\n    " + tag + content.slice(manifestTagEnd + 1);
 }
 await writeFile(manifest, content);
 console.log("Android notification permission declarations verified.");
