@@ -18,12 +18,14 @@ export async function createNovaLifePostgresAuthorizedHandler({
   now,
   ttlMs,
 } = {}) {
-  if (typeof extractToken !== "function" ||
+  if (typeof resource !== "string" || !resource ||
+      typeof action !== "string" || !action ||
+      typeof extractToken !== "function" ||
       typeof loadAuthorizationContext !== "function" ||
       typeof authorizationAudit !== "function" ||
       typeof handler !== "function") {
     throw new TypeError(
-      "extractToken, loadAuthorizationContext, authorizationAudit and handler are required"
+      "resource, action, extractToken, loadAuthorizationContext, authorizationAudit and handler are required"
     );
   }
 
