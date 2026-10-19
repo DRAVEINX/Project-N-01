@@ -184,3 +184,36 @@ test("denied access is audited with safe metadata before returning forbidden", a
   assert.equal(deniedEvent.requestId, "denied-request");
   assert.equal(JSON.stringify(deniedEvent).includes("private client information"), false);
 });
+
+
+test("missing trusted client ID is denied and safely audited before handler", async () => {
+  const order = [];
+  let event;
+  const { run, calls } = fixture({
+    loadAuthorizationContext: async () => ({
+      clientId: null,
+      assignedClientIds: ["client-1"],
+      grantedScopes: ["care"]
+    }),
+    audit: async (entry) => {
+      order.push("audit");
+      event = entry;
+    },
+    handler: async () => {
+      order.push("handler");
+      calls.handler++;
+      return { status: 200 };
+    }
+  });
+  const response = await run({
+    requestId: "missing-target-request",
+    body: { clientId: "client-1", note: "private care information" }
+  });
+  assert.deepEqual(response, { status: 403, body: { error: "forbidden" } });
+  assert.deepEqual(order, ["audit"]);
+  assert.equal(calls.handler, 0);
+  assert.equal(event.clientId, null);
+  assert.equal(event.outcome, "deny");
+  assert.equal(event.reason, "client-required");
+  assert.equal(JSON.stringify(event).includes("private care information"), false);
+});
