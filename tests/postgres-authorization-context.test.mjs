@@ -376,3 +376,18 @@ test("wildcard database grant cannot produce consent scopes or authorize care ac
     });
   }
 });
+
+test("rejects whitespace-padded target IDs before querying PostgreSQL", async () => {
+  const pool = fakePool();
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => " client-1 ",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+
+  await assert.rejects(
+    loader({ id: "caregiver-1", role: "caregiver", active: true }, {}),
+    /target client resolver must return a trimmed, non-empty ID or null/
+  );
+  assert.equal(pool.calls.length, 0, "invalid target must fail before assignment or consent queries");
+});
