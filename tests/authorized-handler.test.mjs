@@ -413,3 +413,31 @@ test("authorization context loader cannot mutate trusted actor identity", async 
   assert.equal(sourceActor.role, "caregiver");
   assert.equal(sourceActor.id, "caregiver-1");
 });
+
+
+test("protected handler receives a frozen minimal authorization context", async () => {
+  let handlerContext;
+  const { run } = fixture({
+    loadAuthorizationContext: async () => ({
+      clientId: "client-1",
+      assignedClientIds: ["client-1"],
+      grantedScopes: ["care"],
+      internalNotes: "must not be forwarded",
+      databaseHandle: { secret: "must not be forwarded" }
+    }),
+    handler: async (_request, context) => {
+      handlerContext = context;
+      assert.equal(Object.isFrozen(context), true);
+      assert.throws(() => { context.clientId = "client-2"; }, TypeError);
+      assert.deepEqual(Object.keys(context).sort(), ["actor", "authorization", "clientId"]);
+      return { status: 200, body: { clientId: context.clientId } };
+    }
+  });
+
+  assert.deepEqual(await run({}), { status: 200, body: { clientId: "client-1" } });
+  assert.equal(handlerContext.clientId, "client-1");
+  assert.equal(Object.hasOwn(handlerContext, "assignedClientIds"), false);
+  assert.equal(Object.hasOwn(handlerContext, "grantedScopes"), false);
+  assert.equal(Object.hasOwn(handlerContext, "internalNotes"), false);
+  assert.equal(Object.hasOwn(handlerContext, "databaseHandle"), false);
+});
