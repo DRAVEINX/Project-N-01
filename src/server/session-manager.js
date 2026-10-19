@@ -31,8 +31,8 @@ export function createSessionManager({
 
   return Object.freeze({
     async create(actorId) {
-      if (typeof actorId !== "string" || !actorId.trim()) {
-        throw new TypeError("actorId is required");
+      if (typeof actorId !== "string" || !actorId.trim() || actorId !== actorId.trim()) {
+        throw new TypeError("actorId is required and must not have surrounding whitespace");
       }
       const actor = await accountRepository.loadActor(actorId);
       if (!actor || actor.active !== true || actor.id !== actorId) {
