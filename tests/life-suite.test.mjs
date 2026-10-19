@@ -199,4 +199,6 @@ test("legacy records without a profile ID stay with the original personal profil
   assert.match(js, /const ownerId = typeof item\.profileId === "string" && item\.profileId \? item\.profileId : "self"/);
   assert.match(js, /const ownerId=\(item&&typeof item\.profileId === "string"&&item\.profileId\)\|\|"self"/);
   assert.match(js, /return ownerId === state\.currentProfileId/);
+  assert.doesNotMatch(js, /return !item\.profileId \|\| item\.profileId === state\.currentProfileId/);
+  assert.doesNotMatch(js, /const ownerId=\(item&&item\.profileId\)\|\|profile\.id/);
 });
