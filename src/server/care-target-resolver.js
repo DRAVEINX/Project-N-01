@@ -1,5 +1,13 @@
 const CARE_ROLES = new Set(["caregiver", "parent", "guardian"]);
 
+function validIdSegment(value) {
+  return typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 200 &&
+    value.trim() === value &&
+    !/[\\/\\\\?#]/.test(value);
+}
+
 /**
  * Resolve a care API target using only a trusted authenticated actor and the
  * parsed route selector. The selector is NOT authorization: the downstream
@@ -12,7 +20,7 @@ const CARE_ROLES = new Set(["caregiver", "parent", "guardian"]);
  */
 export function createCareTargetResolver() {
   return async function resolveTargetClientId(actor, request) {
-    if (!actor || typeof actor.id !== "string" || !actor.id.trim() ||
+    if (!actor || !validIdSegment(actor.id) ||
         actor.active !== true || typeof actor.role !== "string") {
       return null;
     }
@@ -23,8 +31,7 @@ export function createCareTargetResolver() {
       return actor.id;
     }
 
-    if (!CARE_ROLES.has(actor.role)) return null;
-    if (typeof selector !== "string" || !selector.trim() || selector.length > 200) return null;
+    if (!CARE_ROLES.has(actor.role) || !validIdSegment(selector)) return null;
     return selector;
   };
 }
