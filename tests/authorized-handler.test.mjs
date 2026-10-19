@@ -309,3 +309,35 @@ test("protected handler receives a frozen snapshot of trusted actor identity", a
   assert.equal(sourceActor.role, "caregiver");
 });
 
+test("trusted actor snapshot excludes arbitrary and nested authenticator payloads", async () => {
+  const privatePayload = { permissions: ["*"], internalToken: "do-not-forward" };
+  const sourceActor = {
+    id: "caregiver-1",
+    role: "caregiver",
+    active: true,
+    metadata: privatePayload,
+    internalToken: "do-not-forward"
+  };
+  let handlerActor;
+  const { run } = fixture({
+    authenticate: async () => sourceActor,
+    loadAuthorizationContext: async (actor) => {
+      assert.equal(Object.hasOwn(actor, "metadata"), false);
+      assert.equal(Object.hasOwn(actor, "internalToken"), false);
+      return { clientId: "client-1", assignedClientIds: ["client-1"], grantedScopes: ["care"] };
+    },
+    handler: async (_request, context) => {
+      handlerActor = context.actor;
+      assert.deepEqual(Object.keys(context.actor).sort(), ["active", "id", "provisioned", "role"]);
+      assert.equal(Object.hasOwn(context.actor, "metadata"), false);
+      assert.equal(Object.hasOwn(context.actor, "internalToken"), false);
+      return { status: 200 };
+    }
+  });
+
+  assert.deepEqual(await run({}), { status: 200 });
+  assert.equal(handlerActor.metadata, undefined);
+  assert.equal(sourceActor.metadata, privatePayload);
+  assert.deepEqual(privatePayload.permissions, ["*"]);
+});
+

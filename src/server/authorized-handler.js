@@ -44,9 +44,14 @@ export function createAuthorizedHandler({
     if (!actor || typeof actor.id !== "string" || !actor.id.trim()) {
       return { status: 401, body: { error: "unauthenticated" } };
     }
-    // Snapshot trusted identity so downstream callbacks cannot mutate the
-    // authenticator-owned actor object or alter its top-level authorization fields.
-    const trustedActor = Object.freeze({ ...actor });
+    // Copy only fields consumed by the authorization policy. Do not expose
+    // arbitrary authenticator payloads or nested mutable references downstream.
+    const trustedActor = Object.freeze({
+      id: actor.id,
+      role: actor.role,
+      active: actor.active,
+      provisioned: actor.provisioned
+    });
 
     let context;
     try {
