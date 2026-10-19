@@ -2,6 +2,14 @@ import { authorize } from "../authorization-policy.js";
 import { SessionResolutionUnavailableError } from "./session-authenticator.js";
 
 const SAFE_REQUEST_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+const SAFE_AUDIT_IDENTIFIER = /^[^\\u0000-\\u001F\\u007F]{1,256}$/;
+
+function safeAuditIdentifier(value) {
+  return typeof value === "string" && value.trim().length > 0 &&
+    SAFE_AUDIT_IDENTIFIER.test(value)
+    ? value
+    : null;
+}
 
 /**
  * Creates a fail-closed authorization gate for server handlers.
@@ -75,8 +83,8 @@ export function createAuthorizedHandler({
     });
 
     const event = Object.freeze({
-      actorId: trustedActor.id,
-      clientId: typeof context.clientId === "string" ? context.clientId : null,
+      actorId: safeAuditIdentifier(trustedActor.id),
+      clientId: safeAuditIdentifier(context.clientId),
       resource,
       action,
       outcome: decision.allowed ? "allow" : "deny",
