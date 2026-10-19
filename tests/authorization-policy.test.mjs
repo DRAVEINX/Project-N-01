@@ -353,3 +353,28 @@ test("parent and guardian access to care data never grants access to personal re
     }
   }
 });
+
+
+test("parent and guardian roles cannot mutate personal records", () => {
+  const personalResources = ["profile", "mood-report", "journal", "drawing", "appointment", "weekly-plan", "guide", "trusted-contact"];
+
+  for (const role of ["parent", "guardian"]) {
+    const actor = { id: role + "-1", role, active: true };
+    for (const resource of personalResources) {
+      for (const action of ["create", "update", "delete", "manage"]) {
+        assert.equal(
+          authorize({
+            actor,
+            resource,
+            action,
+            clientId: "client-1",
+            assignedClientIds: ["client-1"],
+            grantedScopes: ["care", "careDocuments", "medication", "careMessages", "roster", "careTeam", "careConsents"]
+          }).allowed,
+          false,
+          role + " must not " + action + " personal resource " + resource
+        );
+      }
+    }
+  }
+});
