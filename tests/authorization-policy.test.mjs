@@ -416,3 +416,37 @@ test("parent and guardian roles require the exact consent scope for every care r
     }
   }
 });
+
+
+test("care roles cannot access another client\u0027s care resources with consent for a different client", () => {
+  const cases = [
+    ["care-plan", "care"],
+    ["care-note", "care"],
+    ["care-task", "care"],
+    ["care-report", "care"],
+    ["care-document", "careDocuments"],
+    ["medication-overview", "medication"],
+    ["care-message", "careMessages"],
+    ["care-roster", "roster"],
+    ["care-team", "careTeam"],
+    ["care-consent-record", "careConsents"]
+  ];
+
+  for (const role of ["caregiver", "parent", "guardian"]) {
+    const actor = { id: role + "-cross-client", role, active: true };
+    for (const [resource, requiredScope] of cases) {
+      assert.equal(
+        authorize({
+          actor,
+          resource,
+          action: "read",
+          clientId: "client-2",
+          assignedClientIds: ["client-1"],
+          grantedScopes: [requiredScope]
+        }).reason,
+        "client-not-assigned",
+        role + " must not read " + resource + " for a different client"
+      );
+    }
+  }
+});
