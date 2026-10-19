@@ -23,7 +23,7 @@ test("requires trusted pool and target resolver", () => {
 
 test("loads current assignments and consent from PostgreSQL, never from request fields", async () => {
   const pool = fakePool([
-    { rows: [{ client_id: "client-1" }, { client_id: "client-2" }] },
+    { rows: [{ client_id: "client-1" }, { client_id: "client-2" }, { client_id: " client-3 " }, { client_id: "client-2" }, { client_id: "" }, { client_id: null }] },
     { rows: [
       { scope: "care_plan" },
       { scope: "care_note" },
