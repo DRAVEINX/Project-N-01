@@ -295,3 +295,54 @@ test("maps the explicit care-consent record grant to the exact policy scope", as
     grantedScopes: context.grantedScopes,
   }).allowed, true, "database consent mapping must satisfy the exact policy scope");
 });
+
+
+test("every care portal data resource maps to the exact policy scope and remains assignment-gated", async (t) => {
+  const cases = [
+    { resource: "care-plan", grants: ["care_plan", "care_note", "care_task", "care_report"] },
+    { resource: "care-note", grants: ["care_plan", "care_note", "care_task", "care_report"] },
+    { resource: "care-task", grants: ["care_plan", "care_note", "care_task", "care_report"] },
+    { resource: "care-report", grants: ["care_plan", "care_note", "care_task", "care_report"] },
+    { resource: "care-document", grants: ["care_document"] },
+    { resource: "medication-overview", grants: ["medication_overview"] },
+    { resource: "care-message", grants: ["care_message"] },
+    { resource: "care-roster", grants: ["roster"] },
+    { resource: "care-team", grants: ["team"] },
+    { resource: "care-consent-record", grants: ["care_consents"] },
+  ];
+
+  for (const scenario of cases) {
+    await t.test(scenario.resource, async () => {
+      const pool = fakePool([
+        { rows: [{ client_id: "client-1" }] },
+        { rows: scenario.grants.map((scope) => ({ scope })) },
+      ]);
+      const loader = createPostgresAuthorizationContextLoader({
+        pool,
+        resolveTargetClientId: async () => "client-1",
+        now: () => new Date("2026-10-19T10:00:00.000Z"),
+      });
+      const context = await loader({ id: "caregiver-1", role: "caregiver", active: true }, {});
+      const allowed = authorize({
+        actor: { id: "caregiver-1", role: "caregiver", active: true },
+        resource: scenario.resource,
+        action: "read",
+        clientId: context.clientId,
+        assignedClientIds: context.assignedClientIds,
+        grantedScopes: context.grantedScopes,
+      });
+      assert.equal(allowed.allowed, true, `expected matching explicit grants to allow ${scenario.resource}`);
+
+      const unassigned = authorize({
+        actor: { id: "caregiver-1", role: "caregiver", active: true },
+        resource: scenario.resource,
+        action: "read",
+        clientId: "client-not-assigned",
+        assignedClientIds: context.assignedClientIds,
+        grantedScopes: context.grantedScopes,
+      });
+      assert.equal(unassigned.allowed, false, "consent alone must not bypass client assignment");
+      assert.equal(unassigned.reason, "client-not-assigned");
+    });
+  }
+});
