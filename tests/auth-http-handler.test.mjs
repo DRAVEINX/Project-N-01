@@ -114,3 +114,47 @@ test("HTTP boundary rejects oversized bodies and malformed bearer tokens", async
   }));
   assert.equal(noToken.status, 401);
 });
+
+
+test("HTTP boundary fails closed when session validation or revocation storage fails", async () => {
+  const token = "a".repeat(43);
+  const headers = { authorization: `Bearer ${token}` };
+  const authUnavailable = createAuthHttpHandler({
+    auth: {
+      async login() { throw new Error("not used"); },
+      async authenticate() { throw new Error("session storage unavailable"); },
+      async revoke() { throw new Error("session storage unavailable"); },
+    },
+    rateLimit: async () => true,
+  });
+
+  const me = await authUnavailable(new Request("https://novalife.example/auth/me", { headers }));
+  assert.equal(me.status, 503);
+  assert.deepEqual(await me.json(), { error: "authentication-unavailable" });
+  assert.equal(me.headers.get("cache-control"), "no-store");
+
+  const logout = await authUnavailable(new Request("https://novalife.example/auth/logout", {
+    method: "POST",
+    headers,
+  }));
+  assert.equal(logout.status, 503);
+  assert.deepEqual(await logout.json(), { error: "authentication-unavailable" });
+  assert.equal(logout.headers.get("cache-control"), "no-store");
+});
+
+test("HTTP boundary does not claim logout succeeded when revocation returns false", async () => {
+  const handler = createAuthHttpHandler({
+    auth: {
+      async login() { throw new Error("not used"); },
+      async authenticate() { return null; },
+      async revoke() { return false; },
+    },
+    rateLimit: async () => true,
+  });
+  const response = await handler(new Request("https://novalife.example/auth/logout", {
+    method: "POST",
+    headers: { authorization: `Bearer ${"b".repeat(43)}` },
+  }));
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { error: "unauthorized" });
+});
