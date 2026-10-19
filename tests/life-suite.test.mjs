@@ -54,6 +54,17 @@ test("weekly planner supports weekday schedules, saved completion and profile-sc
   assert.match(js, /modifyScope/);
 });
 
+test("microphone recording selects a supported codec and reports permission/device errors clearly", () => {
+  assert.match(js, /audioPermission/);
+  assert.match(js, /audioMissing/);
+  assert.match(js, /audioBusy/);
+  assert.match(js, /audioSecure/);
+  assert.match(js, /MediaRecorder\.isTypeSupported/);
+  assert.match(js, /No audio was captured|Er is geen geluid opgenomen/);
+  assert.match(js, /recorder\.onstop=async/);
+  assert.match(js, /stream\.getTracks\(\)\.forEach\(track=>track\.stop\(\)\)/);
+});
+
 test("mood, journal, drawings, guide photos and audio are kept inside encrypted app data", () => {
   assert.match(js, /function encryptState/);
   assert.match(js, /AES-256-GCM/);
@@ -142,7 +153,7 @@ test("mobile-first accessible styling and offline cache include the new module",
   assert.match(css, /ls-high-contrast/);
   assert.match(css, /ls-large-text/);
   assert.match(css, /ls-reduced-motion/);
-  assert.match(serviceWorker, /project-n-01-prototype-v16/);
+  assert.match(serviceWorker, /project-n-01-prototype-v17/);
   assert.match(serviceWorker, /"\/src\/life-suite\.js"/);
   assert.match(serviceWorker, /"\/src\/life-suite\.css"/);
   assert.match(workflow, /node --check src\/life-suite\.js/);
