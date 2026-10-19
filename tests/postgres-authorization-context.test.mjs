@@ -85,3 +85,72 @@ test("does not query care assignments for client roles and propagates storage fa
     /database unavailable/
   );
 });
+
+
+test("maps each supported consent scope conservatively and ignores unknown or duplicate rows", async () => {
+  const pool = fakePool([
+    { rows: [{ client_id: "client-1" }] },
+    { rows: [
+      { scope: "care_plan" },
+      { scope: "care_note" },
+      { scope: "care_task" },
+      { scope: "care_report" },
+      { scope: "care_document" },
+      { scope: "medication_overview" },
+      { scope: "care_message" },
+      { scope: "roster" },
+      { scope: "team" },
+      { scope: "care_document" },
+      { scope: "unknown_admin_scope" },
+      { scope: null },
+    ] },
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+  const context = await loader({ id: "guardian-1", role: "guardian", active: true }, {});
+  assert.deepEqual(context.grantedScopes, [
+    "care", "careDocuments", "medication", "careMessages", "roster", "careTeam"
+  ]);
+  assert.equal(pool.calls.length, 2);
+});
+
+test("does not query consent without a resolved target and rejects malformed resolver results", async () => {
+  const pool = fakePool([{ rows: [{ client_id: "client-1" }] }]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => null,
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+  const context = await loader({ id: "caregiver-1", role: "caregiver", active: true }, {
+    body: { clientId: "untrusted-client" }
+  });
+  assert.equal(context.clientId, null);
+  assert.deepEqual(context.grantedScopes, []);
+  assert.equal(pool.calls.length, 1);
+
+  const malformedLoader = createPostgresAuthorizationContextLoader({
+    pool: fakePool(),
+    resolveTargetClientId: async () => "   ",
+  });
+  await assert.rejects(
+    malformedLoader({ id: "caregiver-1", role: "caregiver", active: true }, {}),
+    /target client resolver must return/
+  );
+});
+
+test("rejects invalid clock values rather than loading permissions with an invalid timestamp", async () => {
+  const pool = fakePool();
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("invalid"),
+  });
+  await assert.rejects(
+    loader({ id: "caregiver-1", role: "caregiver", active: true }, {}),
+    /now returned an invalid time/
+  );
+  assert.equal(pool.calls.length, 0);
+});
