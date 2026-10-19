@@ -51,3 +51,11 @@ test("unknown scopes and missing client assignments never fall through to allow"
   assert.equal(authorize({actor:caregiver,resource:"care-task",action:"read",clientId:"client-1",assignedClientIds:["client-1"],grantedScopes:[]}).allowed, false);
   assert.equal(authorize({actor:caregiver,resource:"care-task",action:"read",clientId:"client-1"}).allowed, false);
 });
+
+test("personal record ownership does not grant privileged manage actions", () => {
+  for (const resource of ["profile", "mood-report", "journal", "drawing", "appointment", "weekly-plan", "guide", "trusted-contact"]) {
+    assert.equal(authorize({actor:client,resource,action:"manage",clientId:"client-1"}).reason, "personal-record-manage-not-allowed", resource);
+  }
+  assert.equal(authorize({actor:client,resource:"mood-report",action:"create",clientId:"client-1"}).allowed, true);
+  assert.equal(authorize({actor:client,resource:"mood-report",action:"update",clientId:"client-1"}).allowed, true);
+});
