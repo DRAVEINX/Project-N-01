@@ -494,3 +494,40 @@ test("wildcard consent does not grant access to protected care records", async (
   assert.deepEqual(order, ["audit"]);
   assert.equal(calls.handler, 0, "wildcard permissions must never substitute for explicit consent");
 });
+
+test("caregiver, parent, and guardian are all denied when consent is missing", async (t) => {
+  for (const role of ["caregiver", "parent", "guardian"]) {
+    await t.test(role, async () => {
+      const { run, calls } = fixture({
+        authenticate: async () => ({ id: role + "-1", role, active: true }),
+        loadAuthorizationContext: async () => ({
+          clientId: "client-1",
+          assignedClientIds: ["client-1"],
+          grantedScopes: []
+        })
+      });
+      const response = await run({ requestId: "missing-consent-" + role });
+      assert.deepEqual(response, { status: 403, body: { error: "forbidden" } });
+      assert.equal(calls.handler, 0, "protected care handler must not run");
+      assert.equal(calls.audit.length, 1);
+      assert.equal(calls.audit[0].outcome, "deny");
+      assert.equal(calls.audit[0].reason, "scope-not-consented");
+    });
+  }
+});
+
+test("care-role access is denied when assignment exists but consent collection is malformed", async () => {
+  const { run, calls } = fixture({
+    loadAuthorizationContext: async () => ({
+      clientId: "client-1",
+      assignedClientIds: ["client-1"],
+      grantedScopes: { care: true }
+    })
+  });
+  assert.deepEqual(await run({ requestId: "malformed-consent" }), {
+    status: 403, body: { error: "forbidden" }
+  });
+  assert.equal(calls.handler, 0);
+  assert.equal(calls.audit[0].outcome, "deny");
+  assert.equal(calls.audit[0].reason, "scope-not-consented");
+});
