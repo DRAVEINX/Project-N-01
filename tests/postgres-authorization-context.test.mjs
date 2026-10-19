@@ -154,3 +154,50 @@ test("rejects invalid clock values rather than loading permissions with an inval
   );
   assert.equal(pool.calls.length, 0);
 });
+
+
+test("authorization SQL excludes future, expired, inactive, and revoked grants using one captured timestamp", async () => {
+  const pool = fakePool([
+    { rows: [{ client_id: "client-1" }] },
+    { rows: [{ scope: "care_document" }] },
+  ]);
+  let clockCalls = 0;
+  const fixedTime = new Date("2026-10-19T10:00:00.000Z");
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => {
+      clockCalls++;
+      return fixedTime;
+    },
+  });
+
+  const context = await loader(
+    { id: "caregiver-1", role: "caregiver", active: true },
+    { body: { clientId: "attacker-client", grantedScopes: ["*"] } }
+  );
+
+  assert.equal(clockCalls, 1);
+  assert.match(pool.calls[0].sql, /active = TRUE/);
+  assert.match(pool.calls[0].sql, /valid_from <= \$3/);
+  assert.match(pool.calls[0].sql, /valid_until IS NULL OR valid_until > \$3/);
+  assert.match(pool.calls[1].sql, /revoked_at IS NULL/);
+  assert.match(pool.calls[1].sql, /granted_at <= \$3/);
+  assert.match(pool.calls[1].sql, /expires_at IS NULL OR expires_at > \$3/);
+  assert.deepEqual(pool.calls[0].values, ["caregiver-1", "caregiver", fixedTime]);
+  assert.deepEqual(pool.calls[1].values, ["client-1", "caregiver-1", fixedTime]);
+  assert.deepEqual(context.grantedScopes, ["careDocuments"]);
+});
+
+test("non-caregiver roles never query assignments or consent even when a target is resolved", async () => {
+  const pool = fakePool();
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+  });
+  const context = await loader({ id: "staff-1", role: "staff", active: true }, {});
+  assert.equal(context.clientId, "client-1");
+  assert.deepEqual(context.assignedClientIds, []);
+  assert.deepEqual(context.grantedScopes, []);
+  assert.equal(pool.calls.length, 0);
+});
