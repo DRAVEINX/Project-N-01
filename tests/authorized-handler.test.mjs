@@ -118,3 +118,34 @@ test("request-supplied client and permission fields cannot replace trusted conte
   assert.equal(calls.handler, 1);
   assert.equal(calls.context, 1);
 });
+
+test("audit event is immutable, contains only safe metadata, and runs before handler", async () => {
+  const order = [];
+  let auditedEvent;
+  const { run, calls } = fixture({
+    audit: async (event) => {
+      order.push("audit");
+      auditedEvent = event;
+      assert.equal(Object.isFrozen(event), true);
+      assert.deepEqual(Object.keys(event).sort(), [
+        "action", "actorId", "clientId", "outcome", "reason", "requestId", "resource"
+      ]);
+      assert.equal("body" in event, false);
+      assert.equal("grantedScopes" in event, false);
+      assert.throws(() => { event.outcome = "allow"; }, TypeError);
+    },
+    handler: async (_request, context) => {
+      order.push("handler");
+      calls.handler++;
+      return { status: 200, body: { clientId: context.clientId } };
+    }
+  });
+  const result = await run({
+    requestId: "safe-request-id",
+    body: { note: "private care note", role: "admin", grantedScopes: ["*"] }
+  });
+  assert.deepEqual(result, { status: 200, body: { clientId: "client-1" } });
+  assert.deepEqual(order, ["audit", "handler"]);
+  assert.equal(auditedEvent.requestId, "safe-request-id");
+  assert.equal(JSON.stringify(auditedEvent).includes("private care note"), false);
+});
