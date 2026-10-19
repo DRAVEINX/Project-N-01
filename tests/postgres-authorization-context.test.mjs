@@ -223,9 +223,9 @@ test("parent role loads its own active assignments and current consent", async (
 });
 
 
-test("assignment query requires valid_from and rejects null or future start times", async () => {
+test("assignment query applies valid_from predicate using a bound timestamp", async () => {
   const pool = fakePool([
-    { rows: [{ client_id: "client-null-start" }, { client_id: "client-future-start" }] },
+    { rows: [{ client_id: "client-1" }] },
     { rows: [{ scope: "care_document" }] },
   ]);
   const loader = createPostgresAuthorizationContextLoader({
