@@ -78,7 +78,36 @@ export function createCareApiClient({ baseUrl, getAccessToken, fetchImpl = globa
     return payload;
   }
 
+  async function login(email, password) {
+    if (typeof email !== "string" || email.length > 320 ||
+        typeof password !== "string" || password.length < 1 || password.length > 1024) {
+      throw new TypeError("valid email and password are required");
+    }
+    const response = await fetchImpl(`${base}/api/auth/login`, {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      credentials: "omit",
+      cache: "no-store",
+      redirect: "error",
+      referrerPolicy: "no-referrer",
+    });
+    let payload = null;
+    try { payload = await response.json(); } catch { /* generic error below */ }
+    if (!response.ok) {
+      const error = new Error(typeof payload?.error === "string" ? payload.error : "authentication-failed");
+      error.status = response.status;
+      error.code = typeof payload?.error === "string" ? payload.error : "authentication-failed";
+      throw error;
+    }
+    return payload;
+  }
+
   return Object.freeze({
+    login,
+    logout() {
+      return request("/api/auth/logout", { method: "POST" });
+    },
     list(clientId, resource, { limit } = {}) {
       const client = validId(clientId, "client ID");
       if (!ALLOWED_RESOURCES.has(resource)) throw new TypeError("resource is not allow-listed");
