@@ -58,6 +58,15 @@ test("creates opaque bearer token but persists only its SHA-256 digest", async (
   assert.equal(JSON.stringify(calls.put[0]).includes(session.token), false);
 });
 
+test("rejects actor IDs with surrounding whitespace before repository access", async () => {
+  const { manager, calls } = setup();
+  await assert.rejects(() => manager.create(" client-1 "), /surrounding whitespace/);
+  await assert.rejects(() => manager.create("client-1 "), /surrounding whitespace/);
+  await assert.rejects(() => manager.create(" client-1"), /surrounding whitespace/);
+  assert.equal(calls.actor.length, 0);
+  assert.equal(calls.put.length, 0);
+});
+
 test("authenticates an active actor and returns only minimal identity", async () => {
   const { manager } = setup();
   const session = await manager.create("client-1");
