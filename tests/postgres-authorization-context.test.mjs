@@ -450,3 +450,23 @@ test("real authorization context denies consent when the selected client is not 
     new Date("2026-10-19T10:00:00.000Z"),
   ]);
 });
+
+
+test("consent storage outage fails closed after assignment lookup", async () => {
+  const pool = fakePool([
+    { rows: [{ client_id: "client-1" }] },
+    new Error("consent database unavailable"),
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+
+  await assert.rejects(
+    loader({ id: "caregiver-consent-outage", role: "caregiver", active: true }, {}),
+    /consent database unavailable/
+  );
+  assert.equal(pool.calls.length, 2);
+  assert.match(pool.calls[1].sql, /revoked_at IS NULL/);
+});
