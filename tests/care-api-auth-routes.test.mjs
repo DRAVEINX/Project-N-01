@@ -66,7 +66,19 @@ test("login rejects arrays, missing fields, and oversized credentials before que
     assert.equal(response.status, 400, "invalid login body should be rejected");
     assert.deepEqual(response.body, { error: "invalid-login-request" });
   }
-  assert.equal(deps.pool.calls.length, 0, "invalid login bodies must not query account storage");
+  const oversizedExtraField = {
+    email: "person@example.test",
+    password: "example-password",
+    ignored: "x".repeat(65 * 1024),
+  };
+  const oversizedResponse = await router.handle({
+    method: "POST",
+    url: "/api/auth/login",
+    body: oversizedExtraField,
+  });
+  assert.equal(oversizedResponse.status, 400);
+  assert.deepEqual(oversizedResponse.body, { error: "invalid-login-request" });
+  assert.equal(deps.pool.calls.length, 0, "oversized login bodies must not query account storage");
 });
 
 test("logout requires a bearer token and rejects unsupported methods", async () => {
