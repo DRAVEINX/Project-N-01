@@ -67,7 +67,7 @@ test("voice notes can be recorded, played and explicitly downloaded without app 
   assert.match(html, /id="download-voice-note"/);
   assert.match(html, /id="voice-note-playback"/);
   assert.match(js, /navigator\.mediaDevices\?\.getUserMedia/);
-  assert.match(js, /new MediaRecorder\(voiceStream\)/);
+  assert.match(js, /new MediaRecorder\(stream(?:, \{mimeType\})?\)/);
   assert.match(js, /voiceNotePlayback\.src = voiceObjectUrl/);
   assert.match(js, /link\.download = "spraaknotitie\."/);
   assert.match(js, /voiceNoteIntro:"[^"]*not automatically saved or uploaded/);
@@ -121,7 +121,7 @@ test("notes explicitly warn that the prototype does not save them", () => {
 const manifest = await readFile(new URL("../manifest.webmanifest", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 test("service worker cache version is bumped when shipping updated app assets", () => {
-  assert.match(serviceWorker, /project-n-01-prototype-v16/);
+  assert.match(serviceWorker, /project-n-01-prototype-v17/);
   assert.doesNotMatch(serviceWorker, /project-n-01-prototype-v9/);
 });
 
@@ -791,7 +791,7 @@ test("voice recording permission failures release the microphone and restore con
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
   const handler = app.slice(start, end);
-  assert.match(handler, /catch \{[\s\S]*?releaseVoiceStream\(\);[\s\S]*?voiceNoteStart\.disabled = false;[\s\S]*?voiceNoteStop\.disabled = true;[\s\S]*?recordingPermissionError/);
+  assert.match(handler, /catch \(error\) \{[\s\S]*?releaseVoiceStream\(\);[\s\S]*?voiceNoteStart\.disabled = false;[\s\S]*?voiceNoteStop\.disabled = true;[\s\S]*?recordingPermissionError/);
   assert.match(app, /function releaseVoiceStream\(\) \{\s*if \(voiceStream\) voiceStream\.getTracks\(\)\.forEach\(track => track\.stop\(\)\);\s*voiceStream = null;/);
 });
 
@@ -802,7 +802,7 @@ test("voice recorder runtime errors stop microphone tracks and restore recording
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
   const handler = app.slice(start, end);
-  assert.match(handler, /voiceRecorder\.addEventListener\("error", \(\) => \{[\s\S]*?recordingError[\s\S]*?voiceNoteStart\.disabled = false;[\s\S]*?voiceNoteStop\.disabled = true;[\s\S]*?releaseVoiceStream\(\)/);
+  assert.match(handler, /recorder\.addEventListener\("error", \(\) => \{[\s\S]*?recordingError[\s\S]*?voiceNoteStart\.disabled = false;[\s\S]*?voiceNoteStop\.disabled = true;[\s\S]*?releaseVoiceStream\(\)/);
   assert.match(app, /function releaseVoiceStream\(\) \{\s*if \(voiceStream\) voiceStream\.getTracks\(\)\.forEach\(track => track\.stop\(\)\);\s*voiceStream = null;/);
 });
 
