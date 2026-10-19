@@ -297,3 +297,36 @@ test("admin support grants never bypass personal-record ownership rules", () => 
     );
   }
 });
+
+test("parent and guardian roles require explicit assignment and consent just like caregivers", () => {
+  for (const role of ["parent", "guardian"]) {
+    const actor = { id: `${role}-1`, role, active: true };
+    const base = {
+      actor,
+      resource: "care-plan",
+      action: "read",
+      clientId: "client-1"
+    };
+
+    assert.equal(
+      authorize({ ...base, assignedClientIds: ["client-1"], grantedScopes: ["care"] }).allowed,
+      true,
+      `${role} with assignment and consent should be allowed scoped access`
+    );
+    assert.equal(
+      authorize({ ...base, assignedClientIds: [], grantedScopes: ["care"] }).reason,
+      "client-not-assigned",
+      `${role} without an assignment must be denied`
+    );
+    assert.equal(
+      authorize({ ...base, assignedClientIds: ["client-1"], grantedScopes: [] }).reason,
+      "scope-not-consented",
+      `${role} without consent must be denied`
+    );
+    assert.equal(
+      authorize({ ...base, assignedClientIds: ["client-1"], grantedScopes: ["care"], actor: { ...actor, active: false } }).reason,
+      "inactive-account",
+      `${role} with an inactive account must be denied`
+    );
+  }
+});
