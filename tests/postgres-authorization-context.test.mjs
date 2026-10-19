@@ -43,7 +43,7 @@ test("loads current assignments and consent from PostgreSQL, never from request 
     { body: { clientId: "attacker-chosen", grantedScopes: ["*"] } }
   );
   assert.equal(context.clientId, "client-1");
-  assert.deepEqual(context.assignedClientIds, ["client-1", "client-2"]);
+  assert.deepEqual(context.assignedClientIds, ["client-1", "client-2"], "padded and duplicate database IDs must not become assignment grants");
   assert.deepEqual(context.grantedScopes, ["care", "medication", "careTeam"]);
   assert.deepEqual(pool.calls[0].values, ["staff-1", "caregiver", new Date("2026-10-19T10:00:00.000Z")]);
   assert.deepEqual(pool.calls[1].values, ["client-1", "staff-1", new Date("2026-10-19T10:00:00.000Z")]);
@@ -253,6 +253,8 @@ test("assignment loader ignores malformed client IDs returned by the database", 
       { client_id: null },
       { client_id: 42 },
       {},
+      { client_id: "client-2" },
+      { client_id: " client-3 " },
       { client_id: "client-2" },
     ] },
     { rows: [{ scope: "care_document" }] },
