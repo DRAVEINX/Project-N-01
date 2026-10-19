@@ -1,0 +1,54 @@
+name: NovaLife PostgreSQL integration
+
+on:
+  push:
+    branches:
+      - "feature/**"
+  pull_request:
+    branches:
+      - "feature/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: novalife-postgres-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-integration:
+    name: PostgreSQL 16 migration and repository integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: novalife-ci-only
+          POSTGRES_DB: novalife_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d novalife_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgres://postgres:novalife-ci-only@localhost:5432/novalife_test
+      PGPASSWORD: novalife-ci-only
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install project dependencies
+        run: npm install
+      - name: Install PostgreSQL client library for CI integration test
+        run: npm install --no-save --package-lock=false pg@8
+      - name: Apply schema migration to disposable PostgreSQL
+        run: psql -h localhost -U postgres -d novalife_test -v ON_ERROR_STOP=1 -f migrations/0001_novalife_core.sql
+      - name: Run real PostgreSQL repository integration test
+        run: node --test tests/postgres-integration.test.mjs
