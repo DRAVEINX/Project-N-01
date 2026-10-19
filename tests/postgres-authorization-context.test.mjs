@@ -43,7 +43,7 @@ test("loads current assignments and consent from PostgreSQL, never from request 
   );
   assert.equal(context.clientId, "client-1");
   assert.deepEqual(context.assignedClientIds, ["client-1", "client-2"]);
-  assert.deepEqual(context.grantedScopes, ["care", "careTeam", "medication"]);
+  assert.deepEqual(context.grantedScopes, ["care", "medication", "careTeam"]);
   assert.deepEqual(pool.calls[0].values, ["staff-1", "caregiver", new Date("2026-10-19T10:00:00.000Z")]);
   assert.deepEqual(pool.calls[1].values, ["client-1", "staff-1", new Date("2026-10-19T10:00:00.000Z")]);
   assert.doesNotMatch(pool.calls[0].sql, /attacker-chosen/);
