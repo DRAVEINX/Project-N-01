@@ -5,7 +5,7 @@
  * reviewed authentication service. This repository never accepts role/active
  * values from request data and never returns password hashes from loadActor.
  */
-const ALLOWED_ROLES = new Set(["client", "caregiver", "guardian", "developer_admin"]);
+const ALLOWED_ROLES = new Set(["client", "caregiver", "parent", "guardian", "developer_admin"]);
 
 function normalizeEmail(email) {
   if (typeof email !== "string") return null;

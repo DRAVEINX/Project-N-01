@@ -66,6 +66,21 @@ test("creates an account with normalized email and parameterized SQL", async () 
   assert.match(pool.calls[0].sql, /INSERT INTO novalife_accounts/);
 });
 
+test("accepts parent as a supported trusted account role", async () => {
+  const pool = fakePool({ rows: [{ id: "parent-1", role: "parent", active: true }] });
+  const repo = createPostgresAccountRepository({ pool });
+  assert.deepEqual(await repo.createAccount({
+    id: "parent-1",
+    email: "parent@example.org",
+    passwordHash: "argon2id$reviewed-test-hash-value",
+    role: "parent"
+  }), { id: "parent-1", role: "parent", active: true });
+  assert.deepEqual(pool.calls[0].values, [
+    "parent-1", "parent@example.org", "argon2id$reviewed-test-hash-value", "parent"
+  ]);
+  assert.deepEqual(await repo.loadActor("parent-1"), { id: "parent-1", role: "parent", active: true });
+});
+
 test("rejects plaintext-like short passwords and invalid roles before database access", async () => {
   const pool = fakePool();
   const repo = createPostgresAccountRepository({ pool });
