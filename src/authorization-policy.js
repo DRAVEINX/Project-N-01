@@ -99,7 +99,7 @@ export function authorize(input = {}) {
     const grant = input.breakGlass;
     const now = Number.isFinite(input.now) ? input.now : Date.now();
     const expiry = grant && Date.parse(grant.expiresAt);
-    if (grant && grant.active === true &&
+    if (input.action === "read" && grant && grant.active === true &&
         typeof grant.reason === "string" && grant.reason.trim().length >= 20 &&
         typeof grant.auditId === "string" && grant.auditId.trim() &&
         Number.isFinite(expiry) && expiry > now) {
