@@ -481,3 +481,37 @@ test("only provisioned developer admins may access admin users and audit logs", 
   assert.equal(authorize({ actor: admin, resource: "admin-users", action: "read" }).allowed, true);
   assert.equal(authorize({ actor: admin, resource: "audit-log", action: "read" }).allowed, true);
 });
+
+test("wildcard consent never substitutes for each care resource's explicit scope", () => {
+  const cases = [
+    ["care-plan", "care"],
+    ["care-note", "care"],
+    ["care-task", "care"],
+    ["care-report", "care"],
+    ["care-document", "careDocuments"],
+    ["medication-overview", "medication"],
+    ["care-message", "careMessages"],
+    ["care-roster", "roster"],
+    ["care-team", "careTeam"],
+    ["care-consent-record", "careConsents"]
+  ];
+
+  for (const role of ["caregiver", "parent", "guardian"]) {
+    const actor = { id: role + "-wildcard", role, active: true };
+    for (const [resource, requiredScope] of cases) {
+      assert.notEqual(requiredScope, "*");
+      assert.equal(
+        authorize({
+          actor,
+          resource,
+          action: "read",
+          clientId: "client-1",
+          assignedClientIds: ["client-1"],
+          grantedScopes: ["*"]
+        }).reason,
+        "scope-not-consented",
+        role + " wildcard consent must not authorize " + resource
+      );
+    }
+  }
+});
