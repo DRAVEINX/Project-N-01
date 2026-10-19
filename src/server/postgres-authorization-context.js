@@ -50,7 +50,7 @@ export function createPostgresAuthorizationContextLoader({
     if (!Number.isFinite(time.getTime())) throw new TypeError("now returned an invalid time");
 
     let assignedClientIds = [];
-    if (actor.role === "caregiver" || actor.role === "guardian") {
+    if (actor.role === "caregiver" || actor.role === "parent" || actor.role === "guardian") {
       const assignments = await pool.query(
         `SELECT client_id
            FROM novalife_client_assignments
@@ -67,7 +67,7 @@ export function createPostgresAuthorizationContextLoader({
     }
 
     let grantedScopes = [];
-    if (target !== null && (actor.role === "caregiver" || actor.role === "guardian")) {
+    if (target !== null && (actor.role === "caregiver" || actor.role === "parent" || actor.role === "guardian")) {
       const consents = await pool.query(
         `SELECT scope
            FROM novalife_consent_grants

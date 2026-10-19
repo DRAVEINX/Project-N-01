@@ -201,3 +201,23 @@ test("non-caregiver roles never query assignments or consent even when a target 
   assert.deepEqual(context.grantedScopes, []);
   assert.equal(pool.calls.length, 0);
 });
+
+
+test("parent role loads its own active assignments and current consent", async () => {
+  const pool = fakePool([
+    { rows: [{ client_id: "client-1" }] },
+    { rows: [{ scope: "care_plan" }, { scope: "care_note" }, { scope: "care_task" }, { scope: "care_report" }] },
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+  const context = await loader({ id: "parent-1", role: "parent", active: true }, {});
+
+  assert.equal(pool.calls.length, 2);
+  assert.deepEqual(pool.calls[0].values, ["parent-1", "parent", new Date("2026-10-19T10:00:00.000Z")]);
+  assert.deepEqual(pool.calls[1].values, ["client-1", "parent-1", new Date("2026-10-19T10:00:00.000Z")]);
+  assert.deepEqual(context.assignedClientIds, ["client-1"]);
+  assert.deepEqual(context.grantedScopes, ["care"]);
+});
