@@ -62,3 +62,38 @@ test("client sends mutations as JSON and surfaces server authorization errors", 
   assert.deepEqual(JSON.parse(calls[0].options.body), { text: "test" });
   await assert.rejects(api.update("client-1", "care-note", "note-1", { text: "updated" }), (error) => error.status === 403 && error.code === "forbidden");
 });
+
+
+test("login sends credentials without requiring an existing token and uses safe fetch defaults", async () => {
+  let observed;
+  const api = createCareApiClient({
+    baseUrl: "https://api.example.test",
+    getAccessToken: () => null,
+    fetchImpl: async (url, options) => {
+      observed = { url, options };
+      return response(200, { accessToken: "short-lived-token", actor: { id: "client-1", role: "client" } });
+    },
+  });
+  const result = await api.login("client@example.test", "long-test-password");
+  assert.equal(result.actor.role, "client");
+  assert.equal(observed.url, "https://api.example.test/api/auth/login");
+  assert.equal(observed.options.credentials, "omit");
+  assert.equal(observed.options.cache, "no-store");
+  assert.equal(observed.options.redirect, "error");
+  assert.equal(observed.options.referrerPolicy, "no-referrer");
+  assert.deepEqual(JSON.parse(observed.options.body), { email: "client@example.test", password: "long-test-password" });
+  assert.equal("authorization" in observed.options.headers, false);
+});
+
+test("login validates input locally and surfaces generic authentication failures", async () => {
+  let calls = 0;
+  const api = createCareApiClient({
+    baseUrl: "https://api.example.test",
+    getAccessToken: () => null,
+    fetchImpl: async () => { calls += 1; return response(401, { error: "invalid-credentials" }); },
+  });
+  await assert.rejects(api.login("", "password"), /valid email and password/);
+  assert.equal(calls, 0);
+  await assert.rejects(api.login("missing@example.test", "password"), (error) => error.status === 401 && error.code === "invalid-credentials");
+  assert.equal(calls, 1);
+});
