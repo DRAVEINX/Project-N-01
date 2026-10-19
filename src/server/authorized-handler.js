@@ -1,6 +1,8 @@
 import { authorize } from "../authorization-policy.js";
 import { SessionResolutionUnavailableError } from "./session-authenticator.js";
 
+const SAFE_REQUEST_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+
 /**
  * Creates a fail-closed authorization gate for server handlers.
  *
@@ -71,7 +73,9 @@ export function createAuthorizedHandler({
       action,
       outcome: decision.allowed ? "allow" : "deny",
       reason: decision.reason,
-      requestId: typeof request?.requestId === "string" ? request.requestId : null
+      requestId: typeof request?.requestId === "string" && SAFE_REQUEST_ID.test(request.requestId)
+        ? request.requestId
+        : null
     });
 
     try {
