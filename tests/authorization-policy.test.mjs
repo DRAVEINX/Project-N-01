@@ -272,3 +272,28 @@ test("every care resource requires its exact consent scope and an active assignm
     );
   }
 });
+
+test("admin support grants never bypass personal-record ownership rules", () => {
+  const breakGlass = {
+    active: true,
+    reason: "Support issue confirmed by service owner",
+    auditId: "audit-personal-123",
+    expiresAt: "2026-10-19T08:15:00Z"
+  };
+  const now = Date.parse("2026-10-19T08:00:00Z");
+
+  for (const resource of ["profile", "mood-report", "journal", "drawing", "appointment", "weekly-plan", "guide", "trusted-contact"]) {
+    assert.equal(
+      authorize({
+        actor: admin,
+        resource,
+        action: "read",
+        clientId: "client-1",
+        breakGlass,
+        now
+      }).reason,
+      "personal-record-owner-only",
+      `support grant must not bypass ownership for ${resource}`
+    );
+  }
+});
