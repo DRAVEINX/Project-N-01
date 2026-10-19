@@ -5,7 +5,7 @@ function validIdSegment(value) {
     value.length > 0 &&
     value.length <= 200 &&
     value.trim() === value &&
-    !/[\\/\\\\?#]/.test(value);
+    !/[\\u0000-\\u001F\\u007F\\/\\\\?#]/.test(value);
 }
 
 /**
