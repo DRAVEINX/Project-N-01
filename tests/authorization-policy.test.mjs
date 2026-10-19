@@ -160,3 +160,32 @@ test("caregiver cannot create, update, delete or manage personal records", () =>
     }
   }
 });
+
+
+test("revoked caregiver assignment or consent and inactive caregiver deny care access", () => {
+  const request = {
+    actor: caregiver,
+    resource: "care-plan",
+    action: "read",
+    clientId: "client-1",
+    assignedClientIds: ["client-1"],
+    grantedScopes: ["care"]
+  };
+
+  assert.equal(authorize(request).allowed, true, "active assignment and consent permit scoped access");
+  assert.equal(
+    authorize({ ...request, assignedClientIds: [] }).reason,
+    "client-not-assigned",
+    "revoked assignment must immediately deny access"
+  );
+  assert.equal(
+    authorize({ ...request, grantedScopes: [] }).reason,
+    "scope-not-consented",
+    "withdrawn consent must immediately deny access"
+  );
+  assert.equal(
+    authorize({ ...request, actor: { ...caregiver, active: false } }).reason,
+    "inactive-account",
+    "inactive caregiver accounts must not retain access"
+  );
+});
