@@ -15,7 +15,7 @@ const CORE_CARE_SCOPES = Object.freeze([
 ]);
 
 function validActor(actor) {
-  return actor && typeof actor.id === "string" && actor.id.trim() &&
+  return actor && typeof actor.id === "string" && actor.id.trim() && actor.id === actor.id.trim() &&
     typeof actor.role === "string" && actor.active === true;
 }
 
