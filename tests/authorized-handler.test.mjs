@@ -149,3 +149,38 @@ test("audit event is immutable, contains only safe metadata, and runs before han
   assert.equal(auditedEvent.requestId, "safe-request-id");
   assert.equal(JSON.stringify(auditedEvent).includes("private care note"), false);
 });
+
+test("denied access is audited with safe metadata before returning forbidden", async () => {
+  const order = [];
+  let deniedEvent;
+  const { run, calls } = fixture({
+    loadAuthorizationContext: async () => ({
+      clientId: "client-2",
+      assignedClientIds: ["client-1"],
+      grantedScopes: []
+    }),
+    audit: async (event) => {
+      order.push("audit");
+      deniedEvent = event;
+      assert.equal(Object.isFrozen(event), true);
+      assert.equal(event.outcome, "deny");
+      assert.equal(event.reason, "client-not-assigned");
+      assert.equal("body" in event, false);
+    },
+    handler: async () => {
+      order.push("handler");
+      calls.handler++;
+      return { status: 200 };
+    }
+  });
+  const response = await run({
+    requestId: "denied-request",
+    body: { note: "private client information", clientId: "client-1" }
+  });
+  assert.deepEqual(response, { status: 403, body: { error: "forbidden" } });
+  assert.deepEqual(order, ["audit"]);
+  assert.equal(calls.handler, 0);
+  assert.equal(deniedEvent.clientId, "client-2");
+  assert.equal(deniedEvent.requestId, "denied-request");
+  assert.equal(JSON.stringify(deniedEvent).includes("private client information"), false);
+});
