@@ -141,3 +141,22 @@ test("caregiver assignment and consent do not grant direct personal-record acces
     );
   }
 });
+
+
+test("caregiver cannot create, update, delete or manage personal records", () => {
+  for (const resource of ["profile", "mood-report", "journal", "drawing", "appointment", "weekly-plan", "guide", "trusted-contact"]) {
+    for (const action of ["create", "update", "delete", "manage"]) {
+      assert.equal(
+        authorize({
+          actor: caregiver,
+          resource,
+          action,
+          clientId: "client-1",
+          ...assignment
+        }).allowed,
+        false,
+        `${action} ${resource}`
+      );
+    }
+  }
+});
