@@ -242,3 +242,32 @@ test("assignment query applies valid_from predicate using a bound timestamp", as
     new Date("2026-10-19T10:00:00.000Z")
   ]);
 });
+
+test("assignment loader ignores malformed client IDs returned by the database", async () => {
+  const pool = fakePool([
+    { rows: [
+      { client_id: "client-1" },
+      { client_id: "" },
+      { client_id: "   " },
+      { client_id: null },
+      { client_id: 42 },
+      {},
+      { client_id: "client-2" },
+    ] },
+    { rows: [{ scope: "care_document" }] },
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+
+  const context = await loader(
+    { id: "caregiver-1", role: "caregiver", active: true },
+    {}
+  );
+
+  assert.deepEqual(context.assignedClientIds, ["client-1", "   ", "client-2"]);
+  assert.equal(Object.isFrozen(context.assignedClientIds), true);
+});
+
