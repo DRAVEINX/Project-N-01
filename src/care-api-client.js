@@ -29,7 +29,7 @@ function normalizeBaseUrl(value) {
   if (url.protocol !== "https:" && !(url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname))) {
     throw new TypeError("care API requires HTTPS (HTTP is allowed only on loopback for local development)");
   }
-  return url.href.replace(/\\/$/, "");
+  return url.href.endsWith("/") ? url.href.slice(0, -1) : url.href;
 }
 
 /**
