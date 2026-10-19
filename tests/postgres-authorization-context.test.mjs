@@ -508,3 +508,40 @@ test("assignment storage outage fails closed without querying consent storage", 
   assert.equal(pool.calls.length, 1, "consent storage must not be queried after assignment lookup fails");
   assert.match(pool.calls[0].sql, /novalife_client_assignments/);
 });
+
+
+test("trusted target and database assignment IDs reject unsafe identifier segments", async (t) => {
+  for (const target of ["client-\\n1", "client-\\u0000x", "client/other", "client\\\\other", "client?x", "client#x", "x".repeat(201)]) {
+    await t.test(`reject target ${JSON.stringify(target)}`, async () => {
+      const pool = fakePool();
+      const loader = createPostgresAuthorizationContextLoader({
+        pool,
+        resolveTargetClientId: async () => target,
+      });
+      await assert.rejects(
+        loader({ id: "caregiver-1", role: "caregiver", active: true }, {}),
+        /target client resolver must return a valid ID segment or null/
+      );
+      assert.equal(pool.calls.length, 0);
+    });
+  }
+
+  const pool = fakePool([
+    { rows: [
+      { client_id: "client-1" },
+      { client_id: "client/other" },
+      { client_id: "client\\\\other" },
+      { client_id: "client?x" },
+      { client_id: "client#x" },
+      { client_id: "x".repeat(201) },
+    ] },
+    { rows: [{ scope: "care_document" }] },
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+  const context = await loader({ id: "caregiver-1", role: "caregiver", active: true }, {});
+  assert.deepEqual(context.assignedClientIds, ["client-1"]);
+});
