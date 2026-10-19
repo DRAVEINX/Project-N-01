@@ -196,3 +196,25 @@ test("revoked caregiver assignment or consent and inactive caregiver deny care a
     "inactive caregiver accounts must not retain access"
   );
 });
+
+test("admin assignment and consent inputs cannot replace an audited support grant", () => {
+  const request = {
+    actor: admin,
+    resource: "care-plan",
+    action: "read",
+    clientId: "client-1",
+    assignedClientIds: ["client-1"],
+    grantedScopes: ["care"]
+  };
+
+  assert.equal(
+    authorize(request).reason,
+    "admin-client-data-needs-audited-grant",
+    "admin must not inherit caregiver access from assignment and consent"
+  );
+  assert.equal(
+    authorize({ ...request, breakGlass: undefined }).allowed,
+    false,
+    "assignment and consent alone must never authorize admin client-data access"
+  );
+});
