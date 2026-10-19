@@ -119,7 +119,6 @@ test("Node adapter rejects invalid JSON and non-JSON content types", async () =>
   assert.equal(api.calls.length, 0);
 });
 
-
 test("Node adapter forwards secure login requests to the auth router", async () => {
   const api = router({ status: 200, body: { actor: { id: "account-1", role: "client" }, accessToken: "test-token" } });
   const res = response();
@@ -146,4 +145,31 @@ test("Node adapter applies the same origin policy to auth mutations", async () =
   }), res, api, { allowedOrigins: ["https://app.example"] });
   assert.equal(res.status, 403);
   assert.equal(api.calls.length, 0);
+});
+
+test("Node adapter rejects malformed or oversized Content-Length before reading body", async () => {
+  const api = router();
+  const cases = [
+    { contentLength: "not-a-number", expectedStatus: 413 },
+    { contentLength: "-1", expectedStatus: 413 },
+    { contentLength: "9", expectedStatus: 413, maxBodyBytes: 8 },
+  ];
+
+  for (const item of cases) {
+    const res = response();
+    await handleNodeCareApiRequest(request({
+      method: "POST",
+      headers: {
+        origin: "https://app.example",
+        "content-type": "application/json",
+        "content-length": item.contentLength,
+      },
+      chunks: ['{"x":1}'],
+    }), res, api, {
+      allowedOrigins: ["https://app.example"],
+      maxBodyBytes: item.maxBodyBytes ?? 64 * 1024,
+    });
+    assert.equal(res.status, item.expectedStatus);
+  }
+  assert.equal(api.calls.length, 0, "invalid Content-Length must not reach the router");
 });
