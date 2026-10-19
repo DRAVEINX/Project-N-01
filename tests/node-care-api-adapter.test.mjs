@@ -173,3 +173,22 @@ test("Node adapter rejects malformed or oversized Content-Length before reading 
   }
   assert.equal(api.calls.length, 0, "invalid Content-Length must not reach the router");
 });
+
+
+test("Node adapter hides unexpected router errors behind a no-store 503 response", async () => {
+  const api = {
+    calls: 0,
+    async handle() {
+      this.calls++;
+      throw new Error("sensitive database connection details");
+    },
+  };
+  const res = response();
+  await handleNodeCareApiRequest(request({ url: "/api/care/care-plan" }), res, api);
+
+  assert.equal(api.calls, 1);
+  assert.equal(res.status, 503);
+  assert.deepEqual(JSON.parse(res.body), { error: "care-data-unavailable" });
+  assert.equal(res.headers["cache-control"], "no-store");
+  assert.doesNotMatch(res.body, /sensitive database connection details/);
+});
