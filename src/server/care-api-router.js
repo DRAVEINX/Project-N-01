@@ -157,6 +157,41 @@ export async function createNovaLifeCareApiRouter({
   return Object.freeze({
     async handle(request) {
       const method = String(request?.method ?? "GET").toUpperCase();
+      let requestUrl;
+      try { requestUrl = new URL(request?.url ?? request?.path ?? "/", "http://novalife.internal"); }
+      catch { return json(404, { error: "not-found" }); }
+
+      // Login/logout share the same reviewed PostgreSQL Argon2id session runtime
+      // as care-data routes. Account provisioning is deliberately not public.
+      if (requestUrl.pathname === "/api/auth/login") {
+        if (method !== "POST") return json(405, { error: "method-not-allowed" });
+        const body = request?.body;
+        if (!body || typeof body !== "object" || Array.isArray(body) ||
+            typeof body.email !== "string" || typeof body.password !== "string" ||
+            body.email.length > 320 || body.password.length > 1024) {
+          return json(400, { error: "invalid-login-request" });
+        }
+        try {
+          const result = await auth.login({ email: body.email, password: body.password });
+          return json(result.status, result.body);
+        } catch {
+          return json(503, { error: "authentication-unavailable" });
+        }
+      }
+      if (requestUrl.pathname === "/api/auth/logout") {
+        if (method !== "POST") return json(405, { error: "method-not-allowed" });
+        let token;
+        try { token = extractToken(request); }
+        catch { return json(401, { error: "unauthenticated" }); }
+        if (typeof token !== "string" || !token) return json(401, { error: "unauthenticated" });
+        try {
+          const revoked = await auth.revoke(token);
+          return revoked ? json(200, { loggedOut: true }) : json(401, { error: "unauthenticated" });
+        } catch {
+          return json(503, { error: "authentication-unavailable" });
+        }
+      }
+
       const route = parseRoute(request);
       if (!route) return json(404, { error: "not-found" });
       const action = METHODS[method];
