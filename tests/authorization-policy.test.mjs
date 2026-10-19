@@ -450,3 +450,34 @@ test("care roles cannot access another client\u0027s care resources with consent
     }
   }
 });
+
+
+test("only provisioned developer admins may access admin users and audit logs", () => {
+  const adminResources = ["admin-users", "audit-log"];
+  const actors = [
+    client,
+    caregiver,
+    { id: "parent-admin-boundary", role: "parent", active: true },
+    { id: "guardian-admin-boundary", role: "guardian", active: true },
+    { id: "unprovisioned-admin", role: "developer_admin", active: true, provisioned: false },
+    { id: "legacy-admin", role: "admin", active: true }
+  ];
+
+  for (const actor of actors) {
+    for (const resource of adminResources) {
+      assert.equal(
+        authorize({ actor, resource, action: "read" }).allowed,
+        false,
+        actor.role + " must not read " + resource
+      );
+      assert.equal(
+        authorize({ actor, resource, action: "manage" }).allowed,
+        false,
+        actor.role + " must not manage " + resource
+      );
+    }
+  }
+
+  assert.equal(authorize({ actor: admin, resource: "admin-users", action: "read" }).allowed, true);
+  assert.equal(authorize({ actor: admin, resource: "audit-log", action: "read" }).allowed, true);
+});
