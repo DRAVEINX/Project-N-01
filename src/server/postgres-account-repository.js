@@ -29,7 +29,7 @@ export function createPostgresAccountRepository({ pool } = {}) {
 
   return Object.freeze({
     async loadActor(id) {
-      if (typeof id !== "string" || !id.trim()) return null;
+      if (typeof id !== "string" || !id.trim() || id !== id.trim() || id.length > 200) return null;
       const result = await pool.query(
         "SELECT id, role, active FROM novalife_accounts WHERE id = $1 LIMIT 1",
         [id]
