@@ -378,3 +378,41 @@ test("parent and guardian roles cannot mutate personal records", () => {
     }
   }
 });
+
+
+test("parent and guardian roles require the exact consent scope for every care resource", () => {
+  const cases = [
+    ["care-plan", "care"],
+    ["care-note", "care"],
+    ["care-task", "care"],
+    ["care-report", "care"],
+    ["care-document", "careDocuments"],
+    ["medication-overview", "medication"],
+    ["care-message", "careMessages"],
+    ["care-roster", "roster"],
+    ["care-team", "careTeam"],
+    ["care-consent-record", "careConsents"]
+  ];
+
+  for (const role of ["parent", "guardian"]) {
+    const actor = { id: role + "-1", role, active: true };
+    for (const [resource, requiredScope] of cases) {
+      const base = { actor, resource, action: "read", clientId: "client-1", assignedClientIds: ["client-1"] };
+      assert.equal(
+        authorize({ ...base, grantedScopes: [requiredScope] }).allowed,
+        true,
+        role + " with the exact scope should read " + resource
+      );
+      assert.equal(
+        authorize({ ...base, grantedScopes: [] }).reason,
+        "scope-not-consented",
+        role + " without consent must not read " + resource
+      );
+      assert.equal(
+        authorize({ ...base, assignedClientIds: [], grantedScopes: [requiredScope] }).reason,
+        "client-not-assigned",
+        role + " without assignment must not read " + resource
+      );
+    }
+  }
+});
