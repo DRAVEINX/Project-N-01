@@ -76,6 +76,29 @@ test("Node adapter parses bounded JSON and forwards authenticated request header
   assert.equal(res.headers["cache-control"], "no-store");
 });
 
+test("Node adapter rejects non-object JSON bodies before calling the router", async () => {
+  const api = router();
+  const cases = [
+    { chunks: ['"just a string"'] },
+    { chunks: ["42"] },
+    { chunks: ["true"] },
+    { chunks: ["null"] },
+    { chunks: ["[]"] },
+  ];
+
+  for (const item of cases) {
+    const res = response();
+    await handleNodeCareApiRequest(request({
+      method: "POST",
+      headers: { origin: "https://app.example", "content-type": "application/json" },
+      chunks: item.chunks,
+    }), res, api, { allowedOrigins: ["https://app.example"] });
+    assert.equal(res.status, 400);
+    assert.deepEqual(JSON.parse(res.body), { error: "invalid-request" });
+  }
+  assert.equal(api.calls.length, 0, "non-object JSON bodies must not reach the router");
+});
+
 test("Node adapter rejects invalid JSON and non-JSON content types", async () => {
   const api = router();
   const badJson = response();
