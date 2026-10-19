@@ -55,6 +55,7 @@ test("login rejects arrays, missing fields, and oversized credentials before que
     { email: "person@example.test", password: 42 },
     { email: "x".repeat(321), password: "example-password" },
     { email: "person@example.test", password: "x".repeat(1025) },
+    Object.assign(Object.create({ inherited: true }), { email: "person@example.test", password: "example-password" }),
   ];
 
   for (const body of invalidBodies) {
