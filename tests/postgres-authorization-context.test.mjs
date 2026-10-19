@@ -407,3 +407,46 @@ test("rejects whitespace-padded trusted actor IDs before querying PostgreSQL", a
   );
   assert.equal(pool.calls.length, 0);
 });
+
+
+test("real authorization context denies consent when the selected client is not assigned to the actor", async () => {
+  const pool = fakePool([
+    { rows: [{ client_id: "another-client" }] },
+    { rows: [
+      { scope: "care_plan" },
+      { scope: "care_note" },
+      { scope: "care_task" },
+      { scope: "care_report" },
+    ] },
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-not-assigned",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+  const actor = { id: "caregiver-1", role: "caregiver", active: true };
+  const context = await loader(actor, { params: { targetClientId: "client-not-assigned" } });
+
+  assert.deepEqual(context.assignedClientIds, ["another-client"]);
+  assert.deepEqual(context.grantedScopes, ["care"]);
+  const decision = authorize({
+    actor,
+    resource: "care-plan",
+    action: "read",
+    clientId: context.clientId,
+    assignedClientIds: context.assignedClientIds,
+    grantedScopes: context.grantedScopes,
+  });
+  assert.equal(decision.allowed, false);
+  assert.equal(decision.reason, "client-not-assigned");
+  assert.deepEqual(pool.calls[0].values, [
+    "caregiver-1",
+    "caregiver",
+    new Date("2026-10-19T10:00:00.000Z"),
+  ]);
+  assert.deepEqual(pool.calls[1].values, [
+    "client-not-assigned",
+    "caregiver-1",
+    new Date("2026-10-19T10:00:00.000Z"),
+  ]);
+});
