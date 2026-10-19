@@ -35,8 +35,8 @@ function normalizeBaseUrl(value) {
 /**
  * Minimal browser/Capacitor client for the authenticated care-data API.
  * Access tokens remain owned by the caller and are never persisted here.
- * This module does not implement login, account provisioning, or authorization;
- * the server remains responsible for identity, assignments, consent and roles.
+ * Login is delegated to the server; account provisioning and authorization remain
+ * server responsibilities for identity, assignments, consent and roles.
  */
 export function createCareApiClient({ baseUrl, getAccessToken, fetchImpl = globalThis.fetch } = {}) {
   const base = normalizeBaseUrl(baseUrl);
@@ -79,8 +79,8 @@ export function createCareApiClient({ baseUrl, getAccessToken, fetchImpl = globa
   }
 
   async function login(email, password) {
-    if (typeof email !== "string" || email.length > 320 ||
-        typeof password !== "string" || password.length < 1 || password.length > 1024) {
+    if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320 ||
+        typeof password !== "string" || !password.trim() || password.length > 1024) {
       throw new TypeError("valid email and password are required");
     }
     const response = await fetchImpl(`${base}/api/auth/login`, {
