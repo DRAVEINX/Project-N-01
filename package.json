@@ -14,7 +14,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@capacitor/core": "8.5.3"
+    "@capacitor/core": "8.5.3",
+    "argon2": "^0.44.0"
   },
   "devDependencies": {
     "@capacitor/android": "8.5.3",
