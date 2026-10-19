@@ -42,8 +42,8 @@ export function createPostgresAuthorizationContextLoader({
     if (!validActor(actor)) throw new TypeError("trusted active actor is required");
 
     const target = await resolveTargetClientId(actor, request);
-    if (target !== null && (typeof target !== "string" || !target.trim())) {
-      throw new TypeError("target client resolver must return a non-empty ID or null");
+    if (target !== null && (typeof target !== "string" || !target.trim() || target !== target.trim())) {
+      throw new TypeError("target client resolver must return a trimmed, non-empty ID or null");
     }
 
     const currentTime = now();
