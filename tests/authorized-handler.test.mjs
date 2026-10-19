@@ -381,3 +381,35 @@ test("audit actor and client identifiers reject control characters and oversized
     });
   }
 });
+
+
+test("authorization context loader cannot mutate trusted actor identity", async () => {
+  const sourceActor = { id: "caregiver-1", role: "caregiver", active: true };
+  let loaderActor;
+  let handlerActor;
+  const { run } = fixture({
+    authenticate: async () => sourceActor,
+    loadAuthorizationContext: async (actor) => {
+      loaderActor = actor;
+      assert.equal(Object.isFrozen(actor), true);
+      assert.throws(() => { actor.role = "admin"; }, TypeError);
+      assert.throws(() => { actor.id = "client-2"; }, TypeError);
+      return {
+        clientId: "client-1",
+        assignedClientIds: ["client-1"],
+        grantedScopes: ["care"]
+      };
+    },
+    handler: async (_request, context) => {
+      handlerActor = context.actor;
+      return { status: 200 };
+    }
+  });
+
+  assert.deepEqual(await run({}), { status: 200 });
+  assert.equal(handlerActor, loaderActor);
+  assert.equal(handlerActor.role, "caregiver");
+  assert.equal(handlerActor.id, "caregiver-1");
+  assert.equal(sourceActor.role, "caregiver");
+  assert.equal(sourceActor.id, "caregiver-1");
+});
