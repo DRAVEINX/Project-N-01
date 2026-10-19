@@ -71,6 +71,15 @@ if (root) {
       statusText("Dit account heeft geen toegang tot het zorgportaal.", true);
       return;
     }
+    if (clientRole) {
+      root.innerHTML = '<section class="panel care-portal-panel" aria-labelledby="care-portal-title"><h3 id="care-portal-title">Mijn persoonlijke ruimte</h3><p>Je bent ingelogd als cliënt/gebruiker. Begeleidersgegevens en zorgdossiers zijn niet zichtbaar in deze ruimte.</p><p>Je stemming kun je rapporteren via de functie <strong>Mijn gevoel</strong> in je persoonlijke module. De online stemmingskoppeling wordt pas ingeschakeld wanneer daarvoor een aparte, geteste API-route beschikbaar is.</p><button class="secondary-button" type="button" data-care-logout>Uitloggen</button><p class="inline-status" role="status" aria-live="polite" data-care-status></p></section>';
+      root.querySelector("[data-care-logout]")?.addEventListener("click", async () => {
+        setBusy(true);
+        try { await session?.logout(); } catch { /* Local session is cleared even if the server is unavailable. */ }
+        finally { session = null; setBusy(false); renderLogin("Je bent uitgelogd."); }
+      });
+      return;
+    }
     root.innerHTML = `
       <section class="panel care-portal-panel" aria-labelledby="care-portal-title">
         <div class="section-heading">
