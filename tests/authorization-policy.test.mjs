@@ -42,6 +42,13 @@ test("admin support access requires reason, audit ID and an unexpired grant", ()
   const valid = {active:true,reason:"Support issue confirmed by service owner",auditId:"audit-123",expiresAt:"2026-10-19T08:15:00Z"};
   const base = {actor:admin,resource:"care-plan",action:"read",clientId:"client-1",now};
   assert.equal(authorize({...base,breakGlass:valid}).reason, "admin-time-limited-audited-support-grant");
+  for (const action of ["create", "update", "delete", "manage"]) {
+    assert.equal(
+      authorize({ ...base, action, breakGlass: valid }).reason,
+      "admin-client-data-needs-audited-grant",
+      `support access must not permit ${action} on client records`
+    );
+  }
   assert.equal(authorize({...base,breakGlass:{...valid,reason:"help"}}).reason, "admin-client-data-needs-audited-grant");
   assert.equal(authorize({...base,breakGlass:{...valid,expiresAt:"2026-10-19T07:59:00Z"}}).reason, "admin-client-data-needs-audited-grant");
   assert.equal(authorize({...base,breakGlass:{...valid,auditId:""}}).reason, "admin-client-data-needs-audited-grant");
