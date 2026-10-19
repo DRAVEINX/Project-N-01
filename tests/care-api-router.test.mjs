@@ -119,3 +119,19 @@ test("malformed percent-encoding and encoded path delimiters are rejected", asyn
   }
   assert.equal(deps.pool.calls.length, 0, "malformed routes must not access PostgreSQL");
 });
+test("control characters in encoded route segments are rejected before authentication or database access", async () => {
+  const deps = dependencies();
+  const router = await createNovaLifeCareApiRouter(deps);
+  const unsafePaths = [
+    "/api/care/clients/client%00id/care-note",
+    "/api/care/clients/client%0Aid/care-note",
+    "/api/care/clients/client%7Fid/care-note",
+    "/api/care/clients/client-1/care%0Anote",
+    "/api/care/clients/client-1/care-note/note%00id",
+  ];
+
+  for (const url of unsafePaths) {
+    assert.equal((await router.handle({ method: "GET", url })).status, 404, url);
+  }
+  assert.equal(deps.pool.calls.length, 0, "control characters must be rejected before database access");
+});
