@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createPostgresAuthorizationContextLoader } from "../src/server/postgres-authorization-context.js";
+import { authorize } from "../src/authorization-policy.js";
 
 function fakePool(responses = []) {
   const calls = [];
@@ -285,13 +286,12 @@ test("maps the explicit care-consent record grant to the exact policy scope", as
   const context = await loader({ id: "caregiver-1", role: "caregiver", active: true }, {});
 
   assert.deepEqual(context.grantedScopes, ["careConsents"]);
-  assert.equal(
-    authorizeConsentRecord(context),
-    true,
-    "the database grant must produce the exact scope expected by the authorization policy"
-  );
+  assert.equal(authorize({
+    actor: { id: "caregiver-1", role: "caregiver", active: true },
+    resource: "care-consent-record",
+    action: "read",
+    clientId: context.clientId,
+    assignedClientIds: context.assignedClientIds,
+    grantedScopes: context.grantedScopes,
+  }).allowed, true, "database consent mapping must satisfy the exact policy scope");
 });
-
-function authorizeConsentRecord(context) {
-  return context.grantedScopes.includes("careConsents");
-}
