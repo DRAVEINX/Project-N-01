@@ -4,6 +4,14 @@ import { SessionResolutionUnavailableError } from "./session-authenticator.js";
 const SAFE_REQUEST_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const SAFE_AUDIT_IDENTIFIER = /^[^\u0000-\u001F\u007F]{1,256}$/;
 
+function validActorId(value) {
+  return typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 200 &&
+    value.trim() === value &&
+    !/[\u0000-\u001F\u007F/\\?#]/.test(value);
+}
+
 function safeAuditIdentifier(value) {
   return typeof value === "string" && value.trim().length > 0 &&
     SAFE_AUDIT_IDENTIFIER.test(value)
@@ -49,7 +57,7 @@ export function createAuthorizedHandler({
       }
       return { status: 401, body: { error: "unauthenticated" } };
     }
-    if (!actor || typeof actor.id !== "string" || !actor.id.trim() || actor.id !== actor.id.trim()) {
+    if (!actor || !validActorId(actor.id)) {
       return { status: 401, body: { error: "unauthenticated" } };
     }
     // Copy only fields consumed by the authorization policy. Do not expose
