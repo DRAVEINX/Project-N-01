@@ -190,6 +190,22 @@ test("authorization SQL excludes future, expired, inactive, and revoked grants u
   assert.deepEqual(context.grantedScopes, ["careDocuments"]);
 });
 
+test("trusted actor IDs containing embedded control characters fail closed before database access", async () => {
+  const pool = fakePool();
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+  });
+
+  for (const id of ["caregiver-\n1", "caregiver-\u0000x", "caregiver-\u007Fx"]) {
+    await assert.rejects(
+      loader({ id, role: "caregiver", active: true }, {}),
+      /trusted active actor is required/
+    );
+  }
+  assert.equal(pool.calls.length, 0);
+});
+
 test("non-caregiver roles never query assignments or consent even when a target is resolved", async () => {
   const pool = fakePool();
   const loader = createPostgresAuthorizationContextLoader({
@@ -254,6 +270,8 @@ test("assignment loader ignores malformed client IDs returned by the database", 
       { client_id: 42 },
       {},
       { client_id: "client-2" },
+      { client_id: "client-\n2" },
+      { client_id: "client-\u0000x" },
       { client_id: " client-3 " },
       { client_id: "client-2" },
     ] },
