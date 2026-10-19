@@ -49,7 +49,7 @@ export function createAuthorizedHandler({
       }
       return { status: 401, body: { error: "unauthenticated" } };
     }
-    if (!actor || typeof actor.id !== "string" || !actor.id.trim()) {
+    if (!actor || typeof actor.id !== "string" || !actor.id.trim() || actor.id !== actor.id.trim()) {
       return { status: 401, body: { error: "unauthenticated" } };
     }
     // Copy only fields consumed by the authorization policy. Do not expose
