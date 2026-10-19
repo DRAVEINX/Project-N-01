@@ -43,3 +43,47 @@ test("real PostgreSQL schema supports account and durable session lifecycle", { 
     await pool.end();
   }
 });
+
+import { createNovaLifePostgresAuth } from "../src/server/postgres-auth-runtime.js";
+
+test("composed Argon2id login stack works against real PostgreSQL", { skip: !databaseUrl }, async () => {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+  const actorId = randomUUID();
+  const email = `auth-integration-${actorId}@example.invalid`;
+  const auditEvents = [];
+  const auth = await createNovaLifePostgresAuth({
+    pool,
+    audit: async (event) => { auditEvents.push(event); },
+    ttlMs: 60_000,
+  });
+
+  try {
+    const passwordHash = await auth.hashPassword("test-only secure password");
+    const actor = await auth.accounts.createAccount({
+      id: actorId,
+      email,
+      passwordHash,
+      role: "client",
+    });
+    assert.deepEqual(actor, { id: actorId, role: "client", active: true });
+
+    const denied = await auth.login({ email, password: "wrong test password" });
+    assert.equal(denied.status, 401);
+    assert.deepEqual(denied.body, { error: "invalid-credentials" });
+
+    const accepted = await auth.login({ email: email.toUpperCase(), password: "test-only secure password" });
+    assert.equal(accepted.status, 200);
+    assert.deepEqual(accepted.body.actor, { id: actorId, role: "client" });
+    assert.deepEqual(await auth.authenticate(accepted.body.accessToken), {
+      actor: { id: actorId, role: "client" },
+    });
+    assert.equal(auditEvents.filter((event) => event.event === "login" && event.outcome === "allow").length, 1);
+    assert.equal(await auth.revoke(accepted.body.accessToken), true);
+    assert.equal(await auth.authenticate(accepted.body.accessToken), null);
+  } finally {
+    await pool.query("DELETE FROM novalife_sessions WHERE actor_id = $1", [actorId]).catch(() => {});
+    await pool.query("DELETE FROM novalife_accounts WHERE id = $1", [actorId]).catch(() => {});
+    await pool.end();
+  }
+});
