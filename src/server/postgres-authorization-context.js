@@ -14,12 +14,18 @@ const CORE_CARE_SCOPES = Object.freeze([
   "care_report",
 ]);
 
-function validActor(actor) {
-  return actor && typeof actor.id === "string" && actor.id.trim() && actor.id === actor.id.trim() &&
-    !/[\u0000-\u001F\u007F]/.test(actor.id) &&
-    typeof actor.role === "string" && actor.active === true;
+function validIdentifierSegment(value) {
+  return typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 200 &&
+    value.trim() === value &&
+    !/[\u0000-\u001F\u007F/\\?#]/.test(value);
 }
 
+function validActor(actor) {
+  return actor && validIdentifierSegment(actor.id) &&
+    typeof actor.role === "string" && actor.active === true;
+}
 /**
  * Build a server-side authorization-context loader using PostgreSQL.
  *
@@ -43,8 +49,8 @@ export function createPostgresAuthorizationContextLoader({
     if (!validActor(actor)) throw new TypeError("trusted active actor is required");
 
     const target = await resolveTargetClientId(actor, request);
-    if (target !== null && (typeof target !== "string" || !target.trim() || target !== target.trim())) {
-      throw new TypeError("target client resolver must return a trimmed, non-empty ID or null");
+    if (target !== null && !validIdentifierSegment(target)) {
+      throw new TypeError("target client resolver must return a valid ID segment or null");
     }
 
     const currentTime = now();
@@ -65,7 +71,7 @@ export function createPostgresAuthorizationContextLoader({
       );
       assignedClientIds = (assignments?.rows ?? [])
         .map((row) => row?.client_id)
-        .filter((id) => typeof id === "string" && id.length > 0 && id === id.trim() && !/[\u0000-\u001F\u007F]/.test(id))
+        .filter((id) => validIdentifierSegment(id))
         .filter((id, index, ids) => ids.indexOf(id) === index);
     }
 
