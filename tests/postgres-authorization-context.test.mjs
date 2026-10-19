@@ -393,3 +393,17 @@ test("rejects whitespace-padded target IDs before querying PostgreSQL", async ()
   );
   assert.equal(pool.calls.length, 0, "invalid target must fail before assignment or consent queries");
 });
+
+test("rejects whitespace-padded trusted actor IDs before querying PostgreSQL", async () => {
+  const pool = fakePool();
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+  });
+
+  await assert.rejects(
+    loader({ id: " caregiver-1 ", role: "caregiver", active: true }, {}),
+    /trusted active actor is required/
+  );
+  assert.equal(pool.calls.length, 0);
+});
