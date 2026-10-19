@@ -193,3 +193,10 @@ test("Windows desktop MSI and iOS archive pipelines are configured separately", 
   assert.match(iosWorkflow, /project-n-01-ios-unsigned-archive/);
   assert.equal(packageConfig.devDependencies["@capacitor/ios"], "8.5.3");
 });
+
+
+test("legacy records without a profile ID stay with the original personal profile", () => {
+  assert.match(js, /const ownerId = typeof item\.profileId === "string" && item\.profileId \? item\.profileId : "self"/);
+  assert.match(js, /const ownerId=\(item&&typeof item\.profileId === "string"&&item\.profileId\)\|\|"self"/);
+  assert.match(js, /return ownerId === state\.currentProfileId/);
+});
