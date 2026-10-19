@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createCareApiClient } from "../src/care-api-client.js";
+import { createCareApiClient, createCareApiSession } from "../src/care-api-client.js";
 
 function response(status = 200, body = { records: [] }) {
   return { status, ok: status >= 200 && status < 300, async json() { return body; } };
@@ -98,4 +98,68 @@ test("login validates input locally and surfaces generic authentication failures
   assert.equal(calls, 0);
   await assert.rejects(api.login("missing@example.test", "password"), (error) => error.status === 401 && error.code === "invalid-credentials");
   assert.equal(calls, 1);
+});
+
+
+test("session keeps the bearer token in memory, attaches it to requests, and clears on logout", async () => {
+  let now = 1_800_000_000_000;
+  const calls = [];
+  const session = createCareApiSession({
+    baseUrl: "https://api.example.test",
+    now: () => now,
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      if (url.endsWith("/api/auth/login")) {
+        return response(200, {
+          accessToken: "a".repeat(43),
+          tokenType: "Bearer",
+          expiresAt: now + 60_000,
+          actor: { id: "caregiver-1", role: "caregiver" },
+        });
+      }
+      if (url.endsWith("/api/auth/logout")) return response(200, { loggedOut: true });
+      return response(200, { records: [] });
+    },
+  });
+
+  assert.equal(session.isAuthenticated(), false);
+  const login = await session.login("caregiver@example.test", "test-password");
+  assert.deepEqual(login.actor, { id: "caregiver-1", role: "caregiver" });
+  assert.equal(session.isAuthenticated(), true);
+  assert.deepEqual(session.getActor(), { id: "caregiver-1", role: "caregiver" });
+
+  await session.api.list("client-1", "care-note");
+  assert.equal(calls[1].options.headers.authorization, `Bearer ${"a".repeat(43)}`);
+  assert.equal(calls[1].options.credentials, "omit");
+
+  await session.logout();
+  assert.equal(session.isAuthenticated(), false);
+  assert.equal(session.getActor(), null);
+  await assert.rejects(session.api.list("client-1", "care-note"), (error) => error.code === "authentication-required");
+});
+
+test("session expires in memory and rejects malformed successful login responses", async () => {
+  let now = 1_800_000_000_000;
+  const session = createCareApiSession({
+    baseUrl: "https://api.example.test",
+    now: () => now,
+    fetchImpl: async () => response(200, {
+      accessToken: "b".repeat(43),
+      tokenType: "Bearer",
+      expiresAt: now + 1000,
+      actor: { id: "client-1", role: "client" },
+    }),
+  });
+  await session.login("client@example.test", "test-password");
+  now += 1001;
+  assert.equal(session.isAuthenticated(), false);
+  assert.equal(session.getActor(), null);
+
+  const malformed = createCareApiSession({
+    baseUrl: "https://api.example.test",
+    now: () => now,
+    fetchImpl: async () => response(200, { actor: { id: "client-1", role: "client" } }),
+  });
+  await assert.rejects(malformed.login("client@example.test", "test-password"), /invalid-authentication-response/);
+  assert.equal(malformed.isAuthenticated(), false);
 });
