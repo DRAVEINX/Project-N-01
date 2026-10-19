@@ -346,3 +346,33 @@ test("every care portal data resource maps to the exact policy scope and remains
     });
   }
 });
+
+test("wildcard database grant cannot produce consent scopes or authorize care access", async (t) => {
+  for (const role of ["caregiver", "parent", "guardian"]) {
+    await t.test(role, async () => {
+      const pool = fakePool([
+        { rows: [{ client_id: "client-1" }] },
+        { rows: [{ scope: "*" }] },
+      ]);
+      const loader = createPostgresAuthorizationContextLoader({
+        pool,
+        resolveTargetClientId: async () => "client-1",
+        now: () => new Date("2026-10-19T10:00:00.000Z"),
+      });
+      const actor = { id: role + "-wildcard-db", role, active: true };
+      const context = await loader(actor, {});
+      assert.deepEqual(context.grantedScopes, []);
+
+      const decision = authorize({
+        actor,
+        resource: "care-plan",
+        action: "read",
+        clientId: context.clientId,
+        assignedClientIds: context.assignedClientIds,
+        grantedScopes: context.grantedScopes,
+      });
+      assert.equal(decision.allowed, false);
+      assert.equal(decision.reason, "scope-not-consented");
+    });
+  }
+});
