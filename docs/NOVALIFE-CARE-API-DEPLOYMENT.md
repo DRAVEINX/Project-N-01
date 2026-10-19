@@ -4,9 +4,11 @@ This document describes what must be supplied by a real hosting environment befo
 
 ## Current state
 
-- The framework-neutral care API router, PostgreSQL repositories, Argon2id login/session stack, authorization context loader and Node HTTP adapter are implemented as modules.
+- The framework-neutral care API router, PostgreSQL repositories, Argon2id login/session stack, authorization context loader, target resolver and Node HTTP adapter are implemented as modules.
+- `src/server/care-target-resolver.js` is a conservative resolver: client accounts can resolve only to their own account ID; care roles require a bounded target selector; legacy unscoped care routes and developer-admin targets resolve to null.
+- For caregiver/parent/guardian accounts, a route selector is only a selector, not permission. The authorization gate must still verify active assignment and unrevoked, unexpired consent from PostgreSQL on every request.
 - The browser portal is wired into `index.html`, but it remains disabled until `window.NOVALIFE_CONFIG.careApiBaseUrl` is set to a real HTTPS API origin.
-- No production API origin, database credentials, trusted target resolver, audit sink, account-provisioning workflow or hosting environment is configured by this repository.
+- No production API origin, database credentials, durable audit sink, account-provisioning workflow or hosting environment is configured by this repository.
 - Passing CI does not prove production hosting, account assignment, consent or real-device end-to-end behavior.
 
 ## Required host composition
@@ -16,7 +18,7 @@ The host must construct one long-lived PostgreSQL pool and one router using `cre
 1. **Private database connection:** credentials injected by the host's secret manager, TLS verification enabled where supported, connection/pool limits, and network access restricted to the API service.
 2. **Durable audit callbacks:** `authAudit` and `authorizationAudit` must persist allow/deny outcomes to access-controlled storage. They must never record passwords, bearer tokens, full health/care payloads or secrets. A failing audit write must fail closed.
 3. **Bearer-token extraction:** `extractToken` must accept only a well-formed `Authorization: Bearer <token>` header, reject duplicates/malformed headers, and never read tokens from URLs, cookies or request bodies.
-4. **Trusted target resolution:** `resolveTargetClientId(actor, request)` must resolve the target from trusted server-side relationships. For the `/api/care/clients/:clientId/...` route, treat the path client ID as an untrusted selector only. Verify that the authenticated actor is linked to that client in trusted account data; never trust IDs or roles from the body.
+4. **Trusted target resolution:** use `createCareTargetResolver` from `src/server/care-target-resolver.js` as a conservative starting point. It prevents client users from selecting another account and fails closed for unscoped routes. Do not weaken it to trust body fields. Care-role selectors must still be checked against database assignments and consent on every request.
 5. **Authorization and consent:** the authorization context must confirm the active, time-valid assignment and current, unrevoked consent for the requested data scope on every operation. Deny by default when assignment, consent, client identity or audit state is missing or ambiguous.
 6. **Secure HTTP boundary:** pass requests through `handleNodeCareApiRequest` only behind verified HTTPS. Configure exact allowed browser origins, keep `allowMissingOrigin` false for browser deployment, and validate any trusted-proxy/TLS callback against the actual hosting topology.
 7. **Abuse controls:** add rate limits for login and mutation routes, request/read timeouts, maximum header sizes, connection limits, security monitoring and a tested incident response process.
