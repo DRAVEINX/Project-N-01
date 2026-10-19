@@ -543,3 +543,20 @@ test("rejects whitespace-padded trusted actor IDs before loading authorization c
   assert.equal(calls.handler, 0);
   assert.equal(calls.audit.length, 0);
 });
+
+
+test("authenticated actor IDs with unsafe route characters fail before authorization lookup", async (t) => {
+  for (const id of ["caregiver/other", "caregiver\\\\other", "caregiver?x", "caregiver#x", "caregiver-\\n1", "x".repeat(201)]) {
+    await t.test(JSON.stringify(id), async () => {
+      const { run, calls } = fixture({
+        authenticate: async () => ({ id, role: "caregiver", active: true }),
+      });
+      assert.deepEqual(await run({}), {
+        status: 401, body: { error: "unauthenticated" }
+      });
+      assert.equal(calls.context, 0);
+      assert.equal(calls.handler, 0);
+      assert.equal(calls.audit.length, 0);
+    });
+  }
+});
