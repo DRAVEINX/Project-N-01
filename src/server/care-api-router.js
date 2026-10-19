@@ -20,21 +20,43 @@ function json(status, body) {
   });
 }
 
+function decodeSegment(value) {
+  try { return decodeURIComponent(value); }
+  catch { return null; }
+}
+
+function validSegment(value) {
+  return typeof value === "string" && value.length > 0 && value.length <= 200 && !value.includes("/");
+}
+
 function parseRoute(request) {
   let url;
   try { url = new URL(request?.url ?? request?.path ?? "/", "http://novalife.internal"); }
   catch { return null; }
   const parts = url.pathname.split("/").filter(Boolean);
   if (parts.length < 3 || parts[0] !== "api" || parts[1] !== "care") return null;
+
   let resource;
   let id;
-  try {
-    resource = decodeURIComponent(parts[2]);
-    if (parts.length > 3) id = decodeURIComponent(parts[3]);
-  } catch { return null; }
-  if (parts.length > 4 || !DATA_RESOURCES.has(resource) ||
-      (id !== undefined && (!id || id.length > 200 || id.includes("/")))) return null;
-  return { resource, id, query: url.searchParams };
+  let targetClientId = null;
+  if (parts[2] === "clients") {
+    // Client IDs are selectors only. The trusted resolver and authorization
+    // policy must still verify client identity, active assignment and consent.
+    if (parts.length < 5 || parts.length > 6) return null;
+    targetClientId = decodeSegment(parts[3]);
+    resource = decodeSegment(parts[4]);
+    if (!validSegment(targetClientId)) return null;
+    if (parts.length === 6) id = decodeSegment(parts[5]);
+  } else {
+    // Backwards-compatible resource path; deployments must resolve its target
+    // through trusted server-side relationships rather than request body data.
+    if (parts.length > 4) return null;
+    resource = decodeSegment(parts[2]);
+    if (parts.length === 4) id = decodeSegment(parts[3]);
+  }
+
+  if (!DATA_RESOURCES.has(resource) || (id !== undefined && !validSegment(id))) return null;
+  return { resource, id, targetClientId, query: url.searchParams };
 }
 
 function validateBody(request) {
@@ -55,9 +77,9 @@ function validateBody(request) {
  * Framework-neutral router for authenticated NovaLife care-data operations.
  * The hosting server must enforce TLS, request byte limits, timeouts, rate
  * limits, origin/CSRF policy and secure token transport. resolveTargetClientId
- * must use trusted server-side relationships, not a client-provided role or
- * consent claim. The authorization context separately checks active assignment
- * and current consent before any repository operation.
+ * may use params.targetClientId as an untrusted selector, but must validate
+ * the target against trusted account data. The authorization context separately
+ * checks active assignment and current consent before any repository operation.
  */
 export async function createNovaLifeCareApiRouter({
   pool, authAudit, authorizationAudit, extractToken, resolveTargetClientId, now, ttlMs,
@@ -148,7 +170,12 @@ export async function createNovaLifeCareApiRouter({
       const adapted = Object.freeze({
         ...request,
         query: route.query,
-        params: Object.freeze({ ...(request?.params ?? {}), resource: route.resource, recordId: route.id ?? null }),
+        params: Object.freeze({
+          ...(request?.params ?? {}),
+          resource: route.resource,
+          recordId: route.id ?? null,
+          targetClientId: route.targetClientId,
+        }),
       });
       try { return await protectedHandler(adapted); }
       catch {
