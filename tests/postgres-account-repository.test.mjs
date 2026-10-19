@@ -41,9 +41,10 @@ test("fails closed on missing rows, padded IDs, malformed IDs, and unknown roles
 
   const paddedPool = fakePool({ rows: [{ id: " a1 ", role: "client", active: true }] });
   const paddedRepo = createPostgresAccountRepository({ pool: paddedPool });
-  assert.equal(await paddedRepo.loadActor(" a1 "), null, "database IDs with surrounding whitespace are not trusted");
+  assert.equal(await paddedRepo.loadActor(" a1 "), null, "padded input IDs must be rejected before querying");
+  assert.equal(await paddedRepo.loadActor("a1 "), null, "trailing whitespace must be rejected before querying");
   assert.equal(await paddedRepo.findCredentialsByEmail("person@example.org"), null, "credentials with padded actor IDs are rejected");
-  assert.equal(paddedPool.calls.length, 2);
+  assert.equal(paddedPool.calls.length, 1, "only the credentials lookup should reach PostgreSQL");
 });
 
 test("finds credentials using normalized email and parameterized SQL", async () => {
