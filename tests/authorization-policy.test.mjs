@@ -113,3 +113,14 @@ test("admin support grant is denied at expiry and for malformed or inactive gran
     "admin-client-data-needs-audited-grant"
   );
 });
+
+
+test("caregiver role never gains personal-record access from matching clientId", () => {
+  for (const resource of ["profile", "mood-report", "journal", "drawing", "appointment", "weekly-plan", "guide", "trusted-contact"]) {
+    assert.equal(
+      authorize({ actor: caregiver, resource, action: "read", clientId: caregiver.id }).reason,
+      "personal-resource-role-not-allowed",
+      resource
+    );
+  }
+});
