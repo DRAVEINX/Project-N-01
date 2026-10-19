@@ -81,6 +81,9 @@ export function authorize(input = {}) {
 
   const scope = PERSONAL_SCOPES[input.resource];
   if (scope) {
+    // Personal records support normal CRUD, but "manage" is a privileged
+    // administrative action and must never be inferred from record ownership.
+    if (input.action === "manage") return deny("personal-record-manage-not-allowed");
     if (!isOwnRecord) return deny("personal-record-owner-only");
     return role === "client" || role === "self"
       ? allow("own-personal-record")
