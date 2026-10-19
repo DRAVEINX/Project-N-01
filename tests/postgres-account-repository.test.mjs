@@ -78,7 +78,7 @@ test("accepts parent as a supported trusted account role", async () => {
   assert.deepEqual(pool.calls[0].values, [
     "parent-1", "parent@example.org", "argon2id$reviewed-test-hash-value", "parent"
   ]);
-  assert.equal(await repo.loadActor("parent-1"), { id: "parent-1", role: "parent", active: true });
+  assert.deepEqual(await repo.loadActor("parent-1"), { id: "parent-1", role: "parent", active: true });
 });
 
 test("rejects plaintext-like short passwords and invalid roles before database access", async () => {
