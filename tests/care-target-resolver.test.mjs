@@ -49,3 +49,22 @@ test("inactive or unsupported actors fail closed", async () => {
   assert.equal(await resolve({ id: "a", role: "caregiver", active: false }, { params: { targetClientId: "c2" } }), null);
   assert.equal(await resolve({ id: "admin", role: "developer-admin", active: true }, { params: { targetClientId: "c2" } }), null);
 });
+
+test("care target and actor IDs reject ASCII control characters", async () => {
+  const resolve = createCareTargetResolver();
+  const actor = { id: "staff", role: "caregiver", active: true };
+  for (const targetClientId of ["c\\u0000 2", "c\\u000a2", "c\\u001f2", "c\\u007f2"]) {
+    assert.equal(
+      await resolve(actor, { params: { targetClientId } }),
+      null,
+      `expected control character in target ${JSON.stringify(targetClientId)} to be rejected`
+    );
+  }
+  for (const id of ["staff\\u0000", "staff\\u000a", "staff\\u007f"]) {
+    assert.equal(
+      await resolve({ id, role: "client", active: true }, { params: {} }),
+      null,
+      `expected control character in actor ID ${JSON.stringify(id)} to be rejected`
+    );
+  }
+});
