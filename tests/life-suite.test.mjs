@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/life-suite.js", import.meta.url), "utf8");
+const appJs = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/life-suite.css", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../service-worker.js", import.meta.url), "utf8");
 const workflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
@@ -52,6 +53,17 @@ test("weekly planner supports weekday schedules, saved completion and profile-sc
   assert.match(js, /week-plan-prev/);
   assert.match(js, /planAccess/);
   assert.match(js, /modifyScope/);
+});
+
+test("main voice-note recorder handles supported codecs, permission errors and empty recordings", () => {
+  assert.match(appJs, /MediaRecorder\.isTypeSupported/);
+  assert.match(appJs, /recordingPermissionError/);
+  assert.match(appJs, /recordingMissing/);
+  assert.match(appJs, /recordingBusy/);
+  assert.match(appJs, /recordingSecure/);
+  assert.match(appJs, /recordingNoAudio/);
+  assert.match(appJs, /const actualType = recorder\.mimeType/);
+  assert.match(appJs, /voiceNoteStart\.disabled = false/);
 });
 
 test("microphone recording selects a supported codec and reports permission/device errors clearly", () => {
