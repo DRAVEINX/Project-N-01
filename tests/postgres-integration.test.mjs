@@ -87,3 +87,65 @@ test("composed Argon2id login stack works against real PostgreSQL", { skip: !dat
     await pool.end();
   }
 });
+
+
+import { createNovaLifeAuthHttpHandler } from "../src/server/novalife-auth-http.js";
+
+test("composed PostgreSQL HTTP boundary supports login, current actor and logout", { skip: !databaseUrl }, async () => {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+  const actorId = randomUUID();
+  const email = `http-integration-${actorId}@example.invalid`;
+  const auditEvents = [];
+  const handler = await createNovaLifeAuthHttpHandler({
+    pool,
+    audit: async (event) => { auditEvents.push(event); },
+    rateLimit: async () => true,
+    ttlMs: 60_000,
+  });
+
+  try {
+    const { createNovaLifePostgresAuth: createAuth } = await import("../src/server/postgres-auth-runtime.js");
+    const auth = await createAuth({
+      pool,
+      audit: async () => {},
+      ttlMs: 60_000,
+    });
+    const passwordHash = await auth.hashPassword("HTTP integration-only password");
+    await auth.accounts.createAccount({
+      id: actorId,
+      email,
+      passwordHash,
+      role: "client",
+    });
+
+    const login = await handler(new Request("https://novalife.example/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, password: "HTTP integration-only password" }),
+    }));
+    assert.equal(login.status, 200);
+    const loginBody = await login.json();
+    assert.deepEqual(loginBody.actor, { id: actorId, role: "client" });
+    const authorization = { authorization: `Bearer ${loginBody.accessToken}` };
+
+    const me = await handler(new Request("https://novalife.example/auth/me", { headers: authorization }));
+    assert.equal(me.status, 200);
+    assert.deepEqual(await me.json(), { actor: { id: actorId, role: "client" } });
+
+    const logout = await handler(new Request("https://novalife.example/auth/logout", {
+      method: "POST",
+      headers: authorization,
+    }));
+    assert.equal(logout.status, 200);
+    assert.deepEqual(await logout.json(), { loggedOut: true });
+
+    const afterLogout = await handler(new Request("https://novalife.example/auth/me", { headers: authorization }));
+    assert.equal(afterLogout.status, 401);
+    assert.ok(auditEvents.some((event) => event.event === "login" && event.outcome === "allow"));
+  } finally {
+    await pool.query("DELETE FROM novalife_sessions WHERE actor_id = $1", [actorId]).catch(() => {});
+    await pool.query("DELETE FROM novalife_accounts WHERE id = $1", [actorId]).catch(() => {});
+    await pool.end();
+  }
+});
