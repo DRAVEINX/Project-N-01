@@ -441,3 +441,30 @@ test("protected handler receives a frozen minimal authorization context", async 
   assert.equal(Object.hasOwn(handlerContext, "internalNotes"), false);
   assert.equal(Object.hasOwn(handlerContext, "databaseHandle"), false);
 });
+
+
+test("active assignment without the required consent scope is denied before data access", async () => {
+  const order = [];
+  const { run, calls } = fixture({
+    loadAuthorizationContext: async () => ({
+      clientId: "client-1",
+      assignedClientIds: ["client-1"],
+      grantedScopes: []
+    }),
+    audit: async (event) => {
+      order.push("audit");
+      assert.equal(event.outcome, "deny");
+      assert.equal(event.reason, "scope-not-consented");
+    },
+    handler: async () => {
+      order.push("handler");
+      calls.handler++;
+      return { status: 200 };
+    }
+  });
+
+  const result = await run({ requestId: "assigned-without-consent" });
+  assert.deepEqual(result, { status: 403, body: { error: "forbidden" } });
+  assert.deepEqual(order, ["audit"]);
+  assert.equal(calls.handler, 0, "care records must not be accessed without explicit consent");
+});
