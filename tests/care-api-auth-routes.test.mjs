@@ -44,6 +44,27 @@ test("login route validates method and request shape without exposing account pr
   assert.equal(deps.pool.calls.length, 0, "invalid login payload must not query account storage");
 });
 
+test("login rejects arrays, missing fields, and oversized credentials before querying PostgreSQL", async () => {
+  const deps = dependencies();
+  const router = await createNovaLifeCareApiRouter(deps);
+  const invalidBodies = [
+    [],
+    null,
+    { email: "person@example.test" },
+    { email: 42, password: "example-password" },
+    { email: "person@example.test", password: 42 },
+    { email: "x".repeat(321), password: "example-password" },
+    { email: "person@example.test", password: "x".repeat(1025) },
+  ];
+
+  for (const body of invalidBodies) {
+    const response = await router.handle({ method: "POST", url: "/api/auth/login", body });
+    assert.equal(response.status, 400, "invalid login body should be rejected");
+    assert.deepEqual(response.body, { error: "invalid-login-request" });
+  }
+  assert.equal(deps.pool.calls.length, 0, "invalid login bodies must not query account storage");
+});
+
 test("logout requires a bearer token and rejects unsupported methods", async () => {
   const router = await createNovaLifeCareApiRouter(dependencies());
   assert.equal((await router.handle({ method: "GET", url: "/api/auth/logout" })).status, 405);
