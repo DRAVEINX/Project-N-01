@@ -20,6 +20,16 @@ function json(status, body) {
   });
 }
 
+function isPlainObject(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  try {
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+  } catch {
+    return false;
+  }
+}
+
 function decodeSegment(value) {
   try { return decodeURIComponent(value); }
   catch { return null; }
@@ -64,10 +74,7 @@ function parseRoute(request) {
 
 function validateBody(request) {
   const body = request?.body;
-  if (!body || typeof body !== "object" || Array.isArray(body) ||
-      (Object.getPrototypeOf(body) !== Object.prototype && Object.getPrototypeOf(body) !== null)) {
-    return { error: "invalid-json-object" };
-  }
+  if (!isPlainObject(body)) return { error: "invalid-json-object" };
   let encoded;
   try { encoded = JSON.stringify(body); } catch { return { error: "invalid-json-object" }; }
   if (typeof encoded !== "string" || Buffer.byteLength(encoded, "utf8") > MAX_BODY_BYTES) {
@@ -169,7 +176,7 @@ export async function createNovaLifeCareApiRouter({
       if (requestUrl.pathname === "/api/auth/login") {
         if (method !== "POST") return json(405, { error: "method-not-allowed" });
         const body = request?.body;
-        if (!body || typeof body !== "object" || Array.isArray(body) ||
+        if (!isPlainObject(body) ||
             typeof body.email !== "string" || typeof body.password !== "string" ||
             body.email.length > 320 || body.password.length > 1024) {
           return json(400, { error: "invalid-login-request" });
