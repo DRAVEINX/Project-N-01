@@ -81,7 +81,7 @@ export async function handleNodeCareApiRequest(req, res, router, {
   }
   const method = String(req.method ?? "GET").toUpperCase();
   const pathname = String(req.url ?? "/").split("?")[0];
-  if (!pathname.startsWith("/api/care/")) {
+  if (!pathname.startsWith("/api/care/") && !pathname.startsWith("/api/auth/")) {
     send(res, 404, { error: "not-found" });
     return;
   }
