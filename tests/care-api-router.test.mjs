@@ -85,3 +85,21 @@ test("encoded unsafe route segments are rejected before authentication or databa
   }
   assert.equal(deps.pool.calls.length, 0);
 });
+
+
+test("encoded unsafe resource and record ID segments are rejected", async () => {
+  const deps = dependencies();
+  const router = await createNovaLifeCareApiRouter(deps);
+  const unsafePaths = [
+    "/api/care/clients/client-1/care%3Fnote",
+    "/api/care/clients/client-1/care%23note",
+    "/api/care/clients/client-1/care-note/note%2Fother",
+    "/api/care/clients/client-1/care-note/note%5Cother",
+    "/api/care/clients/client-1/care-note/%20note",
+    "/api/care/clients/client-1/care-note/note%20",
+  ];
+  for (const url of unsafePaths) {
+    assert.equal((await router.handle({ method: "GET", url })).status, 404, url);
+  }
+  assert.equal(deps.pool.calls.length, 0, "invalid paths must not query PostgreSQL");
+});
