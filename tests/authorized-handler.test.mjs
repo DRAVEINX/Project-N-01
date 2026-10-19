@@ -217,3 +217,33 @@ test("missing trusted client ID is denied and safely audited before handler", as
   assert.equal(event.reason, "client-required");
   assert.equal(JSON.stringify(event).includes("private care information"), false);
 });
+
+
+test("malformed assignment and consent collections fail closed", async (t) => {
+  const cases = [
+    {
+      name: "missing assignment collection",
+      context: { clientId: "client-1", assignedClientIds: null, grantedScopes: ["care"] },
+      reason: "client-not-assigned"
+    },
+    {
+      name: "non-array consent collection",
+      context: { clientId: "client-1", assignedClientIds: ["client-1"], grantedScopes: "care" },
+      reason: "scope-not-consented"
+    }
+  ];
+
+  for (const scenario of cases) {
+    await t.test(scenario.name, async () => {
+      const { run, calls } = fixture({
+        loadAuthorizationContext: async () => scenario.context
+      });
+      const response = await run({ requestId: "malformed-context-request" });
+      assert.deepEqual(response, { status: 403, body: { error: "forbidden" } });
+      assert.equal(calls.handler, 0);
+      assert.equal(calls.audit.length, 1);
+      assert.equal(calls.audit[0].outcome, "deny");
+      assert.equal(calls.audit[0].reason, scenario.reason);
+    });
+  }
+});
