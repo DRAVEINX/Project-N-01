@@ -12,11 +12,11 @@ test("authorized PostgreSQL handler requires trusted authorization dependencies 
       action: "read",
       handler: async () => ({ status: 200, body: {} }),
     }),
-    /extractToken, loadAuthorizationContext, authorizationAudit and handler are required/
+    /resource, action, extractToken, loadAuthorizationContext, authorizationAudit and handler are required/
   );
 });
 
-test("authorized PostgreSQL handler rejects missing resource/action configuration", async () => {
+test("authorized PostgreSQL handler rejects missing resource/action configuration before DB setup", async () => {
   await assert.rejects(
     createNovaLifePostgresAuthorizedHandler({
       pool: null,
@@ -26,6 +26,6 @@ test("authorized PostgreSQL handler rejects missing resource/action configuratio
       loadAuthorizationContext: async () => ({}),
       handler: async () => ({ status: 200, body: {} }),
     }),
-    /resource, action, authenticate, loadAuthorizationContext, audit and handler are required/
+    /resource, action, extractToken, loadAuthorizationContext, authorizationAudit and handler are required/
   );
 });
