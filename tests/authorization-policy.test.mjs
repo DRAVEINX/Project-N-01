@@ -218,3 +218,57 @@ test("admin assignment and consent inputs cannot replace an audited support gran
     "assignment and consent alone must never authorize admin client-data access"
   );
 });
+
+test("every care resource requires its exact consent scope and an active assignment", () => {
+  const cases = [
+    ["care-plan", "care"],
+    ["care-note", "care"],
+    ["care-task", "care"],
+    ["care-report", "care"],
+    ["care-document", "careDocuments"],
+    ["medication-overview", "medication"],
+    ["care-message", "careMessages"],
+    ["care-roster", "roster"],
+    ["care-team", "careTeam"],
+    ["care-consent-record", "careConsents"]
+  ];
+
+  for (const [resource, requiredScope] of cases) {
+    assert.equal(
+      authorize({
+        actor: caregiver,
+        resource,
+        action: "read",
+        clientId: "client-1",
+        assignedClientIds: ["client-1"],
+        grantedScopes: [requiredScope]
+      }).allowed,
+      true,
+      `${resource} should allow its explicitly granted scope`
+    );
+    assert.equal(
+      authorize({
+        actor: caregiver,
+        resource,
+        action: "read",
+        clientId: "client-1",
+        assignedClientIds: ["client-1"],
+        grantedScopes: []
+      }).reason,
+      "scope-not-consented",
+      `${resource} must deny access without its consent scope`
+    );
+    assert.equal(
+      authorize({
+        actor: caregiver,
+        resource,
+        action: "read",
+        clientId: "client-1",
+        assignedClientIds: [],
+        grantedScopes: [requiredScope]
+      }).reason,
+      "client-not-assigned",
+      `${resource} must deny access without an active assignment`
+    );
+  }
+});
