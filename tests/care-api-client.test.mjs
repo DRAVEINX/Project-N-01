@@ -93,6 +93,8 @@ test("login validates input locally and surfaces generic authentication failures
     fetchImpl: async () => { calls += 1; return response(401, { error: "invalid-credentials" }); },
   });
   await assert.rejects(api.login("", "password"), /valid email and password/);
+  await assert.rejects(api.login("not-an-email", "password"), /valid email and password/);
+  await assert.rejects(api.login("valid@example.test", "   "), /valid email and password/);
   assert.equal(calls, 0);
   await assert.rejects(api.login("missing@example.test", "password"), (error) => error.status === 401 && error.code === "invalid-credentials");
   assert.equal(calls, 1);
