@@ -1,0 +1,43 @@
+name: NovaLife feature branch checks
+
+on:
+  push:
+    branches:
+      - "feature/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: novalife-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests and syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Run automated tests
+        run: npm test
+      - name: Check JavaScript syntax
+        run: |
+          node --check src/app.js
+          node --check src/life-suite.js
+          node --check src/authorization-policy.js
+          node --check src/secure-storage.js
+          node --check src/encrypted-vault.js
+          node --check src/routine-migration.js
+          node --check desktop/main.cjs
+          node --check tests/smoke.test.mjs
+          node --check tests/life-suite.test.mjs
+          node --check tests/authorization-policy.test.mjs
