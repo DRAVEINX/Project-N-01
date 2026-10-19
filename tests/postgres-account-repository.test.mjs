@@ -26,6 +26,12 @@ test("loads only trusted actor fields and never returns the password hash", asyn
   assert.doesNotMatch(pool.calls[0].sql, /password_hash/);
 });
 
+test("loads parent accounts as a supported trusted role", async () => {
+  const pool = fakePool({ rows: [{ id: "parent-1", role: "parent", active: true }] });
+  const repo = createPostgresAccountRepository({ pool });
+  assert.deepEqual(await repo.loadActor("parent-1"), { id: "parent-1", role: "parent", active: true });
+});
+
 test("fails closed on missing rows, malformed IDs, and unknown roles", async () => {
   const pool = fakePool({ rows: [{ id: "a1", role: "superuser", active: true }] });
   const repo = createPostgresAccountRepository({ pool });
@@ -66,15 +72,25 @@ test("creates an account with normalized email and parameterized SQL", async () 
   assert.match(pool.calls[0].sql, /INSERT INTO novalife_accounts/);
 });
 
-test("rejects plaintext-like short passwords and invalid roles before database access", async () => {
+test("creates parent accounts and rejects unknown roles before database access", async () => {
+  const pool = fakePool({ rows: [{ id: "p1", role: "parent", active: true }] });
+  const repo = createPostgresAccountRepository({ pool });
+  assert.deepEqual(await repo.createAccount({
+    id: "p1", email: "parent@example.org", passwordHash: "scrypt$some-long-parent-hash",
+    role: "parent"
+  }), { id: "p1", role: "parent", active: true });
+  await assert.rejects(repo.createAccount({
+    id: "a1", email: "a@example.org", passwordHash: "scrypt$some-long-hash", role: "superuser"
+  }), /invalid account role/);
+  assert.equal(pool.calls.length, 1);
+});
+
+test("rejects plaintext-like short passwords before database access", async () => {
   const pool = fakePool();
   const repo = createPostgresAccountRepository({ pool });
   await assert.rejects(repo.createAccount({
     id: "a1", email: "a@example.org", passwordHash: "plaintext", role: "client"
   }), /reviewed password hash/);
-  await assert.rejects(repo.createAccount({
-    id: "a1", email: "a@example.org", passwordHash: "scrypt$some-long-hash", role: "superuser"
-  }), /invalid account role/);
   assert.equal(pool.calls.length, 0);
 });
 
