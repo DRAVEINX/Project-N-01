@@ -346,7 +346,7 @@ test("audit actor and client identifiers reject control characters and oversized
   const cases = [
     {
       name: "actor identifier with newline",
-      actor: { id: "caregiver-1\\ninjected", role: "caregiver", active: true },
+      actor: { id: "caregiver-1\ninjected", role: "caregiver", active: true },
       context: { clientId: "client-1", assignedClientIds: ["client-1"], grantedScopes: ["care"] },
       expectedActorId: null,
       expectedClientId: "client-1"
@@ -354,7 +354,7 @@ test("audit actor and client identifiers reject control characters and oversized
     {
       name: "client identifier with control character",
       actor: { id: "caregiver-1", role: "caregiver", active: true },
-      context: { clientId: "client-1\\u007finjected", assignedClientIds: ["client-1\\u007finjected"], grantedScopes: ["care"] },
+      context: { clientId: "client-1\u007finjected", assignedClientIds: ["client-1\u007finjected"], grantedScopes: ["care"] },
       expectedActorId: "caregiver-1",
       expectedClientId: null
     },
