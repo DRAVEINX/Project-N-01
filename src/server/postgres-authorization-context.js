@@ -4,6 +4,7 @@ const CONSENT_TO_POLICY_SCOPE = Object.freeze({
   care_message: "careMessages",
   roster: "roster",
   team: "careTeam",
+  care_consents: "careConsents",
 });
 
 const CORE_CARE_SCOPES = Object.freeze([
