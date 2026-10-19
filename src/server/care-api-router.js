@@ -176,7 +176,16 @@ export async function createNovaLifeCareApiRouter({
       if (requestUrl.pathname === "/api/auth/login") {
         if (method !== "POST") return json(405, { error: "method-not-allowed" });
         const body = request?.body;
-        if (!isPlainObject(body) ||
+        let loginBodyBytes;
+        try {
+          loginBodyBytes = isPlainObject(body)
+            ? Buffer.byteLength(JSON.stringify(body), "utf8")
+            : Infinity;
+        } catch {
+          loginBodyBytes = Infinity;
+        }
+        if (!isPlainObject(body) || !Number.isFinite(loginBodyBytes) ||
+            loginBodyBytes > MAX_BODY_BYTES ||
             typeof body.email !== "string" || typeof body.password !== "string" ||
             body.email.trim().length === 0 || body.email.length > 320 ||
             body.password.length === 0 || body.password.length > 1024) {
