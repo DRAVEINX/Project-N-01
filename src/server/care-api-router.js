@@ -26,7 +26,10 @@ function decodeSegment(value) {
 }
 
 function validSegment(value) {
-  return typeof value === "string" && value.length > 0 && value.length <= 200 &&\n    value.trim() === value && !/[\\\\/\\\\\\\\?#]/.test(value);
+  return typeof value === "string" && value.length > 0 && value.length <= 200 &&
+    value.trim() === value &&
+    !value.includes("/") && !value.includes("\\") &&
+    !value.includes("?") && !value.includes("#");
 }
 
 function parseRoute(request) {
