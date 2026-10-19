@@ -9,7 +9,7 @@
  */
 export class SessionResolutionUnavailableError extends Error {
   constructor() {
-    super("Trusted account lookup is unavailable");
+    super("Trusted session or account lookup is unavailable");
     this.name = "SessionResolutionUnavailableError";
   }
 }
@@ -29,7 +29,15 @@ export function createSessionAuthenticator({ sessionStore, extractToken, loadAct
     }
     if (typeof token !== "string" || token.length < 32 || token.length > 256) return null;
 
-    const session = sessionStore.resolve(token);
+    let session;
+    try {
+      // Must await: the durable session-store adapter is asynchronous.
+      session = await sessionStore.resolve(token);
+    } catch {
+      // A storage outage is not the same as an invalid session. Fail closed
+      // and let the HTTP authorization gate return service unavailable (503).
+      throw new SessionResolutionUnavailableError();
+    }
     if (!session || typeof session.actorId !== "string" || !session.actorId.trim()) return null;
 
     let actor;

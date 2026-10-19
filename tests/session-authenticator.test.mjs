@@ -27,6 +27,39 @@ test("resolves the current active actor from trusted account storage", async () 
   });
 });
 
+test("awaits asynchronous durable session-store resolution", async () => {
+  const token = "t".repeat(43);
+  let resolvedToken;
+  const authenticator = createSessionAuthenticator({
+    sessionStore: {
+      async resolve(value) {
+        resolvedToken = value;
+        return { actorId: "caregiver-1", createdAt: 1, expiresAt: 9999999999999 };
+      }
+    },
+    extractToken: (request) => request?.sessionToken,
+    loadActor: async (id) => ({ id, role: "caregiver", active: true })
+  });
+  assert.deepEqual(await authenticator({ sessionToken: token }), {
+    id: "caregiver-1",
+    role: "caregiver",
+    active: true
+  });
+  assert.equal(resolvedToken, token);
+});
+
+test("treats session-store outages as unavailable rather than invalid credentials", async () => {
+  const authenticator = createSessionAuthenticator({
+    sessionStore: { async resolve() { throw new Error("database offline"); } },
+    extractToken: (request) => request?.sessionToken,
+    loadActor: async () => { throw new Error("must not be called"); }
+  });
+  await assert.rejects(
+    authenticator({ sessionToken: "t".repeat(43) }),
+    SessionResolutionUnavailableError
+  );
+});
+
 test("does not restore a stale role after the account role changes", async () => {
   let role = "caregiver";
   const { session, authenticator } = fixture({
@@ -88,6 +121,28 @@ test("authorized handler returns 503 and never reaches protected data when accou
     handler: async () => { protectedCalls++; return { status: 200 }; }
   });
   assert.deepEqual(await run({ sessionToken: session.token }), {
+    status: 503,
+    body: { error: "authentication-unavailable" }
+  });
+  assert.equal(protectedCalls, 0);
+});
+
+test("authorized handler returns 503 on session repository outage without reaching protected data", async () => {
+  const authenticator = createSessionAuthenticator({
+    sessionStore: { async resolve() { throw new Error("database offline"); } },
+    extractToken: (request) => request?.sessionToken,
+    loadActor: async () => ({ id: "caregiver-1", role: "caregiver", active: true })
+  });
+  let protectedCalls = 0;
+  const run = createAuthorizedHandler({
+    resource: "care-plan",
+    action: "read",
+    authenticate: authenticator,
+    loadAuthorizationContext: async () => ({ clientId: "client-1", assignedClientIds: ["client-1"], grantedScopes: ["care"] }),
+    audit: async () => {},
+    handler: async () => { protectedCalls++; return { status: 200 }; }
+  });
+  assert.deepEqual(await run({ sessionToken: "t".repeat(43) }), {
     status: 503,
     body: { error: "authentication-unavailable" }
   });
