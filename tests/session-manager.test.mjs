@@ -84,6 +84,28 @@ test("rejects malformed, unknown and revoked tokens", async () => {
   assert.equal(await manager.authenticate(session.token), null);
 });
 
+test("deletes sessions containing invalid persisted actor IDs without loading the actor", async () => {
+  const { manager, rows, calls } = setup();
+  const session = await manager.create("client-1");
+  const digest = calls.put[0].digest;
+  rows.set(digest, { actorId: " client-1 ", createdAt: 1_800_000_000_000, expiresAt: 1_800_000_060_000 });
+  const actorCallsBefore = calls.actor.length;
+  assert.equal(await manager.authenticate(session.token), null);
+  assert.equal(calls.actor.length, actorCallsBefore);
+  assert.equal(rows.has(digest), false);
+});
+
+test("deletes sessions with invalid timestamps before actor lookup", async () => {
+  const { manager, rows, calls } = setup();
+  const session = await manager.create("client-1");
+  const digest = calls.put[0].digest;
+  rows.set(digest, { actorId: "client-1", createdAt: 1_800_000_060_000, expiresAt: 1_800_000_030_000 });
+  const actorCallsBefore = calls.actor.length;
+  assert.equal(await manager.authenticate(session.token), null);
+  assert.equal(calls.actor.length, actorCallsBefore);
+  assert.equal(rows.has(digest), false);
+});
+
 test("expires sessions and removes their stored digest", async () => {
   let now = 1_800_000_000_000;
   const rows = new Map();
