@@ -247,3 +247,27 @@ test("malformed assignment and consent collections fail closed", async (t) => {
     });
   }
 });
+
+
+test("invalid authorization context shapes fail closed before audit or handler", async (t) => {
+  const cases = [
+    { name: "null context", context: null },
+    { name: "array context", context: [] },
+    { name: "primitive context", context: "client-1" }
+  ];
+
+  for (const scenario of cases) {
+    await t.test(scenario.name, async () => {
+      const { run, calls } = fixture({
+        loadAuthorizationContext: async () => scenario.context
+      });
+      const response = await run({ requestId: "invalid-context-shape" });
+      assert.deepEqual(response, {
+        status: 503,
+        body: { error: "authorization-unavailable" }
+      });
+      assert.equal(calls.handler, 0);
+      assert.equal(calls.audit.length, 0);
+    });
+  }
+});
