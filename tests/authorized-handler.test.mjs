@@ -531,3 +531,15 @@ test("care-role access is denied when assignment exists but consent collection i
   assert.equal(calls.audit[0].outcome, "deny");
   assert.equal(calls.audit[0].reason, "scope-not-consented");
 });
+
+test("rejects whitespace-padded trusted actor IDs before loading authorization context", async () => {
+  const { run, calls } = fixture({
+    authenticate: async () => ({ id: " caregiver-1 ", role: "caregiver", active: true })
+  });
+  assert.deepEqual(await run({ requestId: "padded-actor-id" }), {
+    status: 401, body: { error: "unauthenticated" }
+  });
+  assert.equal(calls.context, 0);
+  assert.equal(calls.handler, 0);
+  assert.equal(calls.audit.length, 0);
+});
