@@ -178,7 +178,8 @@ export async function createNovaLifeCareApiRouter({
         const body = request?.body;
         if (!isPlainObject(body) ||
             typeof body.email !== "string" || typeof body.password !== "string" ||
-            body.email.length > 320 || body.password.length > 1024) {
+            body.email.trim().length === 0 || body.email.length > 320 ||
+            body.password.length === 0 || body.password.length > 1024) {
           return json(400, { error: "invalid-login-request" });
         }
         try {
