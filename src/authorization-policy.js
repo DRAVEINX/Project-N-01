@@ -79,7 +79,7 @@ export function authorize(input = {}) {
       : deny("care-portal-role-required");
   }
 
-  const scope = PERSONAL_SCOPES[input.resource];
+  const scope = Object.hasOwn(PERSONAL_SCOPES, input.resource) ? PERSONAL_SCOPES[input.resource] : undefined;
   if (scope) {
     // Personal records support normal CRUD, but "manage" is a privileged
     // administrative action and must never be inferred from record ownership.
@@ -90,7 +90,7 @@ export function authorize(input = {}) {
       : deny("personal-resource-role-not-allowed");
   }
 
-  const careScope = CARE_SCOPES[input.resource];
+  const careScope = Object.hasOwn(CARE_SCOPES, input.resource) ? CARE_SCOPES[input.resource] : undefined;
   if (!careScope) return deny("unknown-resource");
 
   // Admin data access is a separately audited, time-limited emergency/support
