@@ -71,3 +71,17 @@ test("malformed and overlong client selectors fail closed", async () => {
   assert.equal((await router.handle({ method: "GET", url: "/api/care/clients/" + "x".repeat(201) + "/care-note" })).status, 404);
   assert.equal((await router.handle({ method: "GET", url: "/api/care/clients/client-1/care-note/extra/path" })).status, 404);
 });
+
+
+test("encoded unsafe route segments are rejected before authentication or database access", async () => {
+  const deps = dependencies();
+  const router = await createNovaLifeCareApiRouter(deps);
+  for (const segment of ["client%3Fid", "client%23id", "client%5C%5Cid", "%20client", "client%20"]) {
+    const response = await router.handle({
+      method: "GET",
+      url: `/api/care/clients/${segment}/care-note`,
+    });
+    assert.equal(response.status, 404, `expected unsafe selector ${segment} to be rejected`);
+  }
+  assert.equal(deps.pool.calls.length, 0);
+});
