@@ -267,7 +267,7 @@ test("assignment loader ignores malformed client IDs returned by the database", 
     {}
   );
 
-  assert.deepEqual(context.assignedClientIds, ["client-1", "   ", "client-2"]);
+  assert.deepEqual(context.assignedClientIds, ["client-1", "client-2"]);
   assert.equal(Object.isFrozen(context.assignedClientIds), true);
 });
 
