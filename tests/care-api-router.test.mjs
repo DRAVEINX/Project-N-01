@@ -103,3 +103,19 @@ test("encoded unsafe resource and record ID segments are rejected", async () => 
   }
   assert.equal(deps.pool.calls.length, 0, "invalid paths must not query PostgreSQL");
 });
+
+
+test("malformed percent-encoding and encoded path delimiters are rejected", async () => {
+  const deps = dependencies();
+  const router = await createNovaLifeCareApiRouter(deps);
+  const unsafePaths = [
+    "/api/care/clients/client%2Fother/care-note",
+    "/api/care/clients/client%5Cother/care-note",
+    "/api/care/clients/client%ZZ/care-note",
+    "/api/care/clients/client-1/care-note/note%ZZ",
+  ];
+  for (const url of unsafePaths) {
+    assert.equal((await router.handle({ method: "GET", url })).status, 404, url);
+  }
+  assert.equal(deps.pool.calls.length, 0, "malformed routes must not access PostgreSQL");
+});
