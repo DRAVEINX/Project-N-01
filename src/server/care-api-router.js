@@ -1,5 +1,8 @@
-import { createNovaLifeCarePortalHandler, novaLifeCarePortalResources } from "./care-portal-handler.js";
+import { novaLifeCarePortalResources } from "./care-portal-handler.js";
 import { createPostgresCareRecordRepository } from "./postgres-care-record-repository.js";
+import { createNovaLifePostgresAuth } from "./postgres-auth-runtime.js";
+import { createPostgresAuthorizationContextLoader } from "./postgres-authorization-context.js";
+import { createAuthorizedHandler } from "./authorized-handler.js";
 
 const DATA_RESOURCES = new Set(novaLifeCarePortalResources.filter((resource) => resource !== "care-portal"));
 const METHODS = Object.freeze({ GET: "read", POST: "create", PUT: "update", PATCH: "update", DELETE: "delete" });
@@ -67,6 +70,22 @@ export async function createNovaLifeCareApiRouter({
     throw new TypeError("extractToken and trusted resolveTargetClientId are required");
   }
 
+  // Reuse one authentication runtime and one authorization-context loader for
+  // every route. Building a separate Argon2/session stack per route would be
+  // wasteful and could create inconsistent runtime behavior.
+  const auth = await createNovaLifePostgresAuth({ pool, audit: authAudit, now, ttlMs });
+  const loadAuthorizationContext = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId,
+    now: now ? () => new Date(now()) : undefined,
+  });
+  const authenticate = async (request) => {
+    const token = extractToken(request);
+    if (typeof token !== "string" || !token) return null;
+    const result = await auth.authenticate(token);
+    if (!result?.actor) return null;
+    return Object.freeze({ id: result.actor.id, role: result.actor.role, active: true });
+  };
   const repository = createPostgresCareRecordRepository({ pool });
   const handlers = new Map();
   for (const resource of DATA_RESOURCES) {
@@ -101,10 +120,13 @@ export async function createNovaLifeCareApiRouter({
         const removed = await repository.remove({ clientId, resource, id: request.params.recordId });
         return json(removed ? 200 : 404, removed ? { deleted: true } : { error: "not-found" });
       };
-      const protectedHandler = await createNovaLifeCarePortalHandler({
-        resource, action, pool, authAudit, authorizationAudit, extractToken,
-        resolveTargetClientId: (actor, request) => resolveTargetClientId(actor, request),
-        handler: dataHandler, now, ttlMs,
+      const protectedHandler = createAuthorizedHandler({
+        resource,
+        action,
+        authenticate,
+        loadAuthorizationContext,
+        audit: authorizationAudit,
+        handler: dataHandler,
       });
       handlers.set(resource + ":" + action, protectedHandler);
     }
