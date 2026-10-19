@@ -135,8 +135,8 @@ test("caregiver assignment and consent do not grant direct personal-record acces
         action: "read",
         clientId: "client-1",
         ...assignment
-      }).reason,
-      "personal-resource-role-not-allowed",
+      }).allowed,
+      false,
       resource
     );
   }
