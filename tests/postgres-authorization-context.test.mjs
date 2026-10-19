@@ -271,3 +271,27 @@ test("assignment loader ignores malformed client IDs returned by the database", 
   assert.equal(Object.isFrozen(context.assignedClientIds), true);
 });
 
+
+test("maps the explicit care-consent record grant to the exact policy scope", async () => {
+  const pool = fakePool([
+    { rows: [{ client_id: "client-1" }] },
+    { rows: [{ scope: "care_consents" }] },
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+  const context = await loader({ id: "caregiver-1", role: "caregiver", active: true }, {});
+
+  assert.deepEqual(context.grantedScopes, ["careConsents"]);
+  assert.equal(
+    authorizeConsentRecord(context),
+    true,
+    "the database grant must produce the exact scope expected by the authorization policy"
+  );
+});
+
+function authorizeConsentRecord(context) {
+  return context.grantedScopes.includes("careConsents");
+}
