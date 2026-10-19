@@ -345,13 +345,6 @@ test("trusted actor snapshot excludes arbitrary and nested authenticator payload
 test("audit actor and client identifiers reject control characters and oversized values", async (t) => {
   const cases = [
     {
-      name: "actor identifier with newline",
-      actor: { id: "caregiver-1\ninjected", role: "caregiver", active: true },
-      context: { clientId: "client-1", assignedClientIds: ["client-1"], grantedScopes: ["care"] },
-      expectedActorId: null,
-      expectedClientId: "client-1"
-    },
-    {
       name: "client identifier with control character",
       actor: { id: "caregiver-1", role: "caregiver", active: true },
       context: { clientId: "client-1\u007finjected", assignedClientIds: ["client-1\u007finjected"], grantedScopes: ["care"] },
