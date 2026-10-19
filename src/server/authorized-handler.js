@@ -44,10 +44,13 @@ export function createAuthorizedHandler({
     if (!actor || typeof actor.id !== "string" || !actor.id.trim()) {
       return { status: 401, body: { error: "unauthenticated" } };
     }
+    // Snapshot trusted identity so downstream callbacks cannot mutate the
+    // authenticator-owned actor object or alter its top-level authorization fields.
+    const trustedActor = Object.freeze({ ...actor });
 
     let context;
     try {
-      context = await loadAuthorizationContext(actor, request);
+      context = await loadAuthorizationContext(trustedActor, request);
       if (!context || typeof context !== "object" || Array.isArray(context)) {
         throw new TypeError("Authorization context unavailable");
       }
@@ -56,7 +59,7 @@ export function createAuthorizedHandler({
     }
 
     const decision = authorize({
-      actor,
+      actor: trustedActor,
       resource,
       action,
       clientId: context.clientId,
@@ -67,7 +70,7 @@ export function createAuthorizedHandler({
     });
 
     const event = Object.freeze({
-      actorId: actor.id,
+      actorId: trustedActor.id,
       clientId: typeof context.clientId === "string" ? context.clientId : null,
       resource,
       action,
@@ -90,7 +93,7 @@ export function createAuthorizedHandler({
     }
 
     return handler(request, Object.freeze({
-      actor,
+      actor: trustedActor,
       clientId: context.clientId,
       authorization: decision
     }));

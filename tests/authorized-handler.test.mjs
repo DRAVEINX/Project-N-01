@@ -290,3 +290,22 @@ test("audit request ID rejects control characters and oversized values", async (
   }
 });
 
+test("protected handler receives a frozen snapshot of trusted actor identity", async () => {
+  const sourceActor = { id: "caregiver-1", role: "caregiver", active: true };
+  let handlerActor;
+  const { run } = fixture({
+    authenticate: async () => sourceActor,
+    handler: async (_request, context) => {
+      handlerActor = context.actor;
+      assert.equal(Object.isFrozen(context.actor), true);
+      assert.throws(() => { context.actor.role = "admin"; }, TypeError);
+      return { status: 200 };
+    }
+  });
+
+  assert.deepEqual(await run({}), { status: 200 });
+  assert.notEqual(handlerActor, sourceActor);
+  assert.equal(handlerActor.role, "caregiver");
+  assert.equal(sourceActor.role, "caregiver");
+});
+
