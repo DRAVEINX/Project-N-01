@@ -1,10 +1,12 @@
 import { createNovaLifePostgresAuth } from "./postgres-auth-runtime.js";
 import { createAuthorizedHandler } from "./authorized-handler.js";
+import { createPostgresAuthorizationContextLoader } from "./postgres-authorization-context.js";
 
 /**
  * Compose PostgreSQL-backed session authentication with the deny-by-default
- * authorization gate. Authorization facts and audit storage remain explicit
- * trusted deployment dependencies; this factory does not invent them.
+ * authorization gate. A caller may provide a complete trusted context loader,
+ * or provide a trusted target resolver and let this factory create the
+ * PostgreSQL-backed assignments/consent loader.
  */
 export async function createNovaLifePostgresAuthorizedHandler({
   pool,
@@ -12,6 +14,7 @@ export async function createNovaLifePostgresAuthorizedHandler({
   authorizationAudit,
   extractToken,
   loadAuthorizationContext,
+  resolveTargetClientId,
   resource,
   action,
   handler,
@@ -21,11 +24,12 @@ export async function createNovaLifePostgresAuthorizedHandler({
   if (typeof resource !== "string" || !resource ||
       typeof action !== "string" || !action ||
       typeof extractToken !== "function" ||
-      typeof loadAuthorizationContext !== "function" ||
+      (typeof loadAuthorizationContext !== "function" &&
+        typeof resolveTargetClientId !== "function") ||
       typeof authorizationAudit !== "function" ||
       typeof handler !== "function") {
     throw new TypeError(
-      "resource, action, extractToken, loadAuthorizationContext, authorizationAudit and handler are required"
+      "resource, action, extractToken, loadAuthorizationContext or resolveTargetClientId, authorizationAudit and handler are required"
     );
   }
 
@@ -35,6 +39,14 @@ export async function createNovaLifePostgresAuthorizedHandler({
     now,
     ttlMs,
   });
+
+  const authorizationContextLoader = typeof loadAuthorizationContext === "function"
+    ? loadAuthorizationContext
+    : createPostgresAuthorizationContextLoader({
+      pool,
+      resolveTargetClientId,
+      now: now ? () => new Date(now()) : undefined,
+    });
 
   return createAuthorizedHandler({
     resource,
@@ -54,7 +66,7 @@ export async function createNovaLifePostgresAuthorizedHandler({
         active: true,
       });
     },
-    loadAuthorizationContext,
+    loadAuthorizationContext: authorizationContextLoader,
     audit: authorizationAudit,
     handler,
   });
