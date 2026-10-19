@@ -221,3 +221,24 @@ test("parent role loads its own active assignments and current consent", async (
   assert.deepEqual(context.assignedClientIds, ["client-1"]);
   assert.deepEqual(context.grantedScopes, ["care"]);
 });
+
+
+test("assignment query requires valid_from and rejects null or future start times", async () => {
+  const pool = fakePool([
+    { rows: [{ client_id: "client-null-start" }, { client_id: "client-future-start" }] },
+    { rows: [{ scope: "care_document" }] },
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+  await loader({ id: "caregiver-1", role: "caregiver", active: true }, {});
+
+  assert.match(pool.calls[0].sql, /valid_from <= \$3/);
+  assert.deepEqual(pool.calls[0].values, [
+    "caregiver-1",
+    "caregiver",
+    new Date("2026-10-19T10:00:00.000Z")
+  ]);
+});
