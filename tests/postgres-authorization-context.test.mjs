@@ -470,3 +470,23 @@ test("consent storage outage fails closed after assignment lookup", async () => 
   assert.equal(pool.calls.length, 2);
   assert.match(pool.calls[1].sql, /revoked_at IS NULL/);
 });
+
+
+test("assignment storage outage fails closed without querying consent storage", async () => {
+  const pool = fakePool([
+    new Error("assignment database unavailable"),
+    { rows: [{ scope: "care_plan" }, { scope: "care_note" }, { scope: "care_task" }, { scope: "care_report" }] },
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+
+  await assert.rejects(
+    loader({ id: "caregiver-assignment-outage", role: "caregiver", active: true }, {}),
+    /assignment database unavailable/
+  );
+  assert.equal(pool.calls.length, 1, "consent storage must not be queried after assignment lookup fails");
+  assert.match(pool.calls[0].sql, /novalife_client_assignments/);
+});
