@@ -146,3 +146,70 @@ export function createCareApiClient({ baseUrl, getAccessToken, fetchImpl = globa
     },
   });
 }
+
+
+/**
+ * Keep a signed-in session in memory only. This wrapper deliberately avoids
+ * localStorage/sessionStorage so a bearer token is not left behind on shared
+ * devices. A reload requires signing in again.
+ */
+export function createCareApiSession({ baseUrl, fetchImpl = globalThis.fetch, now = () => Date.now() } = {}) {
+  if (typeof now !== "function") throw new TypeError("clock callback is required");
+  let accessToken = null;
+  let expiresAt = 0;
+  let actor = null;
+
+  function clearSession() {
+    accessToken = null;
+    expiresAt = 0;
+    actor = null;
+  }
+
+  function getAccessToken() {
+    if (!accessToken || !Number.isSafeInteger(expiresAt) || expiresAt <= now()) {
+      clearSession();
+      return null;
+    }
+    return accessToken;
+  }
+
+  const api = createCareApiClient({ baseUrl, getAccessToken, fetchImpl });
+
+  async function login(email, password) {
+    // Do not allow a failed account switch to leave the previous identity active.
+    clearSession();
+    const result = await api.login(email, password);
+    if (!result || typeof result.accessToken !== "string" ||
+        !result.accessToken.trim() || result.tokenType !== "Bearer" ||
+        !Number.isSafeInteger(result.expiresAt) || result.expiresAt <= now() ||
+        !result.actor || typeof result.actor.id !== "string" ||
+        typeof result.actor.role !== "string") {
+      throw new Error("invalid-authentication-response");
+    }
+    accessToken = result.accessToken;
+    expiresAt = result.expiresAt;
+    actor = Object.freeze({ id: result.actor.id, role: result.actor.role });
+    return Object.freeze({ actor, expiresAt });
+  }
+
+  async function logout() {
+    if (!getAccessToken()) return;
+    try {
+      await api.logout();
+    } finally {
+      clearSession();
+    }
+  }
+
+  return Object.freeze({
+    api,
+    login,
+    logout,
+    getActor() {
+      return getAccessToken() ? actor : null;
+    },
+    isAuthenticated() {
+      return getAccessToken() !== null;
+    },
+  });
+}
