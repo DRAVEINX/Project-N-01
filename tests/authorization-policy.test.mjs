@@ -330,3 +330,26 @@ test("parent and guardian roles require explicit assignment and consent just lik
     );
   }
 });
+
+
+test("parent and guardian access to care data never grants access to personal records", () => {
+  const personalResources = ["profile", "mood-report", "journal", "drawing", "appointment", "weekly-plan", "guide", "trusted-contact"];
+
+  for (const role of ["parent", "guardian"]) {
+    const actor = { id: role + "-1", role, active: true };
+    for (const resource of personalResources) {
+      assert.equal(
+        authorize({
+          actor,
+          resource,
+          action: "read",
+          clientId: "client-1",
+          assignedClientIds: ["client-1"],
+          grantedScopes: ["care", "careDocuments", "medication", "careMessages", "roster", "careTeam", "careConsents"]
+        }).allowed,
+        false,
+        role + " with broad care scopes must not read personal resource " + resource
+      );
+    }
+  }
+});
