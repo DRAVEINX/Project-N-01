@@ -271,3 +271,22 @@ test("invalid authorization context shapes fail closed before audit or handler",
     });
   }
 });
+
+test("audit request ID rejects control characters and oversized values", async (t) => {
+  const cases = [
+    { name: "newline injection", requestId: "req-1\\nprivate-note", expected: null },
+    { name: "oversized identifier", requestId: "x".repeat(129), expected: null },
+    { name: "empty identifier", requestId: "", expected: null },
+    { name: "safe identifier", requestId: "req-2026:abc_123.4", expected: "req-2026:abc_123.4" },
+  ];
+
+  for (const scenario of cases) {
+    await t.test(scenario.name, async () => {
+      const { run, calls } = fixture();
+      await run({ requestId: scenario.requestId });
+      assert.equal(calls.audit.length, 1);
+      assert.equal(calls.audit[0].requestId, scenario.expected);
+    });
+  }
+});
+
