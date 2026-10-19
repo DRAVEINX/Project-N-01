@@ -16,7 +16,7 @@ function normalizeEmail(email) {
 }
 
 function mapActor(row) {
-  if (!row || typeof row.id !== "string" ||
+  if (!row || typeof row.id !== "string" || !row.id.trim() || row.id !== row.id.trim() ||
       typeof row.role !== "string" || !ALLOWED_ROLES.has(row.role) ||
       typeof row.active !== "boolean") return null;
   return Object.freeze({ id: row.id, role: row.role, active: row.active });
@@ -48,7 +48,7 @@ export function createPostgresAccountRepository({ pool } = {}) {
         [normalized]
       );
       const row = result?.rows?.[0];
-      if (!row || typeof row.id !== "string" ||
+      if (!row || typeof row.id !== "string" || !row.id.trim() || row.id !== row.id.trim() ||
           typeof row.email_normalized !== "string" ||
           typeof row.password_hash !== "string" ||
           typeof row.role !== "string" || !ALLOWED_ROLES.has(row.role) ||
@@ -64,7 +64,7 @@ export function createPostgresAccountRepository({ pool } = {}) {
 
     async createAccount({ id, email, passwordHash, role }) {
       const normalized = normalizeEmail(email);
-      if (typeof id !== "string" || !id.trim() || id.length > 200) {
+      if (typeof id !== "string" || !id.trim() || id !== id.trim() || id.length > 200) {
         throw new TypeError("valid account id is required");
       }
       if (!normalized) throw new TypeError("valid email is required");
