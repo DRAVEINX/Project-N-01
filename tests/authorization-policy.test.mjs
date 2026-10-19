@@ -81,3 +81,35 @@ test("prototype property names are not treated as authorized resources", () => {
     );
   }
 });
+
+
+test("admin support grant is denied at expiry and for malformed or inactive grants", () => {
+  const now = Date.parse("2026-10-19T08:00:00Z");
+  const base = {
+    actor: admin,
+    resource: "care-plan",
+    action: "read",
+    clientId: "client-1",
+    now
+  };
+  const valid = {
+    active: true,
+    reason: "Support issue confirmed by service owner",
+    auditId: "audit-123",
+    expiresAt: "2026-10-19T08:00:00Z"
+  };
+
+  assert.equal(
+    authorize({ ...base, breakGlass: valid }).reason,
+    "admin-client-data-needs-audited-grant",
+    "a grant expiring exactly now is no longer valid"
+  );
+  assert.equal(
+    authorize({ ...base, breakGlass: { ...valid, expiresAt: "not-a-date" } }).reason,
+    "admin-client-data-needs-audited-grant"
+  );
+  assert.equal(
+    authorize({ ...base, breakGlass: { ...valid, active: false, expiresAt: "2026-10-19T08:15:00Z" } }).reason,
+    "admin-client-data-needs-audited-grant"
+  );
+});
