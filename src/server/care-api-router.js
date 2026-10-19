@@ -39,7 +39,8 @@ function validSegment(value) {
   return typeof value === "string" && value.length > 0 && value.length <= 200 &&
     value.trim() === value &&
     !value.includes("/") && !value.includes("\\") &&
-    !value.includes("?") && !value.includes("#");
+    !value.includes("?") && !value.includes("#") &&
+    !/[\u0000-\u001F\u007F]/.test(value);
 }
 
 function parseRoute(request) {
