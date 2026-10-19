@@ -59,3 +59,25 @@ test("personal record ownership does not grant privileged manage actions", () =>
   assert.equal(authorize({actor:client,resource:"mood-report",action:"create",clientId:"client-1"}).allowed, true);
   assert.equal(authorize({actor:client,resource:"mood-report",action:"update",clientId:"client-1"}).allowed, true);
 });
+
+
+test("prototype property names are not treated as authorized resources", () => {
+  for (const resource of ["toString", "constructor", "__proto__", "hasOwnProperty"]) {
+    assert.equal(
+      authorize({ actor: client, resource, action: "read", clientId: "client-1" }).reason,
+      "unknown-resource",
+      resource
+    );
+    assert.equal(
+      authorize({
+        actor: caregiver,
+        resource,
+        action: "read",
+        clientId: "client-1",
+        ...assignment
+      }).reason,
+      "unknown-resource",
+      resource
+    );
+  }
+});
