@@ -154,7 +154,10 @@
     return ["dashboard","weekplan","agenda","mood","help","guides","reminders","data"].includes(tab) || isAdmin || isCaregiver;
   }
   function scopeMatches(item) {
-    return !item.profileId || item.profileId === state.currentProfileId;
+    // Legacy records without an owner belong to the original personal profile,
+    // never to whichever profile happens to be active.
+    const ownerId = typeof item.profileId === "string" && item.profileId ? item.profileId : "self";
+    return ownerId === state.currentProfileId;
   }
   function visibleItems(key, scope) {
     const items = state[key] || [];
@@ -168,7 +171,8 @@
   function canModify(scope, item) {
     const profile=currentProfile();
     if(!profile||!state)return false;
-    const ownerId=(item&&item.profileId)||profile.id;
+    // Missing owner IDs are legacy personal data, not data owned by the active profile.
+    const ownerId=(item&&typeof item.profileId === "string"&&item.profileId)||"self";
     if(ownerId===profile.id)return true;
     return state.consents.some(c=>c.ownerId===ownerId&&c.viewerId===profile.id&&c.revoked!==true&&Array.isArray(c.modifyScopes)&&c.modifyScopes.includes(scope));
   }
