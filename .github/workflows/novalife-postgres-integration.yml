@@ -48,7 +48,11 @@ jobs:
         run: npm install
       - name: Install PostgreSQL client library for CI integration test
         run: npm install --no-save --package-lock=false pg@8
-      - name: Apply schema migration to disposable PostgreSQL
-        run: psql -h localhost -U postgres -d novalife_test -v ON_ERROR_STOP=1 -f migrations/0001_novalife_core.sql
+      - name: Apply all schema migrations in order to disposable PostgreSQL
+        run: |
+          for migration in migrations/*.sql; do
+            echo "Applying $migration"
+            psql -h localhost -U postgres -d novalife_test -v ON_ERROR_STOP=1 -f "$migration"
+          done
       - name: Run real PostgreSQL repository integration test
         run: node --test tests/postgres-integration.test.mjs
