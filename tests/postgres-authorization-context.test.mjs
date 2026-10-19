@@ -407,7 +407,7 @@ test("rejects whitespace-padded target IDs before querying PostgreSQL", async ()
 
   await assert.rejects(
     loader({ id: "caregiver-1", role: "caregiver", active: true }, {}),
-    /target client resolver must return a trimmed, non-empty ID or null/
+    /target client resolver must return a valid ID segment or null/
   );
   assert.equal(pool.calls.length, 0, "invalid target must fail before assignment or consent queries");
 });
