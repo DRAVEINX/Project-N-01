@@ -61,8 +61,9 @@ test("HTTP boundary handles login, current actor and logout", async () => {
 
 test("HTTP boundary rejects malformed requests and rate-limit failures", async () => {
   const auth = makeAuth();
-  const handler = createAuthHttpHandler({ auth, rateLimit: async () => false });
-  const limited = await handler(jsonRequest("/auth/login", { email: "a", password: "b" }));
+  const handler = createAuthHttpHandler({ auth, rateLimit: async () => true });
+  const limitedHandler = createAuthHttpHandler({ auth, rateLimit: async () => false });
+  const limited = await limitedHandler(jsonRequest("/auth/login", { email: "a", password: "b" }));
   assert.equal(limited.status, 429);
 
   const wrongMethod = await handler(new Request("https://novalife.example/auth/login"));
@@ -87,7 +88,7 @@ test("HTTP boundary rejects malformed requests and rate-limit failures", async (
     password: "test password",
     role: "developer_admin",
   }));
-  assert.equal(extraFields.status, 429, "rate limiting is applied before parsing login body");
+  assert.equal(extraFields.status, 400, "unexpected fields are rejected when rate limiting permits the request");
 });
 
 test("HTTP boundary fails closed if rate limiter is unavailable and requires limiter", async () => {
