@@ -95,3 +95,32 @@ test("Node adapter rejects invalid JSON and non-JSON content types", async () =>
   assert.equal(badType.status, 415);
   assert.equal(api.calls.length, 0);
 });
+
+
+test("Node adapter forwards secure login requests to the auth router", async () => {
+  const api = router({ status: 200, body: { actor: { id: "account-1", role: "client" }, accessToken: "test-token" } });
+  const res = response();
+  await handleNodeCareApiRequest(request({
+    method: "POST",
+    url: "/api/auth/login",
+    headers: { origin: "https://app.example", "content-type": "application/json" },
+    chunks: ['{"email":"client@example.test","password":"test-password"}'],
+  }), res, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(res.status, 200);
+  assert.equal(api.calls.length, 1);
+  assert.equal(api.calls[0].url, "/api/auth/login");
+  assert.deepEqual(api.calls[0].body, { email: "client@example.test", password: "test-password" });
+});
+
+test("Node adapter applies the same origin policy to auth mutations", async () => {
+  const api = router();
+  const res = response();
+  await handleNodeCareApiRequest(request({
+    method: "POST",
+    url: "/api/auth/login",
+    headers: { origin: "https://untrusted.example", "content-type": "application/json" },
+    chunks: ['{"email":"client@example.test","password":"test-password"}'],
+  }), res, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(res.status, 403);
+  assert.equal(api.calls.length, 0);
+});
