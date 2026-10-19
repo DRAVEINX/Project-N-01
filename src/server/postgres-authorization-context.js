@@ -16,6 +16,7 @@ const CORE_CARE_SCOPES = Object.freeze([
 
 function validActor(actor) {
   return actor && typeof actor.id === "string" && actor.id.trim() && actor.id === actor.id.trim() &&
+    !/[\u0000-\u001F\u007F]/.test(actor.id) &&
     typeof actor.role === "string" && actor.active === true;
 }
 
@@ -64,7 +65,7 @@ export function createPostgresAuthorizationContextLoader({
       );
       assignedClientIds = (assignments?.rows ?? [])
         .map((row) => row?.client_id)
-        .filter((id) => typeof id === "string" && id.length > 0 && id === id.trim())
+        .filter((id) => typeof id === "string" && id.length > 0 && id === id.trim() && !/[\u0000-\u001F\u007F]/.test(id))
         .filter((id, index, ids) => ids.indexOf(id) === index);
     }
 
