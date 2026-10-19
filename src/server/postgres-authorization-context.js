@@ -64,7 +64,7 @@ export function createPostgresAuthorizationContextLoader({
       );
       assignedClientIds = (assignments?.rows ?? [])
         .map((row) => row?.client_id)
-        .filter((id) => typeof id === "string" && id.trim().length > 0);
+        .filter((id) => typeof id === "string" && id.length > 0 && id === id.trim());
     }
 
     let grantedScopes = [];
