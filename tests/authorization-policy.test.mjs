@@ -124,3 +124,20 @@ test("caregiver role never gains personal-record access from matching clientId",
     );
   }
 });
+
+
+test("caregiver assignment and consent do not grant direct personal-record access", () => {
+  for (const resource of ["profile", "mood-report", "journal", "drawing", "appointment", "weekly-plan", "guide", "trusted-contact"]) {
+    assert.equal(
+      authorize({
+        actor: caregiver,
+        resource,
+        action: "read",
+        clientId: "client-1",
+        ...assignment
+      }).reason,
+      "personal-resource-role-not-allowed",
+      resource
+    );
+  }
+});
