@@ -163,3 +163,27 @@ test("session expires in memory and rejects malformed successful login responses
   await assert.rejects(malformed.login("client@example.test", "test-password"), /invalid-authentication-response/);
   assert.equal(malformed.isAuthenticated(), false);
 });
+
+
+test("failed account switch clears the previous in-memory identity", async () => {
+  let loginCalls = 0;
+  const session = createCareApiSession({
+    baseUrl: "https://api.example.test",
+    fetchImpl: async () => {
+      loginCalls += 1;
+      return loginCalls === 1
+        ? response(200, {
+            accessToken: "c".repeat(43),
+            tokenType: "Bearer",
+            expiresAt: Date.now() + 60_000,
+            actor: { id: "client-1", role: "client" },
+          })
+        : response(401, { error: "invalid-credentials" });
+    },
+  });
+  await session.login("client@example.test", "first-password");
+  assert.equal(session.isAuthenticated(), true);
+  await assert.rejects(session.login("caregiver@example.test", "wrong-password"), (error) => error.status === 401);
+  assert.equal(session.isAuthenticated(), false);
+  assert.equal(session.getActor(), null);
+});
