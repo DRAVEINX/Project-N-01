@@ -1,4 +1,5 @@
 import { authorize } from "../authorization-policy.js";
+import { SessionResolutionUnavailableError } from "./session-authenticator.js";
 
 /**
  * Creates a fail-closed authorization gate for server handlers.
@@ -32,7 +33,10 @@ export function createAuthorizedHandler({
     let actor;
     try {
       actor = await authenticate(request);
-    } catch {
+    } catch (error) {
+      if (error instanceof SessionResolutionUnavailableError) {
+        return { status: 503, body: { error: "authentication-unavailable" } };
+      }
       return { status: 401, body: { error: "unauthenticated" } };
     }
     if (!actor || typeof actor.id !== "string" || !actor.id.trim()) {
