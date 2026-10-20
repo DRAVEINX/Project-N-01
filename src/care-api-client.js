@@ -13,6 +13,11 @@ const ALLOWED_RESOURCES = new Set([
   "care-consent-record",
 ]);
 const ID_PATTERN = /^[^/\\?#]+$/;
+const ALLOWED_CONSENT_SCOPES = new Set([
+  "mood", "journal", "care_plan", "care_note", "care_task", "care_report",
+  "care_document", "medication_overview", "care_message", "roster", "team",
+  "care_consents",
+]);
 
 function validId(value, label) {
   if (typeof value !== "string" || !value.trim() || value.length > 200 || !ID_PATTERN.test(value)) {
@@ -144,6 +149,26 @@ export function createCareApiClient({ baseUrl, getAccessToken, fetchImpl = globa
       const record = validId(recordId, "record ID");
       if (!ALLOWED_RESOURCES.has(resource)) throw new TypeError("resource is not allow-listed");
       return request(`/api/care/clients/${client}/${encodeURIComponent(resource)}/${record}`, { method: "DELETE" });
+    },
+    listMyConsents() {
+      return request("/api/consents");
+    },
+    grantConsent({ granteeId, scope, expiresAt } = {}) {
+      const grantee = validId(granteeId, "grantee ID");
+      if (typeof scope !== "string" || !ALLOWED_CONSENT_SCOPES.has(scope)) {
+        throw new TypeError("consent scope is not allow-listed");
+      }
+      if (expiresAt !== undefined && expiresAt !== null &&
+          (typeof expiresAt !== "string" || !Number.isFinite(Date.parse(expiresAt)))) {
+        throw new TypeError("expiresAt must be a valid date-time string");
+      }
+      const body = { granteeId: decodeURIComponent(grantee), scope };
+      if (expiresAt !== undefined && expiresAt !== null) body.expiresAt = expiresAt;
+      return request("/api/consents", { method: "POST", body });
+    },
+    revokeConsent(consentId) {
+      const id = validId(consentId, "consent ID");
+      return request(`/api/consents/${id}`, { method: "DELETE" });
     },
   });
 }
