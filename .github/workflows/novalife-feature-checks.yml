@@ -52,3 +52,5 @@ jobs:
           node --check src/server/private-assignment-provisioner.js
           node --check scripts/manage-novalife-assignment.mjs
           node --check tests/private-assignment-provisioner.test.mjs
+      - name: Build minimal NovaLife API container without secrets
+        run: docker build --file Dockerfile --tag novalife-care-api:ci .
