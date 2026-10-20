@@ -68,7 +68,7 @@ test("update cannot omit tenant scope and binds actor/data separately", async ()
   const repository = createPostgresCareRecordRepository({ pool });
 
   assert.equal(await repository.update({
-    repository.get({ clientId: "client-A", resource: "care-note", id: "note\u0000-1" }),
+    clientId: "client-A", resource: "care-note", id: "note-1",
     actorId: "caregiver-A", data: { summary: "updated" },
   }), null);
   assert.match(pool.calls[0].sql, /WHERE client_id = \$1 AND resource = \$2 AND record_id = \$3/);
@@ -83,7 +83,7 @@ test("rejects unknown resources, invalid record data, and missing tenant identif
   await assert.rejects(repository.create({
     clientId: "client-A", resource: "care-note", actorId: "caregiver-A", data: ["not", "an", "object"],
   }), /plain object/);
-    repository.get({ clientId: "client-A", resource: "care-note", id: "note\u0000-1" }),
+  await assert.rejects(repository.get({ clientId: "", resource: "care-note", id: "note-1" }), /clientId must be a safe identifier/);
 });
 
 test("repository rejects unsafe tenant, actor, and record identifiers before querying", async () => {
