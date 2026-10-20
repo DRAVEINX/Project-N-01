@@ -13,7 +13,8 @@ const PERSONAL_SCOPES = Object.freeze({
   "appointment": "calendar",
   "weekly-plan": "planning",
   "guide": "guides",
-  "trusted-contact": "help"
+  "trusted-contact": "help",
+  "consent-management": "consent"
 });
 
 const CARE_SCOPES = Object.freeze({
