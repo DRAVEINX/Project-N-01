@@ -72,11 +72,34 @@ if (root) {
       return;
     }
     if (clientRole) {
-      root.innerHTML = '<section class="panel care-portal-panel" aria-labelledby="care-portal-title"><h3 id="care-portal-title">Mijn persoonlijke ruimte</h3><p>Je kunt hier zelf doorgeven hoe je je voelt. Begeleidersgegevens en zorgdossiers zijn niet zichtbaar in deze ruimte.</p><form data-care-mood-form><label for="care-mood-text">Hoe voel je je vandaag?</label><textarea id="care-mood-text" maxlength="4000" required rows="4" aria-describedby="care-mood-help"></textarea><p id="care-mood-help" class="section-subtitle">Schrijf in je eigen woorden. Deel alleen wat je wilt delen.</p><button class="primary-button" type="submit">Stemming veilig versturen</button></form><button class="secondary-button" type="button" data-care-logout>Uitloggen</button><p class="inline-status" role="status" aria-live="polite" data-care-status></p></section>';
+      root.innerHTML = '<section class="panel care-portal-panel" aria-labelledby="care-portal-title"><h3 id="care-portal-title">Mijn persoonlijke ruimte</h3><p>Je kunt hier zelf doorgeven hoe je je voelt. Begeleidersgegevens en zorgdossiers zijn niet zichtbaar in deze ruimte.</p><form data-care-mood-form><label for="care-mood-text">Hoe voel je je vandaag?</label><textarea id="care-mood-text" maxlength="4000" required rows="4" aria-describedby="care-mood-help"></textarea><p id="care-mood-help" class="section-subtitle">Schrijf in je eigen woorden. Deel alleen wat je wilt delen.</p><button class="primary-button" type="submit">Stemming veilig versturen</button></form><button class="secondary-button" type="button" data-care-mood-history>Mijn eerdere stemmingsrapportages bekijken</button><div data-care-mood-records aria-live="polite"><p class="section-subtitle">Je eerdere rapportages verschijnen hier wanneer je ze opvraagt.</p></div><button class="secondary-button" type="button" data-care-logout>Uitloggen</button><p class="inline-status" role="status" aria-live="polite" data-care-status></p></section>';
       root.querySelector("[data-care-logout]")?.addEventListener("click", async () => {
         setBusy(true);
         try { await session?.logout(); } catch { /* Local session is cleared even if the server is unavailable. */ }
         finally { session = null; setBusy(false); renderLogin("Je bent uitgelogd."); }
+      });
+      root.querySelector("[data-care-mood-history]")?.addEventListener("click", async () => {
+        if (busy || !session) return;
+        setBusy(true);
+        try {
+          const result = await session.api.list(actor.id, "mood-report", { limit: 50 });
+          const records = Array.isArray(result?.records) ? result.records : Array.isArray(result) ? result : [];
+          const container = root.querySelector("[data-care-mood-records]");
+          if (!records.length) {
+            container.innerHTML = '<p class="section-subtitle">Je hebt nog geen stemmingsrapportages opgeslagen.</p>';
+          } else {
+            container.innerHTML = '<ul>' + records.map((record) => {
+              const data = record?.data && typeof record.data === "object" ? record.data : record;
+              const title = escapeHtml(data.title || "Stemmingsrapportage");
+              const detail = escapeHtml(data.text || data.summary || "");
+              const date = escapeHtml(data.createdAt || record.createdAt || "");
+              return '<li><strong>' + title + '</strong>' + (date ? '<p class="section-subtitle">' + date + '</p>' : '') + '<p>' + detail + '</p></li>';
+            }).join("") + '</ul>';
+          }
+          statusText("Je eigen stemmingsrapportages zijn opgehaald.");
+        } catch (error) {
+          statusText(error?.status === 403 ? "Je hebt geen toestemming om deze gegevens te bekijken." : "Je stemmingsrapportages konden niet worden geladen.", true);
+        } finally { setBusy(false); }
       });
       root.querySelector("[data-care-mood-form]")?.addEventListener("submit", async (event) => {
         event.preventDefault();
