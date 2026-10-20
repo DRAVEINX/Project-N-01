@@ -347,3 +347,75 @@ test("durable audit repository writes authentication and authorization records",
     await pool.end();
   }
 });
+
+
+test("restricted API role has only the table privileges required by server routes", { skip: !databaseUrl }, async () => {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+
+  try {
+    const role = await pool.query(`
+      SELECT rolcanlogin, rolsuper, rolcreatedb, rolcreaterole, rolbypassrls
+      FROM pg_catalog.pg_roles
+      WHERE rolname = 'novalife_api'
+    `);
+    assert.equal(role.rowCount, 1);
+    assert.equal(role.rows[0].rolcanlogin, true);
+    assert.equal(role.rows[0].rolsuper, false);
+    assert.equal(role.rows[0].rolcreatedb, false);
+    assert.equal(role.rows[0].rolcreaterole, false);
+    assert.equal(role.rows[0].rolbypassrls, true);
+
+    const matrix = await pool.query(`
+      SELECT table_name,
+        has_table_privilege('novalife_api', format('public.%I', table_name), 'SELECT') AS can_select,
+        has_table_privilege('novalife_api', format('public.%I', table_name), 'INSERT') AS can_insert,
+        has_table_privilege('novalife_api', format('public.%I', table_name), 'UPDATE') AS can_update,
+        has_table_privilege('novalife_api', format('public.%I', table_name), 'DELETE') AS can_delete
+      FROM unnest(ARRAY[
+        'novalife_accounts',
+        'novalife_sessions',
+        'novalife_client_assignments',
+        'novalife_consent_grants',
+        'novalife_audit_events',
+        'novalife_care_records'
+      ]) AS names(table_name)
+      ORDER BY table_name
+    `);
+    const byName = Object.fromEntries(matrix.rows.map((row) => [row.table_name, row]));
+    assert.deepEqual(
+      [byName.novalife_accounts.can_select, byName.novalife_accounts.can_insert,
+       byName.novalife_accounts.can_update, byName.novalife_accounts.can_delete],
+      [true, false, false, false]
+    );
+    assert.deepEqual(
+      [byName.novalife_sessions.can_select, byName.novalife_sessions.can_insert,
+       byName.novalife_sessions.can_update, byName.novalife_sessions.can_delete],
+      [true, true, false, true]
+    );
+    for (const table of ["novalife_client_assignments", "novalife_consent_grants"]) {
+      assert.deepEqual(
+        [byName[table].can_select, byName[table].can_insert, byName[table].can_update, byName[table].can_delete],
+        [true, false, false, false],
+        table + " is read-only to the API role"
+      );
+    }
+    assert.deepEqual(
+      [byName.novalife_audit_events.can_select, byName.novalife_audit_events.can_insert,
+       byName.novalife_audit_events.can_update, byName.novalife_audit_events.can_delete],
+      [false, true, false, false]
+    );
+    assert.deepEqual(
+      [byName.novalife_care_records.can_select, byName.novalife_care_records.can_insert,
+       byName.novalife_care_records.can_update, byName.novalife_care_records.can_delete],
+      [true, true, true, true]
+    );
+    assert.equal(
+      await pool.query("SELECT has_schema_privilege('novalife_api', 'public', 'CREATE') AS can_create")
+        .then((result) => result.rows[0].can_create),
+      false
+    );
+  } finally {
+    await pool.end();
+  }
+});
