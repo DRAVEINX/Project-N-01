@@ -33,12 +33,12 @@ function fakePool({
         return { rows: accounts.filter((row) => values[0].includes(row.id)).map((row) => ({ ...row })) };
       }
       if (sql.includes("INSERT INTO novalife_client_assignments")) {
-        const [id, actorId, clientId, role, active, validFrom, validUntil] = values;
+        const [id, actorId, clientId, role, validFrom, validUntil] = values;
         if (accounts.some((row) => row.id === actorId && row.active &&
             row.role === role) && accounts.some((row) => row.id === clientId &&
             row.active && row.role === "client")) {
           return { rowCount: 1, rows: [{
-            id, actor_id: actorId, client_id: clientId, assignment_role: role, active,
+            id, actor_id: actorId, client_id: clientId, assignment_role: role, active: true,
             valid_from: validFrom, valid_until: validUntil,
           }] };
         }
