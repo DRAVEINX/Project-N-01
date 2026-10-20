@@ -7,6 +7,10 @@
   "scripts": {
     "test": "node --test",
     "serve": "node scripts/serve.mjs",
+    "serve:care-api": "node scripts/novalife-care-api-server.mjs",
+    "provision:care-account": "node scripts/provision-novalife-account.mjs",
+    "manage:care-assignment": "node scripts/manage-novalife-assignment.mjs",
+    "bootstrap:care-admin": "node scripts/bootstrap-novalife-admin.mjs",
     "build:mobile": "node scripts/prepare-mobile.mjs",
     "android:sync": "npm run build:mobile && cap sync android"
   },
@@ -15,7 +19,8 @@
   },
   "dependencies": {
     "@capacitor/core": "8.5.3",
-    "argon2": "^0.44.0"
+    "argon2": "^0.44.0",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@capacitor/android": "8.5.3",

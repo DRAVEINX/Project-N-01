@@ -16,6 +16,7 @@ export function createPostgresSessionRepository({ pool } = {}) {
         throw new TypeError("digest must be a lowercase SHA-256 hex digest");
       }
       if (!record || typeof record.actorId !== "string" || !record.actorId.trim() ||
+          record.actorId !== record.actorId.trim() ||
           !Number.isFinite(record.createdAt) || !Number.isFinite(record.expiresAt) ||
           record.expiresAt <= record.createdAt) {
         throw new TypeError("valid session record is required");
@@ -42,7 +43,8 @@ export function createPostgresSessionRepository({ pool } = {}) {
       if (!row) return null;
       const createdAt = Number(row.created_at_ms);
       const expiresAt = Number(row.expires_at_ms);
-      if (typeof row.actor_id !== "string" ||
+      if (typeof row.actor_id !== "string" || !row.actor_id.trim() ||
+          row.actor_id !== row.actor_id.trim() ||
           !Number.isFinite(createdAt) || !Number.isFinite(expiresAt)) return null;
       return Object.freeze({ actorId: row.actor_id, createdAt, expiresAt });
     },
@@ -57,7 +59,8 @@ export function createPostgresSessionRepository({ pool } = {}) {
     },
 
     async deleteByActor(actorId) {
-      if (typeof actorId !== "string" || !actorId.trim()) return 0;
+      if (typeof actorId !== "string" || !actorId.trim() ||
+          actorId !== actorId.trim()) return 0;
       const result = await pool.query(
         "DELETE FROM novalife_sessions WHERE actor_id = $1",
         [actorId]

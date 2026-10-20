@@ -58,6 +58,15 @@ test("creates opaque bearer token but persists only its SHA-256 digest", async (
   assert.equal(JSON.stringify(calls.put[0]).includes(session.token), false);
 });
 
+test("rejects actor IDs with surrounding whitespace before repository access", async () => {
+  const { manager, calls } = setup();
+  await assert.rejects(() => manager.create(" client-1 "), /surrounding whitespace/);
+  await assert.rejects(() => manager.create("client-1 "), /surrounding whitespace/);
+  await assert.rejects(() => manager.create(" client-1"), /surrounding whitespace/);
+  assert.equal(calls.actor.length, 0);
+  assert.equal(calls.put.length, 0);
+});
+
 test("authenticates an active actor and returns only minimal identity", async () => {
   const { manager } = setup();
   const session = await manager.create("client-1");
@@ -73,6 +82,28 @@ test("rejects malformed, unknown and revoked tokens", async () => {
   const session = await manager.create("client-1");
   assert.equal(await manager.revoke(session.token), true);
   assert.equal(await manager.authenticate(session.token), null);
+});
+
+test("deletes sessions containing invalid persisted actor IDs without loading the actor", async () => {
+  const { manager, rows, calls } = setup();
+  const session = await manager.create("client-1");
+  const digest = calls.put[0].digest;
+  rows.set(digest, { actorId: " client-1 ", createdAt: 1_800_000_000_000, expiresAt: 1_800_000_060_000 });
+  const actorCallsBefore = calls.actor.length;
+  assert.equal(await manager.authenticate(session.token), null);
+  assert.equal(calls.actor.length, actorCallsBefore);
+  assert.equal(rows.has(digest), false);
+});
+
+test("deletes sessions with invalid timestamps before actor lookup", async () => {
+  const { manager, rows, calls } = setup();
+  const session = await manager.create("client-1");
+  const digest = calls.put[0].digest;
+  rows.set(digest, { actorId: "client-1", createdAt: 1_800_000_060_000, expiresAt: 1_800_000_030_000 });
+  const actorCallsBefore = calls.actor.length;
+  assert.equal(await manager.authenticate(session.token), null);
+  assert.equal(calls.actor.length, actorCallsBefore);
+  assert.equal(rows.has(digest), false);
 });
 
 test("expires sessions and removes their stored digest", async () => {

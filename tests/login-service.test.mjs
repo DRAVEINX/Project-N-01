@@ -107,6 +107,9 @@ test("session creation outage fails closed", async () => {
 test("audit failure revokes newly created session and fails closed", async () => {
   const credentials = { id: "c1", email: "c@example.org", passwordHash: "scrypt$test-hash-long", role: "client", active: true };
   const { login, calls } = setup({ credentials, verify: true, auditError: new Error("audit down") });
-  assert.equal((await login({ email: credentials.email, password: "pw" })).status, 503);
-  assert.equal(calls.revoke.length, 1);
+  const result = await login({ email: credentials.email, password: "pw" });
+  assert.equal(result.status, 503);
+  assert.deepEqual(result.body, { error: "authentication-unavailable" });
+  assert.deepEqual(calls.revoke, ["a".repeat(43)], "the just-created bearer token must be revoked");
+  assert.equal("accessToken" in result.body, false, "no token may escape when audit persistence fails");
 });

@@ -1,0 +1,288 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { Readable } from "node:stream";
+import { handleNodeCareApiRequest } from "../src/server/node-care-api-adapter.js";
+
+function request({ method = "GET", url = "/api/care/care-note", headers = {}, chunks = [], encrypted = true } = {}) {
+  const req = Readable.from(chunks);
+  req.method = method;
+  req.url = url;
+  req.headers = headers;
+  req.socket = { encrypted };
+  return req;
+}
+
+function response() {
+  return {
+    status: null,
+    headers: null,
+    body: null,
+    writeHead(status, headers) { this.status = status; this.headers = headers; },
+    end(body) { this.body = body; },
+    destroy() { this.destroyed = true; },
+  };
+}
+
+function router(result = { status: 200, body: { records: [] } }) {
+  return { calls: [], async handle(req) { this.calls.push(req); return result; } };
+}
+
+test("Node adapter rejects insecure transport before calling router", async () => {
+  const api = router();
+  const res = response();
+  await handleNodeCareApiRequest(request({ encrypted: false }), res, api);
+  assert.equal(res.status, 400);
+  assert.equal(api.calls.length, 0);
+});
+
+test("Node adapter denies mutation requests without an allowed origin by default", async () => {
+  const api = router();
+  const res = response();
+  await handleNodeCareApiRequest(request({ method: "POST", headers: { "content-type": "application/json" }, chunks: ['{"text":"x"}'] }), res, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(res.status, 403);
+  assert.equal(api.calls.length, 0);
+});
+
+test("Node adapter rejects oversized bodies while reading the stream", async () => {
+  const api = router();
+  const res = response();
+  await handleNodeCareApiRequest(request({
+    method: "POST",
+    headers: { origin: "https://app.example", "content-type": "application/json" },
+    chunks: ['{"text":"this is too long"}'],
+  }), res, api, { allowedOrigins: ["https://app.example"], maxBodyBytes: 8 });
+  assert.equal(res.status, 413);
+  assert.equal(api.calls.length, 0);
+});
+
+test("Node adapter parses bounded JSON and forwards authenticated request headers", async () => {
+  const api = router({ status: 201, body: { created: true } });
+  const res = response();
+  await handleNodeCareApiRequest(request({
+    method: "POST",
+    headers: {
+      origin: "https://app.example",
+      "content-type": "application/json",
+      authorization: "Bearer test-token",
+      "x-request-id": "req-123",
+    },
+    chunks: ['{"text":"hello"}'],
+  }), res, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(res.status, 201);
+  assert.deepEqual(JSON.parse(res.body), { created: true });
+  assert.deepEqual(api.calls[0].body, { text: "hello" });
+  assert.equal(api.calls[0].headers.authorization, "Bearer test-token");
+  assert.equal(api.calls[0].requestId, "req-123");
+  assert.equal(res.headers["cache-control"], "no-store");
+});
+
+test("Node adapter rejects non-object JSON bodies before calling the router", async () => {
+  const api = router();
+  const cases = [
+    { chunks: ['"just a string"'] },
+    { chunks: ["42"] },
+    { chunks: ["true"] },
+    { chunks: ["null"] },
+    { chunks: ["[]"] },
+  ];
+
+  for (const item of cases) {
+    const res = response();
+    await handleNodeCareApiRequest(request({
+      method: "POST",
+      headers: { origin: "https://app.example", "content-type": "application/json" },
+      chunks: item.chunks,
+    }), res, api, { allowedOrigins: ["https://app.example"] });
+    assert.equal(res.status, 400);
+    assert.deepEqual(JSON.parse(res.body), { error: "invalid-request" });
+  }
+  assert.equal(api.calls.length, 0, "non-object JSON bodies must not reach the router");
+});
+
+test("Node adapter rejects invalid JSON and non-JSON content types", async () => {
+  const api = router();
+  const badJson = response();
+  await handleNodeCareApiRequest(request({
+    method: "POST",
+    headers: { origin: "https://app.example", "content-type": "application/json" },
+    chunks: ["{bad"],
+  }), badJson, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(badJson.status, 400);
+
+  const badType = response();
+  await handleNodeCareApiRequest(request({
+    method: "POST",
+    headers: { origin: "https://app.example", "content-type": "text/plain" },
+    chunks: ["hello"],
+  }), badType, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(badType.status, 415);
+  assert.equal(api.calls.length, 0);
+});
+
+test("Node adapter forwards secure login requests to the auth router", async () => {
+  const api = router({ status: 200, body: { actor: { id: "account-1", role: "client" }, accessToken: "test-token" } });
+  const res = response();
+  await handleNodeCareApiRequest(request({
+    method: "POST",
+    url: "/api/auth/login",
+    headers: { origin: "https://app.example", "content-type": "application/json" },
+    chunks: ['{"email":"client@example.test","password":"test-password"}'],
+  }), res, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(res.status, 200);
+  assert.equal(api.calls.length, 1);
+  assert.equal(api.calls[0].url, "/api/auth/login");
+  assert.deepEqual(api.calls[0].body, { email: "client@example.test", password: "test-password" });
+});
+
+test("Node adapter applies the same origin policy to auth mutations", async () => {
+  const api = router();
+  const res = response();
+  await handleNodeCareApiRequest(request({
+    method: "POST",
+    url: "/api/auth/login",
+    headers: { origin: "https://untrusted.example", "content-type": "application/json" },
+    chunks: ['{"email":"client@example.test","password":"test-password"}'],
+  }), res, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(res.status, 403);
+  assert.equal(api.calls.length, 0);
+});
+
+test("Node adapter rejects malformed or oversized Content-Length before reading body", async () => {
+  const api = router();
+  const cases = [
+    { contentLength: "not-a-number", expectedStatus: 413 },
+    { contentLength: "-1", expectedStatus: 413 },
+    { contentLength: "9", expectedStatus: 413, maxBodyBytes: 8 },
+  ];
+
+  for (const item of cases) {
+    const res = response();
+    await handleNodeCareApiRequest(request({
+      method: "POST",
+      headers: {
+        origin: "https://app.example",
+        "content-type": "application/json",
+        "content-length": item.contentLength,
+      },
+      chunks: ['{"x":1}'],
+    }), res, api, {
+      allowedOrigins: ["https://app.example"],
+      maxBodyBytes: item.maxBodyBytes ?? 64 * 1024,
+    });
+    assert.equal(res.status, item.expectedStatus);
+  }
+  assert.equal(api.calls.length, 0, "invalid Content-Length must not reach the router");
+});
+
+
+test("Node adapter hides unexpected router errors behind a no-store 503 response", async () => {
+  const api = {
+    calls: 0,
+    async handle() {
+      this.calls++;
+      throw new Error("sensitive database connection details");
+    },
+  };
+  const res = response();
+  await handleNodeCareApiRequest(request({ url: "/api/care/care-plan" }), res, api);
+
+  assert.equal(api.calls, 1);
+  assert.equal(res.status, 503);
+  assert.deepEqual(JSON.parse(res.body), { error: "care-data-unavailable" });
+  assert.equal(res.headers["cache-control"], "no-store");
+  assert.doesNotMatch(res.body, /sensitive database connection details/);
+});
+
+test("Node adapter keeps security response headers fixed against router overrides", async () => {
+  const api = router({
+    status: 200,
+    body: { ok: true },
+    headers: {
+      "content-type": "text/html",
+      "cache-control": "public, max-age=3600",
+      "x-content-type-options": "unsafe",
+      "content-length": "1",
+      // HTTP treats these names case-insensitively; mixed-case duplicates
+      // must not create a second, conflicting security header.
+      "Content-Type": "text/plain",
+      "Cache-Control": "public",
+      "X-Content-Type-Options": "unsafe",
+      "Content-Length": "2",
+      "x-custom-header": "allowed",
+    },
+  });
+  const res = response();
+  await handleNodeCareApiRequest(request(), res, api);
+
+  assert.equal(res.status, 200);
+  assert.equal(res.headers["content-type"], "application/json; charset=utf-8");
+  assert.equal(res.headers["cache-control"], "no-store");
+  assert.equal(res.headers["x-content-type-options"], "nosniff");
+  assert.equal(Number(res.headers["content-length"]), Buffer.byteLength(res.body, "utf8"));
+  assert.equal(res.headers["x-custom-header"], "allowed");
+  assert.deepEqual(JSON.parse(res.body), { ok: true });
+});
+
+
+test("Node adapter handles valid CORS preflight without reaching the API router", async () => {
+  const api = router();
+  const res = response();
+  await handleNodeCareApiRequest(request({
+    method: "OPTIONS",
+    headers: {
+      origin: "https://app.example",
+      "access-control-request-method": "PATCH",
+      "access-control-request-headers": "authorization, content-type, x-request-id",
+    },
+  }), res, api, { allowedOrigins: ["https://app.example"] });
+
+  assert.equal(res.status, 204);
+  assert.equal(res.headers["access-control-allow-origin"], "https://app.example");
+  assert.equal(res.headers["access-control-allow-methods"], "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  assert.match(res.headers["access-control-allow-headers"], /Authorization/);
+  assert.equal(api.calls.length, 0);
+});
+
+test("Node adapter denies CORS preflight from untrusted origins or with unapproved headers", async () => {
+  const api = router();
+  const untrusted = response();
+  await handleNodeCareApiRequest(request({
+    method: "OPTIONS",
+    headers: {
+      origin: "https://attacker.example",
+      "access-control-request-method": "GET",
+      "access-control-request-headers": "authorization",
+    },
+  }), untrusted, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(untrusted.status, 403);
+
+  const unsafeHeader = response();
+  await handleNodeCareApiRequest(request({
+    method: "OPTIONS",
+    headers: {
+      origin: "https://app.example",
+      "access-control-request-method": "GET",
+      "access-control-request-headers": "authorization, x-not-allowed",
+    },
+  }), unsafeHeader, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(unsafeHeader.status, 403);
+  assert.equal(api.calls.length, 0);
+});
+
+test("Node adapter adds exact CORS origin to actual responses only for allow-listed callers", async () => {
+  const api = router({ status: 200, body: { ok: true } });
+  const allowed = response();
+  await handleNodeCareApiRequest(request({
+    method: "GET",
+    headers: { origin: "https://app.example" },
+  }), allowed, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(allowed.headers["access-control-allow-origin"], "https://app.example");
+  assert.equal(allowed.headers.vary, "Origin");
+
+  const denied = response();
+  await handleNodeCareApiRequest(request({
+    method: "GET",
+    headers: { origin: "https://attacker.example" },
+  }), denied, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(denied.headers["access-control-allow-origin"], undefined);
+});

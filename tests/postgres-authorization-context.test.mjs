@@ -23,7 +23,7 @@ test("requires trusted pool and target resolver", () => {
 
 test("loads current assignments and consent from PostgreSQL, never from request fields", async () => {
   const pool = fakePool([
-    { rows: [{ client_id: "client-1" }, { client_id: "client-2" }] },
+    { rows: [{ client_id: "client-1" }, { client_id: "client-2" }, { client_id: " client-3 " }, { client_id: "client-2" }, { client_id: "" }, { client_id: null }] },
     { rows: [
       { scope: "care_plan" },
       { scope: "care_note" },
@@ -43,14 +43,14 @@ test("loads current assignments and consent from PostgreSQL, never from request 
     { body: { clientId: "attacker-chosen", grantedScopes: ["*"] } }
   );
   assert.equal(context.clientId, "client-1");
-  assert.deepEqual(context.assignedClientIds, ["client-1", "client-2"]);
-  assert.deepEqual(context.grantedScopes, ["care", "medication", "careTeam"]);
+  assert.deepEqual(context.assignedClientIds, ["client-1", "client-2"], "padded and duplicate database IDs must not become assignment grants");
+  assert.deepEqual(context.grantedScopes, ["carePlan", "careNote", "careTask", "careReport", "medication", "careTeam"]);
   assert.deepEqual(pool.calls[0].values, ["staff-1", "caregiver", new Date("2026-10-19T10:00:00.000Z")]);
   assert.deepEqual(pool.calls[1].values, ["client-1", "staff-1", new Date("2026-10-19T10:00:00.000Z")]);
   assert.doesNotMatch(pool.calls[0].sql, /attacker-chosen/);
 });
 
-test("one granular core-care grant does not broaden into the general care scope", async () => {
+test("one core-care consent authorizes only the selected resource", async () => {
   const pool = fakePool([
     { rows: [{ client_id: "client-1" }] },
     { rows: [{ scope: "care_plan" }] },
@@ -61,7 +61,17 @@ test("one granular core-care grant does not broaden into the general care scope"
     now: () => new Date("2026-10-19T10:00:00.000Z"),
   });
   const context = await loader({ id: "staff-1", role: "guardian", active: true }, {});
-  assert.deepEqual(context.grantedScopes, []);
+  assert.deepEqual(context.grantedScopes, ["carePlan"]);
+  const actor = { id: "staff-1", role: "guardian", active: true };
+  const common = {
+    actor,
+    action: "read",
+    clientId: context.clientId,
+    assignedClientIds: context.assignedClientIds,
+    grantedScopes: context.grantedScopes,
+  };
+  assert.equal(authorize({ ...common, resource: "care-plan" }).allowed, true);
+  assert.equal(authorize({ ...common, resource: "care-note" }).reason, "scope-not-consented");
 });
 
 test("does not query care assignments for client roles and propagates storage failures", async () => {
@@ -113,7 +123,7 @@ test("maps each supported consent scope conservatively and ignores unknown or du
   });
   const context = await loader({ id: "guardian-1", role: "guardian", active: true }, {});
   assert.deepEqual(context.grantedScopes, [
-    "care", "careDocuments", "medication", "careMessages", "roster", "careTeam"
+    "carePlan", "careNote", "careTask", "careReport", "careDocuments", "medication", "careMessages", "roster", "careTeam"
   ]);
   assert.equal(pool.calls.length, 2);
 });
@@ -190,6 +200,22 @@ test("authorization SQL excludes future, expired, inactive, and revoked grants u
   assert.deepEqual(context.grantedScopes, ["careDocuments"]);
 });
 
+test("trusted actor IDs containing embedded control characters fail closed before database access", async () => {
+  const pool = fakePool();
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+  });
+
+  for (const id of ["caregiver-\n1", "caregiver-\u0000x", "caregiver-\u007Fx"]) {
+    await assert.rejects(
+      loader({ id, role: "caregiver", active: true }, {}),
+      /trusted active actor is required/
+    );
+  }
+  assert.equal(pool.calls.length, 0);
+});
+
 test("non-caregiver roles never query assignments or consent even when a target is resolved", async () => {
   const pool = fakePool();
   const loader = createPostgresAuthorizationContextLoader({
@@ -220,7 +246,7 @@ test("parent role loads its own active assignments and current consent", async (
   assert.deepEqual(pool.calls[0].values, ["parent-1", "parent", new Date("2026-10-19T10:00:00.000Z")]);
   assert.deepEqual(pool.calls[1].values, ["client-1", "parent-1", new Date("2026-10-19T10:00:00.000Z")]);
   assert.deepEqual(context.assignedClientIds, ["client-1"]);
-  assert.deepEqual(context.grantedScopes, ["care"]);
+  assert.deepEqual(context.grantedScopes, ["carePlan", "careNote", "careTask", "careReport"]);
 });
 
 
@@ -253,6 +279,10 @@ test("assignment loader ignores malformed client IDs returned by the database", 
       { client_id: null },
       { client_id: 42 },
       {},
+      { client_id: "client-2" },
+      { client_id: "client-\n2" },
+      { client_id: "client-\u0000x" },
+      { client_id: " client-3 " },
       { client_id: "client-2" },
     ] },
     { rows: [{ scope: "care_document" }] },
@@ -299,10 +329,10 @@ test("maps the explicit care-consent record grant to the exact policy scope", as
 
 test("every care portal data resource maps to the exact policy scope and remains assignment-gated", async (t) => {
   const cases = [
-    { resource: "care-plan", grants: ["care_plan", "care_note", "care_task", "care_report"] },
-    { resource: "care-note", grants: ["care_plan", "care_note", "care_task", "care_report"] },
-    { resource: "care-task", grants: ["care_plan", "care_note", "care_task", "care_report"] },
-    { resource: "care-report", grants: ["care_plan", "care_note", "care_task", "care_report"] },
+    { resource: "care-plan", grants: ["care_plan"] },
+    { resource: "care-note", grants: ["care_note"] },
+    { resource: "care-task", grants: ["care_task"] },
+    { resource: "care-report", grants: ["care_report"] },
     { resource: "care-document", grants: ["care_document"] },
     { resource: "medication-overview", grants: ["medication_overview"] },
     { resource: "care-message", grants: ["care_message"] },
@@ -345,4 +375,183 @@ test("every care portal data resource maps to the exact policy scope and remains
       assert.equal(unassigned.reason, "client-not-assigned");
     });
   }
+});
+
+test("wildcard database grant cannot produce consent scopes or authorize care access", async (t) => {
+  for (const role of ["caregiver", "parent", "guardian"]) {
+    await t.test(role, async () => {
+      const pool = fakePool([
+        { rows: [{ client_id: "client-1" }] },
+        { rows: [{ scope: "*" }] },
+      ]);
+      const loader = createPostgresAuthorizationContextLoader({
+        pool,
+        resolveTargetClientId: async () => "client-1",
+        now: () => new Date("2026-10-19T10:00:00.000Z"),
+      });
+      const actor = { id: role + "-wildcard-db", role, active: true };
+      const context = await loader(actor, {});
+      assert.deepEqual(context.grantedScopes, []);
+
+      const decision = authorize({
+        actor,
+        resource: "care-plan",
+        action: "read",
+        clientId: context.clientId,
+        assignedClientIds: context.assignedClientIds,
+        grantedScopes: context.grantedScopes,
+      });
+      assert.equal(decision.allowed, false);
+      assert.equal(decision.reason, "scope-not-consented");
+    });
+  }
+});
+
+test("rejects whitespace-padded target IDs before querying PostgreSQL", async () => {
+  const pool = fakePool();
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => " client-1 ",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+
+  await assert.rejects(
+    loader({ id: "caregiver-1", role: "caregiver", active: true }, {}),
+    /target client resolver must return a valid ID segment or null/
+  );
+  assert.equal(pool.calls.length, 0, "invalid target must fail before assignment or consent queries");
+});
+
+test("rejects whitespace-padded trusted actor IDs before querying PostgreSQL", async () => {
+  const pool = fakePool();
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+  });
+
+  await assert.rejects(
+    loader({ id: " caregiver-1 ", role: "caregiver", active: true }, {}),
+    /trusted active actor is required/
+  );
+  assert.equal(pool.calls.length, 0);
+});
+
+
+test("real authorization context denies consent when the selected client is not assigned to the actor", async () => {
+  const pool = fakePool([
+    { rows: [{ client_id: "another-client" }] },
+    { rows: [
+      { scope: "care_plan" },
+      { scope: "care_note" },
+      { scope: "care_task" },
+      { scope: "care_report" },
+    ] },
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-not-assigned",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+  const actor = { id: "caregiver-1", role: "caregiver", active: true };
+  const context = await loader(actor, { params: { targetClientId: "client-not-assigned" } });
+
+  assert.deepEqual(context.assignedClientIds, ["another-client"]);
+  assert.deepEqual(context.grantedScopes, ["carePlan", "careNote", "careTask", "careReport"]);
+  const decision = authorize({
+    actor,
+    resource: "care-plan",
+    action: "read",
+    clientId: context.clientId,
+    assignedClientIds: context.assignedClientIds,
+    grantedScopes: context.grantedScopes,
+  });
+  assert.equal(decision.allowed, false);
+  assert.equal(decision.reason, "client-not-assigned");
+  assert.deepEqual(pool.calls[0].values, [
+    "caregiver-1",
+    "caregiver",
+    new Date("2026-10-19T10:00:00.000Z"),
+  ]);
+  assert.deepEqual(pool.calls[1].values, [
+    "client-not-assigned",
+    "caregiver-1",
+    new Date("2026-10-19T10:00:00.000Z"),
+  ]);
+});
+
+
+test("consent storage outage fails closed after assignment lookup", async () => {
+  const pool = fakePool([
+    { rows: [{ client_id: "client-1" }] },
+    new Error("consent database unavailable"),
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+
+  await assert.rejects(
+    loader({ id: "caregiver-consent-outage", role: "caregiver", active: true }, {}),
+    /consent database unavailable/
+  );
+  assert.equal(pool.calls.length, 2);
+  assert.match(pool.calls[1].sql, /revoked_at IS NULL/);
+});
+
+
+test("assignment storage outage fails closed without querying consent storage", async () => {
+  const pool = fakePool([
+    new Error("assignment database unavailable"),
+    { rows: [{ scope: "care_plan" }, { scope: "care_note" }, { scope: "care_task" }, { scope: "care_report" }] },
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+
+  await assert.rejects(
+    loader({ id: "caregiver-assignment-outage", role: "caregiver", active: true }, {}),
+    /assignment database unavailable/
+  );
+  assert.equal(pool.calls.length, 1, "consent storage must not be queried after assignment lookup fails");
+  assert.match(pool.calls[0].sql, /novalife_client_assignments/);
+});
+
+
+test("trusted target and database assignment IDs reject unsafe identifier segments", async (t) => {
+  for (const target of ["client-\\n1", "client-\\u0000x", "client/other", "client\\\\other", "client?x", "client#x", "x".repeat(201)]) {
+    await t.test(`reject target ${JSON.stringify(target)}`, async () => {
+      const pool = fakePool();
+      const loader = createPostgresAuthorizationContextLoader({
+        pool,
+        resolveTargetClientId: async () => target,
+      });
+      await assert.rejects(
+        loader({ id: "caregiver-1", role: "caregiver", active: true }, {}),
+        /target client resolver must return a valid ID segment or null/
+      );
+      assert.equal(pool.calls.length, 0);
+    });
+  }
+
+  const pool = fakePool([
+    { rows: [
+      { client_id: "client-1" },
+      { client_id: "client/other" },
+      { client_id: "client\\\\other" },
+      { client_id: "client?x" },
+      { client_id: "client#x" },
+      { client_id: "x".repeat(201) },
+    ] },
+    { rows: [{ scope: "care_document" }] },
+  ]);
+  const loader = createPostgresAuthorizationContextLoader({
+    pool,
+    resolveTargetClientId: async () => "client-1",
+    now: () => new Date("2026-10-19T10:00:00.000Z"),
+  });
+  const context = await loader({ id: "caregiver-1", role: "caregiver", active: true }, {});
+  assert.deepEqual(context.assignedClientIds, ["client-1"]);
 });

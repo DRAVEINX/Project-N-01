@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import { authorize, authorizationResources } from "../src/authorization-policy.js";
 
 const resourcesByScope = [
-  ["care-plan", "care"],
-  ["care-note", "care"],
-  ["care-task", "care"],
-  ["care-report", "care"],
+  ["care-plan", "carePlan"],
+  ["care-note", "careNote"],
+  ["care-task", "careTask"],
+  ["care-report", "careReport"],
   ["care-document", "careDocuments"],
   ["medication-overview", "medication"],
   ["care-message", "careMessages"],
@@ -20,10 +20,10 @@ for (const role of ["parent", "guardian"]) {
     const actor = { id: `${role}-1`, role, active: true };
     const base = { actor, resource: "care-plan", action: "read", clientId: "client-1" };
 
-    assert.equal(authorize({ ...base, assignedClientIds: ["client-1"], grantedScopes: ["care"] }).allowed, true);
-    assert.equal(authorize({ ...base, assignedClientIds: [], grantedScopes: ["care"] }).reason, "client-not-assigned");
+    assert.equal(authorize({ ...base, assignedClientIds: ["client-1"], grantedScopes: ["carePlan"] }).allowed, true);
+    assert.equal(authorize({ ...base, assignedClientIds: [], grantedScopes: ["carePlan"] }).reason, "client-not-assigned");
     assert.equal(authorize({ ...base, assignedClientIds: ["client-1"], grantedScopes: [] }).reason, "scope-not-consented");
-    assert.equal(authorize({ ...base, assignedClientIds: ["client-2"], grantedScopes: ["care"] }).reason, "client-not-assigned");
+    assert.equal(authorize({ ...base, assignedClientIds: ["client-2"], grantedScopes: ["carePlan"] }).reason, "client-not-assigned");
   });
 
   test(`${role} cannot access another client's personal resources through care role`, () => {

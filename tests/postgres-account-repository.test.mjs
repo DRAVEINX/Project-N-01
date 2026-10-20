@@ -26,12 +26,25 @@ test("loads only trusted actor fields and never returns the password hash", asyn
   assert.doesNotMatch(pool.calls[0].sql, /password_hash/);
 });
 
-test("fails closed on missing rows, malformed IDs, and unknown roles", async () => {
+test("loads parent accounts as a supported trusted role", async () => {
+  const pool = fakePool({ rows: [{ id: "parent-1", role: "parent", active: true }] });
+  const repo = createPostgresAccountRepository({ pool });
+  assert.deepEqual(await repo.loadActor("parent-1"), { id: "parent-1", role: "parent", active: true });
+});
+
+test("fails closed on missing rows, padded IDs, malformed IDs, and unknown roles", async () => {
   const pool = fakePool({ rows: [{ id: "a1", role: "superuser", active: true }] });
   const repo = createPostgresAccountRepository({ pool });
   assert.equal(await repo.loadActor("a1"), null);
   assert.equal(await repo.loadActor(" "), null);
   assert.equal(pool.calls.length, 1);
+
+  const paddedPool = fakePool({ rows: [{ id: " a1 ", role: "client", active: true }] });
+  const paddedRepo = createPostgresAccountRepository({ pool: paddedPool });
+  assert.equal(await paddedRepo.loadActor(" a1 "), null, "padded input IDs must be rejected before querying");
+  assert.equal(await paddedRepo.loadActor("a1 "), null, "trailing whitespace must be rejected before querying");
+  assert.equal(await paddedRepo.findCredentialsByEmail("person@example.org"), null, "credentials with padded actor IDs are rejected");
+  assert.equal(paddedPool.calls.length, 1, "only the credentials lookup should reach PostgreSQL");
 });
 
 test("finds credentials using normalized email and parameterized SQL", async () => {
@@ -55,6 +68,15 @@ test("rejects malformed email before database access", async () => {
   assert.equal(pool.calls.length, 0);
 });
 
+test("rejects padded account IDs before creating accounts", async () => {
+  const pool = fakePool();
+  const repo = createPostgresAccountRepository({ pool });
+  await assert.rejects(repo.createAccount({
+    id: " a1 ", email: "a@example.org", passwordHash: "scrypt$some-long-hash", role: "client"
+  }), /valid account id/);
+  assert.equal(pool.calls.length, 0);
+});
+
 test("creates an account with normalized email and parameterized SQL", async () => {
   const pool = fakePool({ rows: [{ id: "a2", role: "guardian", active: true }] });
   const repo = createPostgresAccountRepository({ pool });
@@ -66,15 +88,25 @@ test("creates an account with normalized email and parameterized SQL", async () 
   assert.match(pool.calls[0].sql, /INSERT INTO novalife_accounts/);
 });
 
-test("rejects plaintext-like short passwords and invalid roles before database access", async () => {
+test("creates parent accounts and rejects unknown roles before database access", async () => {
+  const pool = fakePool({ rows: [{ id: "p1", role: "parent", active: true }] });
+  const repo = createPostgresAccountRepository({ pool });
+  assert.deepEqual(await repo.createAccount({
+    id: "p1", email: "parent@example.org", passwordHash: "scrypt$some-long-parent-hash",
+    role: "parent"
+  }), { id: "p1", role: "parent", active: true });
+  await assert.rejects(repo.createAccount({
+    id: "a1", email: "a@example.org", passwordHash: "scrypt$some-long-hash", role: "superuser"
+  }), /invalid account role/);
+  assert.equal(pool.calls.length, 1);
+});
+
+test("rejects plaintext-like short passwords before database access", async () => {
   const pool = fakePool();
   const repo = createPostgresAccountRepository({ pool });
   await assert.rejects(repo.createAccount({
     id: "a1", email: "a@example.org", passwordHash: "plaintext", role: "client"
   }), /reviewed password hash/);
-  await assert.rejects(repo.createAccount({
-    id: "a1", email: "a@example.org", passwordHash: "scrypt$some-long-hash", role: "superuser"
-  }), /invalid account role/);
   assert.equal(pool.calls.length, 0);
 });
 

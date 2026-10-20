@@ -30,11 +30,13 @@ test("stores only the digest and uses parameterized SQL for session creation", a
   assert.equal(pool.calls[0].values.includes("raw-session-token"), false);
 });
 
-test("rejects malformed digest and invalid record before database access", async () => {
+test("rejects malformed digest and invalid records before database access", async () => {
   const pool = fakePool();
   const repo = createPostgresSessionRepository({ pool });
   await assert.rejects(repo.put("not-a-digest", { actorId: "a", createdAt: 1, expiresAt: 2 }), /digest/);
   await assert.rejects(repo.put("a".repeat(64), { actorId: "a", createdAt: 2, expiresAt: 1 }), /session record/);
+  await assert.rejects(repo.put("a".repeat(64), { actorId: " account-1", createdAt: 1, expiresAt: 2 }), /session record/);
+  await assert.rejects(repo.put("a".repeat(64), { actorId: "account-1 ", createdAt: 1, expiresAt: 2 }), /session record/);
   assert.equal(pool.calls.length, 0);
 });
 
@@ -57,6 +59,12 @@ test("returns null for missing rows or malformed lookup digest", async () => {
   assert.equal(pool.calls.length, 1);
 });
 
+test("does not trust database session rows with padded actor IDs", async () => {
+  const pool = fakePool({ rows: [{ actor_id: " account-1 ", created_at_ms: "1000", expires_at_ms: "9000" }] });
+  const repo = createPostgresSessionRepository({ pool });
+  assert.equal(await repo.get("b".repeat(64)), null);
+});
+
 test("deletes one session and reports whether a row was removed", async () => {
   const pool = fakePool({ rowCount: 1 });
   const repo = createPostgresSessionRepository({ pool });
@@ -70,6 +78,7 @@ test("deletes all sessions for an actor using a parameterized query", async () =
   const repo = createPostgresSessionRepository({ pool });
   assert.equal(await repo.deleteByActor("account-1"), 3);
   assert.equal(await repo.deleteByActor(" "), 0);
+  assert.equal(await repo.deleteByActor(" account-1 "), 0);
   assert.deepEqual(pool.calls[0].values, ["account-1"]);
   assert.match(pool.calls[0].sql, /DELETE FROM novalife_sessions WHERE actor_id = \$1/);
 });

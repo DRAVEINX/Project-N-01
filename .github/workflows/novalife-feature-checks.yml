@@ -41,3 +41,23 @@ jobs:
           node --check tests/smoke.test.mjs
           node --check tests/life-suite.test.mjs
           node --check tests/authorization-policy.test.mjs
+          node --check src/server/postgres-audit-repository.js
+          node --check src/server/node-care-api-adapter.js
+          node --check scripts/novalife-care-api-server.mjs
+          node --check tests/postgres-audit-repository.test.mjs
+          node --check tests/postgres-integration.test.mjs
+          node --check src/server/private-account-provisioner.js
+          node --check scripts/provision-novalife-account.mjs
+          node --check tests/private-account-provisioner.test.mjs
+          node --check src/server/private-assignment-provisioner.js
+          node --check scripts/manage-novalife-assignment.mjs
+          node --check tests/private-assignment-provisioner.test.mjs
+          node --check src/server/initial-admin-bootstrap.js
+          node --check scripts/bootstrap-novalife-admin.mjs
+          node --check tests/initial-admin-bootstrap.test.mjs
+          node --check src/server/http-rate-limiter.js
+          node --check tests/http-rate-limiter.test.mjs
+          node --check scripts/novalife-care-api-server.mjs
+          node --experimental-strip-types --check .railway/railway.ts
+      - name: Build minimal NovaLife API container without secrets
+        run: docker build --file Dockerfile --tag novalife-care-api:ci .

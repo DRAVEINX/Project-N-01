@@ -5,7 +5,7 @@ import { authorize } from "../src/authorization-policy.js";
 const client = { id: "client-1", role: "client", active: true };
 const caregiver = { id: "worker-1", role: "caregiver", active: true };
 const admin = { id: "admin-1", role: "developer_admin", active: true, provisioned: true };
-const assignment = { assignedClientIds: ["client-1"], grantedScopes: ["care", "careDocuments"] };
+const assignment = { assignedClientIds: ["client-1"], grantedScopes: ["carePlan", "careDocuments"] };
 
 test("deny by default for missing, inactive and invalid actors/actions", () => {
   assert.equal(authorize({resource:"care-plan",action:"read"}).reason, "missing-actor");
@@ -176,7 +176,7 @@ test("revoked caregiver assignment or consent and inactive caregiver deny care a
     action: "read",
     clientId: "client-1",
     assignedClientIds: ["client-1"],
-    grantedScopes: ["care"]
+    grantedScopes: ["carePlan"]
   };
 
   assert.equal(authorize(request).allowed, true, "active assignment and consent permit scoped access");
@@ -204,7 +204,7 @@ test("admin assignment and consent inputs cannot replace an audited support gran
     action: "read",
     clientId: "client-1",
     assignedClientIds: ["client-1"],
-    grantedScopes: ["care"]
+    grantedScopes: ["carePlan"]
   };
 
   assert.equal(
@@ -221,10 +221,10 @@ test("admin assignment and consent inputs cannot replace an audited support gran
 
 test("every care resource requires its exact consent scope and an active assignment", () => {
   const cases = [
-    ["care-plan", "care"],
-    ["care-note", "care"],
-    ["care-task", "care"],
-    ["care-report", "care"],
+    ["care-plan", "carePlan"],
+    ["care-note", "careNote"],
+    ["care-task", "careTask"],
+    ["care-report", "careReport"],
     ["care-document", "careDocuments"],
     ["medication-overview", "medication"],
     ["care-message", "careMessages"],
@@ -309,12 +309,12 @@ test("parent and guardian roles require explicit assignment and consent just lik
     };
 
     assert.equal(
-      authorize({ ...base, assignedClientIds: ["client-1"], grantedScopes: ["care"] }).allowed,
+      authorize({ ...base, assignedClientIds: ["client-1"], grantedScopes: ["carePlan"] }).allowed,
       true,
       `${role} with assignment and consent should be allowed scoped access`
     );
     assert.equal(
-      authorize({ ...base, assignedClientIds: [], grantedScopes: ["care"] }).reason,
+      authorize({ ...base, assignedClientIds: [], grantedScopes: ["carePlan"] }).reason,
       "client-not-assigned",
       `${role} without an assignment must be denied`
     );
@@ -324,7 +324,7 @@ test("parent and guardian roles require explicit assignment and consent just lik
       `${role} without consent must be denied`
     );
     assert.equal(
-      authorize({ ...base, assignedClientIds: ["client-1"], grantedScopes: ["care"], actor: { ...actor, active: false } }).reason,
+      authorize({ ...base, assignedClientIds: ["client-1"], grantedScopes: ["carePlan"], actor: { ...actor, active: false } }).reason,
       "inactive-account",
       `${role} with an inactive account must be denied`
     );
@@ -345,7 +345,7 @@ test("parent and guardian access to care data never grants access to personal re
           action: "read",
           clientId: "client-1",
           assignedClientIds: ["client-1"],
-          grantedScopes: ["care", "careDocuments", "medication", "careMessages", "roster", "careTeam", "careConsents"]
+          grantedScopes: ["carePlan", "careNote", "careTask", "careReport", "careDocuments", "medication", "careMessages", "roster", "careTeam", "careConsents"]
         }).allowed,
         false,
         role + " with broad care scopes must not read personal resource " + resource
@@ -369,7 +369,7 @@ test("parent and guardian roles cannot mutate personal records", () => {
             action,
             clientId: "client-1",
             assignedClientIds: ["client-1"],
-            grantedScopes: ["care", "careDocuments", "medication", "careMessages", "roster", "careTeam", "careConsents"]
+            grantedScopes: ["carePlan", "careNote", "careTask", "careReport", "careDocuments", "medication", "careMessages", "roster", "careTeam", "careConsents"]
           }).allowed,
           false,
           role + " must not " + action + " personal resource " + resource
@@ -382,10 +382,10 @@ test("parent and guardian roles cannot mutate personal records", () => {
 
 test("parent and guardian roles require the exact consent scope for every care resource", () => {
   const cases = [
-    ["care-plan", "care"],
-    ["care-note", "care"],
-    ["care-task", "care"],
-    ["care-report", "care"],
+    ["care-plan", "carePlan"],
+    ["care-note", "careNote"],
+    ["care-task", "careTask"],
+    ["care-report", "careReport"],
     ["care-document", "careDocuments"],
     ["medication-overview", "medication"],
     ["care-message", "careMessages"],
@@ -420,10 +420,10 @@ test("parent and guardian roles require the exact consent scope for every care r
 
 test("care roles cannot access another client\u0027s care resources with consent for a different client", () => {
   const cases = [
-    ["care-plan", "care"],
-    ["care-note", "care"],
-    ["care-task", "care"],
-    ["care-report", "care"],
+    ["care-plan", "carePlan"],
+    ["care-note", "careNote"],
+    ["care-task", "careTask"],
+    ["care-report", "careReport"],
     ["care-document", "careDocuments"],
     ["medication-overview", "medication"],
     ["care-message", "careMessages"],
@@ -480,4 +480,66 @@ test("only provisioned developer admins may access admin users and audit logs", 
 
   assert.equal(authorize({ actor: admin, resource: "admin-users", action: "read" }).allowed, true);
   assert.equal(authorize({ actor: admin, resource: "audit-log", action: "read" }).allowed, true);
+});
+
+test("wildcard consent never substitutes for each care resource's explicit scope", () => {
+  const cases = [
+    ["care-plan", "carePlan"],
+    ["care-note", "careNote"],
+    ["care-task", "careTask"],
+    ["care-report", "careReport"],
+    ["care-document", "careDocuments"],
+    ["medication-overview", "medication"],
+    ["care-message", "careMessages"],
+    ["care-roster", "roster"],
+    ["care-team", "careTeam"],
+    ["care-consent-record", "careConsents"]
+  ];
+
+  for (const role of ["caregiver", "parent", "guardian"]) {
+    const actor = { id: role + "-wildcard", role, active: true };
+    for (const [resource, requiredScope] of cases) {
+      assert.notEqual(requiredScope, "*");
+      assert.equal(
+        authorize({
+          actor,
+          resource,
+          action: "read",
+          clientId: "client-1",
+          assignedClientIds: ["client-1"],
+          grantedScopes: ["*"]
+        }).reason,
+        "scope-not-consented",
+        role + " wildcard consent must not authorize " + resource
+      );
+    }
+  }
+});
+
+
+test("clients can manage consent grants only for their own account", () => {
+  assert.equal(
+    authorize({ actor: client, resource: "consent-management", action: "read", clientId: "client-1" }).allowed,
+    true
+  );
+  assert.equal(
+    authorize({ actor: client, resource: "consent-management", action: "create", clientId: "client-1" }).allowed,
+    true
+  );
+  assert.equal(
+    authorize({ actor: client, resource: "consent-management", action: "delete", clientId: "client-1" }).allowed,
+    true
+  );
+  assert.equal(
+    authorize({ actor: client, resource: "consent-management", action: "read", clientId: "client-2" }).reason,
+    "personal-record-owner-only"
+  );
+  assert.equal(
+    authorize({ actor: caregiver, resource: "consent-management", action: "create", clientId: "worker-1" }).reason,
+    "personal-resource-role-not-allowed"
+  );
+  assert.equal(
+    authorize({ actor: client, resource: "consent-management", action: "manage", clientId: "client-1" }).reason,
+    "personal-record-manage-not-allowed"
+  );
 });

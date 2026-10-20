@@ -31,8 +31,8 @@ export function createSessionManager({
 
   return Object.freeze({
     async create(actorId) {
-      if (typeof actorId !== "string" || !actorId.trim()) {
-        throw new TypeError("actorId is required");
+      if (typeof actorId !== "string" || !actorId.trim() || actorId !== actorId.trim()) {
+        throw new TypeError("actorId is required and must not have surrounding whitespace");
       }
       const actor = await accountRepository.loadActor(actorId);
       if (!actor || actor.active !== true || actor.id !== actorId) {
@@ -61,7 +61,13 @@ export function createSessionManager({
       if (!Number.isSafeInteger(currentTime) || currentTime < 0) {
         throw new Error("clock returned an invalid timestamp");
       }
-      if (!Number.isFinite(session.expiresAt) || session.expiresAt <= currentTime) {
+      const validSessionRecord = typeof session.actorId === "string" &&
+        session.actorId.length > 0 &&
+        session.actorId === session.actorId.trim() &&
+        Number.isSafeInteger(session.createdAt) && session.createdAt >= 0 &&
+        Number.isSafeInteger(session.expiresAt) &&
+        session.expiresAt > session.createdAt;
+      if (!validSessionRecord || session.expiresAt <= currentTime) {
         await sessionRepository.delete(digest);
         return null;
       }

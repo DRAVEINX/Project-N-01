@@ -1,4 +1,8 @@
 const CONSENT_TO_POLICY_SCOPE = Object.freeze({
+  care_plan: "carePlan",
+  care_note: "careNote",
+  care_task: "careTask",
+  care_report: "careReport",
   care_document: "careDocuments",
   medication_overview: "medication",
   care_message: "careMessages",
@@ -7,18 +11,18 @@ const CONSENT_TO_POLICY_SCOPE = Object.freeze({
   care_consents: "careConsents",
 });
 
-const CORE_CARE_SCOPES = Object.freeze([
-  "care_plan",
-  "care_note",
-  "care_task",
-  "care_report",
-]);
-
-function validActor(actor) {
-  return actor && typeof actor.id === "string" && actor.id.trim() &&
-    typeof actor.role === "string" && actor.active === true;
+function validIdentifierSegment(value) {
+  return typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 200 &&
+    value.trim() === value &&
+    !/[\u0000-\u001F\u007F/\\?#]/.test(value);
 }
 
+function validActor(actor) {
+  return actor && validIdentifierSegment(actor.id) &&
+    typeof actor.role === "string" && actor.active === true;
+}
 /**
  * Build a server-side authorization-context loader using PostgreSQL.
  *
@@ -42,8 +46,8 @@ export function createPostgresAuthorizationContextLoader({
     if (!validActor(actor)) throw new TypeError("trusted active actor is required");
 
     const target = await resolveTargetClientId(actor, request);
-    if (target !== null && (typeof target !== "string" || !target.trim())) {
-      throw new TypeError("target client resolver must return a non-empty ID or null");
+    if (target !== null && !validIdentifierSegment(target)) {
+      throw new TypeError("target client resolver must return a valid ID segment or null");
     }
 
     const currentTime = now();
@@ -64,7 +68,8 @@ export function createPostgresAuthorizationContextLoader({
       );
       assignedClientIds = (assignments?.rows ?? [])
         .map((row) => row?.client_id)
-        .filter((id) => typeof id === "string" && id.trim().length > 0);
+        .filter((id) => validIdentifierSegment(id))
+        .filter((id, index, ids) => ids.indexOf(id) === index);
     }
 
     let grantedScopes = [];
@@ -83,12 +88,8 @@ export function createPostgresAuthorizationContextLoader({
         .map((row) => row?.scope)
         .filter((scope) => typeof scope === "string"));
 
-      // The policy's "care" scope covers four resource families. Be
-      // conservative: require every underlying explicit grant rather than
-      // broadening a single granular consent into access to all care resources.
-      if (CORE_CARE_SCOPES.every((scope) => scopes.has(scope))) {
-        grantedScopes.push("care");
-      }
+      // Map each active database consent to exactly one policy scope. A
+      // single consent must never broaden access to unrelated care resources.
       for (const [databaseScope, policyScope] of Object.entries(CONSENT_TO_POLICY_SCOPE)) {
         if (scopes.has(databaseScope)) grantedScopes.push(policyScope);
       }
