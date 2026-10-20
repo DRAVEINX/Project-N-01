@@ -46,3 +46,6 @@ jobs:
           node --check scripts/novalife-care-api-server.mjs
           node --check tests/postgres-audit-repository.test.mjs
           node --check tests/postgres-integration.test.mjs
+          node --check src/server/private-account-provisioner.js
+          node --check scripts/provision-novalife-account.mjs
+          node --check tests/private-account-provisioner.test.mjs
