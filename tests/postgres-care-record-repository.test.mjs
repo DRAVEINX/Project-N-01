@@ -20,9 +20,9 @@ test("care record reads always scope SQL by authorized client, resource and reco
   assert.equal(await repository.get({ clientId: "client-A", resource: "care-note", id: "note-1" }), null);
   assert.equal(await repository.get({ clientId: "client-A", resource: "care-note", id: "note-1" }), null);
 
-  assert.match(pool.calls[0].sql, /WHERE client_id = \\$1 AND resource = \\$2 AND record_id = \\$3/);
+  assert.match(pool.calls[0].sql, /WHERE client_id = \$1 AND resource = \$2 AND record_id = \$3/);
   assert.deepEqual(pool.calls[0].values, ["client-A", "care-note", "note-1"]);
-  assert.match(pool.calls[1].sql, /WHERE client_id = \\$1 AND resource = \\$2 AND record_id = \\$3/);
+  assert.match(pool.calls[1].sql, /WHERE client_id = \$1 AND resource = \$2 AND record_id = \$3/);
   assert.deepEqual(pool.calls[1].values, ["client-A", "care-note", "note-1"]);
 });
 
