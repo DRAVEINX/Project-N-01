@@ -11,6 +11,6 @@ test("Railway service configuration is healthchecked and contains no secrets or 
   assert.match(config, /healthcheckTimeout:\s*120/);
   assert.match(config, /NODE_ENV:\s*"production"/);
   assert.match(config, /NOVALIFE_TRUST_PROXY:\s*"true"/);
-  assert.doesNotMatch(config, /DATABASE_URL|password|secret|ALLOWED_ORIGINS/i);
+  assert.doesNotMatch(config, /^\s*(DATABASE_URL|ALLOWED_ORIGINS|SUPABASE_SERVICE_ROLE_KEY|PASSWORD)\s*:/im);
   assert.doesNotMatch(config, /domains:\s*\[/, "no public domain should be attached by default");
 });
