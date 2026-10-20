@@ -1,12 +1,14 @@
 import { createServer as createHttpServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
 import { readFile } from "node:fs/promises";
+import { isIP } from "node:net";
 import { Pool } from "pg";
 import { createNovaLifeCareApiRouter } from "../src/server/care-api-router.js";
 import { createCareTargetResolver } from "../src/server/care-target-resolver.js";
 import { extractBearerSessionToken } from "../src/server/bearer-token.js";
 import { handleNodeCareApiRequest } from "../src/server/node-care-api-adapter.js";
 import { createPostgresAuditRepository } from "../src/server/postgres-audit-repository.js";
+import { createHttpRateLimiter } from "../src/server/http-rate-limiter.js";
 
 const PRODUCTION = process.env.NODE_ENV === "production";
 const DEFAULT_POOL_SIZE = 5;
@@ -242,14 +244,36 @@ async function main() {
       allowMissingOrigin: false,
       isSecureRequest: (request) => trustedTransport(request, { trustProxy, directTls }),
     };
+    const rateLimiter = createHttpRateLimiter();
     const handler = async (req, res) => {
-      if (req.url === "/healthz" && req.method === "GET") {
+      let requestPath = null;
+      try { requestPath = new URL(req.url ?? "/", "http://novalife.internal").pathname; }
+      catch { /* The HTTP adapter will reject malformed paths. */ }
+
+      if (requestPath === "/healthz" && req.method === "GET") {
         // This liveness endpoint exposes no state and must also work for
         // platform-internal healthchecks, where TLS has already terminated
         // before the request reaches this process.
         safeJson(res, 200, { status: "ok" });
         return;
       }
+
+      const forwardedIp = req.headers?.["x-real-ip"];
+      const remoteIp = req.socket?.remoteAddress;
+      const clientIp = trustProxy
+        ? (typeof forwardedIp === "string" && isIP(forwardedIp) ? forwardedIp : null)
+        : (typeof remoteIp === "string" && isIP(remoteIp) ? remoteIp : null);
+      const rateLimit = rateLimiter.check(req, clientIp);
+      if (!rateLimit.allowed) {
+        const headers = rateLimit.status === 429 ? {
+          "retry-after": String(rateLimit.retryAfterSeconds),
+          ...(Number.isSafeInteger(rateLimit.limit) ? { "x-ratelimit-limit": String(rateLimit.limit) } : {}),
+          "x-ratelimit-remaining": "0",
+        } : {};
+        safeJson(res, rateLimit.status, { error: rateLimit.error ?? "request-security-unavailable" }, headers);
+        return;
+      }
+
       await handleNodeCareApiRequest(req, res, router, adapterOptions);
     };
 
