@@ -198,10 +198,13 @@ function consentApiSetup({
                 account.role !== assignment.assignment_role ||
                 !["caregiver", "parent", "guardian"].includes(account.role)) return null;
             return { id: account.id, role: account.role };
-          }).filter(Boolean),
+          }).filter(Boolean).sort((left, right) =>
+            left.role.localeCompare(right.role) || left.id.localeCompare(right.id)
+          ),
         };
       }
-      if (sql.includes("FROM novalife_client_assignments")) return { rows: [] };
+      if (sql.includes("FROM novalife_client_assignments") &&
+          !sql.includes("INSERT INTO novalife_consent_grants")) return { rows: [] };
       if (sql.includes("SELECT scope") && sql.includes("FROM novalife_consent_grants")) {
         return { rows: [] };
       }
