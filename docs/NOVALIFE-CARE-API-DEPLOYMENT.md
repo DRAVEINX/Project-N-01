@@ -36,9 +36,9 @@ A valid consent is not sufficient by itself: the current active assignment and m
 
 ## Host configuration
 
-Use Node.js 22 or newer. Start with `npm run serve:care-api`. Inject settings through the host's secret manager/environment; do not commit a real `.env` file.
+Use Node.js 22 or newer. The prepared Railway Infrastructure-as-Code file is `.railway/railway.ts`; it points to the feature branch, selects `/healthz` as the startup healthcheck, and configures only non-secret runtime settings. Applying the file requires a connected Railway account and explicitly creates resources in that account. It does not publish a public domain by itself. Start locally with `npm run serve:care-api`. Inject settings through the host's secret manager/environment; do not commit a real `.env` file.
 
-Required settings:
+Required settings (set them through the host's secret manager/Variables UI; never commit secrets):
 - `DATABASE_URL`: private PostgreSQL connection URI authenticated as `novalife_api`.
 - `ALLOWED_ORIGINS`: comma-separated, exact origin strings. Include the actual HTTPS web origin plus the exact origins used by the native builds, such as `capacitor://localhost` and `http://localhost`. Never use `*`.
 - `PORT`: port supplied by the host.
@@ -46,7 +46,7 @@ Required settings:
 - `NOVALIFE_EXTERNAL_RATE_LIMIT_CONFIRMED=true` only after the host/ingress has real rate limits configured for login and mutation routes. The server deliberately refuses production startup without this explicit confirmation.
 - Optional `DATABASE_POOL_SIZE` (1–20; default 5). Connection and SQL timeouts are bounded in the server.
 
-See `deploy/novalife-care-api.env.example` for placeholders only. `/healthz` is a liveness response and does not reveal database details.
+See `deploy/novalife-care-api.env.example` for placeholders only. `/healthz` is a liveness response and reveals no database details; it is intended for platform healthchecks and does not prove the database remains available after startup. Railway's public edge provides HTTPS and `X-Forwarded-Proto`/`X-Real-IP`; the server trusts proxy transport only with `NOVALIFE_TRUST_PROXY=true`, and hosting must prevent direct access that bypasses the trusted proxy. See the [Railway public-networking specs](https://docs.railway.com/networking/public-networking/specs-and-limits).
 
 The root `Dockerfile` builds a non-root Node.js 22 runtime image for the API only. To build it locally without embedding secrets:
 ```sh
