@@ -7,6 +7,7 @@
   "scripts": {
     "test": "node --test",
     "serve": "node scripts/serve.mjs",
+    "serve:care-api": "node scripts/novalife-care-api-server.mjs",
     "build:mobile": "node scripts/prepare-mobile.mjs",
     "android:sync": "npm run build:mobile && cap sync android"
   },
