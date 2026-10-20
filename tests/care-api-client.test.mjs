@@ -258,3 +258,23 @@ test("consent client never sends a request without an in-memory bearer token", a
   await assert.rejects(api.revokeConsent("grant-1"), (error) => error.code === "authentication-required");
   assert.equal(calls, 0);
 });
+
+
+test("consent client requests only the caller's assigned care-team recipients", async () => {
+  let observed;
+  const api = createCareApiClient({
+    baseUrl: "https://api.example.test",
+    getAccessToken: () => "token",
+    fetchImpl: async (url, options) => {
+      observed = { url, options };
+      return response(200, { recipients: [{ id: "caregiver-1", role: "caregiver" }] });
+    },
+  });
+
+  const result = await api.listMyConsentRecipients();
+  assert.deepEqual(result.recipients, [{ id: "caregiver-1", role: "caregiver" }]);
+  assert.equal(observed.url, "https://api.example.test/api/consent-recipients");
+  assert.equal(observed.options.method, "GET");
+  assert.equal(observed.options.headers.authorization, "Bearer token");
+  assert.equal(observed.options.credentials, "omit");
+});
