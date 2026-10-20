@@ -18,10 +18,10 @@ const PERSONAL_SCOPES = Object.freeze({
 });
 
 const CARE_SCOPES = Object.freeze({
-  "care-plan": "care",
-  "care-note": "care",
-  "care-task": "care",
-  "care-report": "care",
+  "care-plan": "carePlan",
+  "care-note": "careNote",
+  "care-task": "careTask",
+  "care-report": "careReport",
   "care-document": "careDocuments",
   "medication-overview": "medication",
   "care-message": "careMessages",
