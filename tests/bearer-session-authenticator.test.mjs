@@ -19,7 +19,7 @@ test("valid bearer session resolves trusted current account and reaches authoriz
     loadAuthorizationContext: async () => ({
       clientId: "client-1",
       assignedClientIds: ["client-1"],
-      grantedScopes: ["care"]
+      grantedScopes: ["carePlan"]
     }),
     audit: async () => {},
     handler: async (_request, context) => {
