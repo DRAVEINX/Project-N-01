@@ -265,12 +265,18 @@ async function main() {
         : (typeof remoteIp === "string" && isIP(remoteIp) ? remoteIp : null);
       const rateLimit = rateLimiter.check(req, clientIp);
       if (!rateLimit.allowed) {
-        const headers = rateLimit.status === 429 ? {
+        const origin = req.headers?.origin;
+        const corsHeaders = typeof origin === "string" && allowedOrigins.includes(origin)
+          ? { "access-control-allow-origin": origin, "vary": "Origin" }
+          : {};
+        const limitHeaders = rateLimit.status === 429 ? {
           "retry-after": String(rateLimit.retryAfterSeconds),
           ...(Number.isSafeInteger(rateLimit.limit) ? { "x-ratelimit-limit": String(rateLimit.limit) } : {}),
           "x-ratelimit-remaining": "0",
         } : {};
-        safeJson(res, rateLimit.status, { error: rateLimit.error ?? "request-security-unavailable" }, headers);
+        safeJson(res, rateLimit.status, {
+          error: rateLimit.error ?? "request-security-unavailable",
+        }, { ...corsHeaders, ...limitHeaders });
         return;
       }
 
