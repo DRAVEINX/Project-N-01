@@ -55,6 +55,9 @@ jobs:
           node --check src/server/initial-admin-bootstrap.js
           node --check scripts/bootstrap-novalife-admin.mjs
           node --check tests/initial-admin-bootstrap.test.mjs
+          node --check src/server/http-rate-limiter.js
+          node --check tests/http-rate-limiter.test.mjs
+          node --check scripts/novalife-care-api-server.mjs
           node --experimental-strip-types --check .railway/railway.ts
       - name: Build minimal NovaLife API container without secrets
         run: docker build --file Dockerfile --tag novalife-care-api:ci .
