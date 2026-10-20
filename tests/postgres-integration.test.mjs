@@ -179,7 +179,19 @@ test("RLS helper migration denies direct execution to public API roles", { skip:
     `);
     assert.equal(helper.rowCount, 1, "RLS helper must remain installed for the event trigger");
     assert.equal(helper.rows[0].security_definer, true);
+
+    // The event trigger must still invoke the helper after EXECUTE is revoked
+    // from API roles, and it must continue protecting newly created public tables.
+    await pool.query("CREATE TABLE public.novalife_rls_trigger_probe (id integer)");
+    const rls = await pool.query(`
+      SELECT c.relrowsecurity AS rls_enabled
+      FROM pg_catalog.pg_class c
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relname = 'novalife_rls_trigger_probe'
+    `);
+    assert.equal(rls.rows[0]?.rls_enabled, true, "automatic RLS trigger must protect new public tables");
   } finally {
+    await pool.query("DROP TABLE IF EXISTS public.novalife_rls_trigger_probe").catch(() => {});
     await pool.end();
   }
 });
