@@ -2,13 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { provisionNovaLifeAccount } from "../src/server/private-account-provisioner.js";
 
-function fakePool({ failOn = null } = {}) {
+function fakePool({ failOn = null, operatorValid = true } = {}) {
   const calls = [];
   const client = {
     released: false,
     async query(sql, values) {
       calls.push({ sql, values });
       if (failOn && sql.includes(failOn)) throw new Error("sensitive database error");
+      if (sql.includes("role = 'developer_admin'")) {
+        return { rowCount: operatorValid ? 1 : 0, rows: operatorValid ? [{ id: values[0] }] : [] };
+      }
       return { rowCount: 1, rows: [] };
     },
     release() { this.released = true; },
@@ -102,4 +105,16 @@ test("rolls back the account if durable audit insertion fails", async () => {
   assert.ok(pool.calls.some((call) => call.sql === "ROLLBACK"));
   assert.equal(pool.calls.at(-1).sql, "ROLLBACK");
   assert.equal(pool.client.released, true);
+});
+
+
+test("rejects account provisioning when the operator is not an active developer administrator", async () => {
+  const pool = fakePool({ operatorValid: false });
+  await assert.rejects(
+    provisionNovaLifeAccount({ pool, ...validInput() }),
+    /account-provisioning-failed/
+  );
+  assert.ok(pool.calls.some((call) => call.sql === "ROLLBACK"));
+  assert.equal(pool.calls.some((call) => call.sql.includes("INSERT INTO novalife_accounts")), false);
+  assert.equal(pool.calls.some((call) => call.sql.includes("INSERT INTO novalife_audit_events")), false);
 });
