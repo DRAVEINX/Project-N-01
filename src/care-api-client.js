@@ -153,6 +153,9 @@ export function createCareApiClient({ baseUrl, getAccessToken, fetchImpl = globa
     listMyConsents() {
       return request("/api/consents");
     },
+    listMyConsentRecipients() {
+      return request("/api/consent-recipients");
+    },
     grantConsent({ granteeId, scope, expiresAt } = {}) {
       const grantee = validId(granteeId, "grantee ID");
       if (typeof scope !== "string" || !ALLOWED_CONSENT_SCOPES.has(scope)) {
