@@ -1,5 +1,6 @@
 const ALLOWED_RESOURCES = new Set([
   "care-portal",
+  "mood-report",
   "care-plan",
   "care-note",
   "care-task",
