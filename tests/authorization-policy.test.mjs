@@ -515,3 +515,31 @@ test("wildcard consent never substitutes for each care resource's explicit scope
     }
   }
 });
+
+
+test("clients can manage consent grants only for their own account", () => {
+  assert.equal(
+    authorize({ actor: client, resource: "consent-management", action: "read", clientId: "client-1" }).allowed,
+    true
+  );
+  assert.equal(
+    authorize({ actor: client, resource: "consent-management", action: "create", clientId: "client-1" }).allowed,
+    true
+  );
+  assert.equal(
+    authorize({ actor: client, resource: "consent-management", action: "delete", clientId: "client-1" }).allowed,
+    true
+  );
+  assert.equal(
+    authorize({ actor: client, resource: "consent-management", action: "read", clientId: "client-2" }).reason,
+    "personal-record-owner-only"
+  );
+  assert.equal(
+    authorize({ actor: caregiver, resource: "consent-management", action: "create", clientId: "worker-1" }).reason,
+    "personal-resource-role-not-allowed"
+  );
+  assert.equal(
+    authorize({ actor: client, resource: "consent-management", action: "manage", clientId: "client-1" }).reason,
+    "personal-record-manage-not-allowed"
+  );
+});
