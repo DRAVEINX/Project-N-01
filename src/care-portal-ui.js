@@ -88,11 +88,20 @@ if (root) {
           <button class="secondary-button" type="button" data-care-logout>Uitloggen</button>
         </div>
         ${caregiverRole ? '<label for="care-client-id">Cliënt-ID waarvoor je toegang hebt</label><input id="care-client-id" maxlength="200" autocomplete="off" required><p class="section-subtitle">Dit ID is alleen een selectie. De server moet toewijzing en toestemming onafhankelijk controleren.</p>' : ""}
-        <div class="care-portal-actions">
-          <button class="secondary-button" type="button" data-care-load="care-plan">Zorgplan laden</button>
-          <button class="secondary-button" type="button" data-care-load="care-note">Rapportages laden</button>
+        <div class="care-portal-actions" aria-label="Cliëntgegevens en begeleidersfuncties">
+          <button class="secondary-button" type="button" data-care-load="care-plan">Zorgplan</button>
+          <button class="secondary-button" type="button" data-care-load="care-note">Rapportages en notities</button>
+          <button class="secondary-button" type="button" data-care-load="care-task">Zorgtaken</button>
+          <button class="secondary-button" type="button" data-care-load="care-report">Zorgverslagen</button>
+          <button class="secondary-button" type="button" data-care-load="care-document">Documenten</button>
+          <button class="secondary-button" type="button" data-care-load="medication-overview">Medicatieoverzicht</button>
+          <button class="secondary-button" type="button" data-care-load="care-message">Zorgberichten</button>
+          <button class="secondary-button" type="button" data-care-load="care-roster">Rooster</button>
+          <button class="secondary-button" type="button" data-care-load="care-team">Begeleidingsteam</button>
+          <button class="secondary-button" type="button" data-care-load="care-consent-record">Toestemmingen</button>
           ${clientRole ? '<button class="secondary-button" type="button" data-care-mood>Mijn stemming rapporteren</button>' : ""}
         </div>
+        <p class="section-subtitle">Alleen gegevens waarvoor dit account toegang heeft, worden door de server teruggegeven. Een functie kan leeg zijn wanneer de organisatie die nog niet heeft ingericht.</p>
         <div data-care-records aria-live="polite"><p class="inline-status">Kies een functie om beveiligde gegevens op te vragen.</p></div>
         ${clientRole ? '<form data-care-mood-form hidden><label for="care-mood-text">Hoe voel je je vandaag?</label><textarea id="care-mood-text" maxlength="4000" required rows="3"></textarea><button class="primary-button" type="submit">Stemming veilig versturen</button></form>' : ""}
         <p class="inline-status" role="status" aria-live="polite" data-care-status></p>
