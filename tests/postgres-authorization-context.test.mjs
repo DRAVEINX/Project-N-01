@@ -44,13 +44,13 @@ test("loads current assignments and consent from PostgreSQL, never from request 
   );
   assert.equal(context.clientId, "client-1");
   assert.deepEqual(context.assignedClientIds, ["client-1", "client-2"], "padded and duplicate database IDs must not become assignment grants");
-  assert.deepEqual(context.grantedScopes, ["care", "medication", "careTeam"]);
+  assert.deepEqual(context.grantedScopes, ["carePlan", "careNote", "careTask", "careReport", "medication", "careTeam"]);
   assert.deepEqual(pool.calls[0].values, ["staff-1", "caregiver", new Date("2026-10-19T10:00:00.000Z")]);
   assert.deepEqual(pool.calls[1].values, ["client-1", "staff-1", new Date("2026-10-19T10:00:00.000Z")]);
   assert.doesNotMatch(pool.calls[0].sql, /attacker-chosen/);
 });
 
-test("one granular core-care grant does not broaden into the general care scope", async () => {
+test("one core-care consent authorizes only the selected resource", async () => {
   const pool = fakePool([
     { rows: [{ client_id: "client-1" }] },
     { rows: [{ scope: "care_plan" }] },
@@ -61,7 +61,17 @@ test("one granular core-care grant does not broaden into the general care scope"
     now: () => new Date("2026-10-19T10:00:00.000Z"),
   });
   const context = await loader({ id: "staff-1", role: "guardian", active: true }, {});
-  assert.deepEqual(context.grantedScopes, []);
+  assert.deepEqual(context.grantedScopes, ["carePlan"]);
+  const actor = { id: "staff-1", role: "guardian", active: true };
+  const common = {
+    actor,
+    action: "read",
+    clientId: context.clientId,
+    assignedClientIds: context.assignedClientIds,
+    grantedScopes: context.grantedScopes,
+  };
+  assert.equal(authorize({ ...common, resource: "care-plan" }).allowed, true);
+  assert.equal(authorize({ ...common, resource: "care-note" }).reason, "scope-not-consented");
 });
 
 test("does not query care assignments for client roles and propagates storage failures", async () => {
@@ -113,7 +123,7 @@ test("maps each supported consent scope conservatively and ignores unknown or du
   });
   const context = await loader({ id: "guardian-1", role: "guardian", active: true }, {});
   assert.deepEqual(context.grantedScopes, [
-    "care", "careDocuments", "medication", "careMessages", "roster", "careTeam"
+    "carePlan", "careNote", "careTask", "careReport", "careDocuments", "medication", "careMessages", "roster", "careTeam"
   ]);
   assert.equal(pool.calls.length, 2);
 });
@@ -236,7 +246,7 @@ test("parent role loads its own active assignments and current consent", async (
   assert.deepEqual(pool.calls[0].values, ["parent-1", "parent", new Date("2026-10-19T10:00:00.000Z")]);
   assert.deepEqual(pool.calls[1].values, ["client-1", "parent-1", new Date("2026-10-19T10:00:00.000Z")]);
   assert.deepEqual(context.assignedClientIds, ["client-1"]);
-  assert.deepEqual(context.grantedScopes, ["care"]);
+  assert.deepEqual(context.grantedScopes, ["carePlan", "careNote", "careTask", "careReport"]);
 });
 
 
@@ -319,10 +329,10 @@ test("maps the explicit care-consent record grant to the exact policy scope", as
 
 test("every care portal data resource maps to the exact policy scope and remains assignment-gated", async (t) => {
   const cases = [
-    { resource: "care-plan", grants: ["care_plan", "care_note", "care_task", "care_report"] },
-    { resource: "care-note", grants: ["care_plan", "care_note", "care_task", "care_report"] },
-    { resource: "care-task", grants: ["care_plan", "care_note", "care_task", "care_report"] },
-    { resource: "care-report", grants: ["care_plan", "care_note", "care_task", "care_report"] },
+    { resource: "care-plan", grants: ["care_plan"] },
+    { resource: "care-note", grants: ["care_note"] },
+    { resource: "care-task", grants: ["care_task"] },
+    { resource: "care-report", grants: ["care_report"] },
     { resource: "care-document", grants: ["care_document"] },
     { resource: "medication-overview", grants: ["medication_overview"] },
     { resource: "care-message", grants: ["care_message"] },
