@@ -48,6 +48,12 @@ Required settings:
 
 See `deploy/novalife-care-api.env.example` for placeholders only. `/healthz` is a liveness response and does not reveal database details.
 
+The root `Dockerfile` builds a non-root Node.js 22 runtime image for the API only. To build it locally without embedding secrets:
+```sh
+docker build --file Dockerfile --tag novalife-care-api .
+```
+Provide the required environment variables through the container platform's secret/environment settings at run time. Do not use Docker build arguments, image layers, or the frontend to pass the database URI or password. The image build does not deploy a server and does not switch the portal on.
+
 ## Required host composition and account operations
 
 - Provide a private database connection with TLS verification, restricted network access, connection limits and tested backups/restores.
