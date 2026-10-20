@@ -202,6 +202,12 @@ test("Node adapter keeps security response headers fixed against router override
       "cache-control": "public, max-age=3600",
       "x-content-type-options": "unsafe",
       "content-length": "1",
+      // HTTP treats these names case-insensitively; mixed-case duplicates
+      // must not create a second, conflicting security header.
+      "Content-Type": "text/plain",
+      "Cache-Control": "public",
+      "X-Content-Type-Options": "unsafe",
+      "Content-Length": "2",
       "x-custom-header": "allowed",
     },
   });
