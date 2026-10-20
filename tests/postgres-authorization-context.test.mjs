@@ -456,7 +456,7 @@ test("real authorization context denies consent when the selected client is not 
   const context = await loader(actor, { params: { targetClientId: "client-not-assigned" } });
 
   assert.deepEqual(context.assignedClientIds, ["another-client"]);
-  assert.deepEqual(context.grantedScopes, ["care"]);
+  assert.deepEqual(context.grantedScopes, ["carePlan", "careNote", "careTask", "careReport"]);
   const decision = authorize({
     actor,
     resource: "care-plan",
