@@ -47,6 +47,16 @@ export async function provisionNovaLifeAccount({ pool, ...input } = {}) {
   try {
     await client.query("BEGIN");
     transactionOpen = true;
+    const operator = await client.query(
+      `SELECT id
+         FROM novalife_accounts
+        WHERE id = $1 AND role = 'developer_admin' AND active = TRUE
+        LIMIT 1
+        FOR SHARE`,
+      [normalized.operatorId]
+    );
+    if (operator?.rows?.length !== 1) throw new Error("account-provisioning-failed");
+
     await client.query(
       `INSERT INTO novalife_accounts
          (id, email_normalized, password_hash, role, active)
