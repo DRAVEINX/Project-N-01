@@ -49,3 +49,6 @@ jobs:
           node --check src/server/private-account-provisioner.js
           node --check scripts/provision-novalife-account.mjs
           node --check tests/private-account-provisioner.test.mjs
+          node --check src/server/private-assignment-provisioner.js
+          node --check scripts/manage-novalife-assignment.mjs
+          node --check tests/private-assignment-provisioner.test.mjs
