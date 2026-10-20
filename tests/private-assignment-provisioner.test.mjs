@@ -89,7 +89,7 @@ test("creates an active care assignment with the operator and durable audit in o
   const insert = pool.calls.find((call) => call.sql.includes("INSERT INTO novalife_client_assignments"));
   assert.ok(insert);
   assert.deepEqual(insert.values, [
-    "assignment-1", "caregiver-1", "client-1", "caregiver", true,
+    "assignment-1", "caregiver-1", "client-1", "caregiver",
     new Date("2026-10-20T10:00:00.000Z"), null, "operator-1",
   ]);
   const audit = pool.calls.find((call) => call.sql.includes("INSERT INTO novalife_audit_events"));
