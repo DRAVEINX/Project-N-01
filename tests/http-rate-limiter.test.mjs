@@ -79,3 +79,19 @@ test("refuses new client buckets instead of evicting active rate limits when ful
   assert.equal(other.status, 429);
   assert.equal(limiter.bucketCount, 1);
 });
+
+
+test("leaves CORS preflight to the origin-aware HTTP adapter", () => {
+  const limiter = createHttpRateLimiter({ now: () => 1_000 });
+  const result = limiter.check({
+    method: "OPTIONS",
+    url: "/api/auth/login",
+    headers: {
+      origin: "https://app.example",
+      "access-control-request-method": "POST",
+    },
+  }, null);
+  assert.equal(result.allowed, true);
+  assert.equal(result.exempt, true);
+  assert.equal(limiter.bucketCount, 0);
+});
