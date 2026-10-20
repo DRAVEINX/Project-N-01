@@ -419,3 +419,33 @@ test("restricted API role has only the table privileges required by server route
     await pool.end();
   }
 });
+
+
+test("future public sequences are not granted to Supabase API roles", { skip: !databaseUrl }, async () => {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+
+  try {
+    await pool.query("CREATE SEQUENCE public.novalife_sequence_privilege_probe");
+    const result = await pool.query(`
+      SELECT
+        has_sequence_privilege('anon', 'public.novalife_sequence_privilege_probe', 'USAGE') AS anon_usage,
+        has_sequence_privilege('anon', 'public.novalife_sequence_privilege_probe', 'SELECT') AS anon_select,
+        has_sequence_privilege('authenticated', 'public.novalife_sequence_privilege_probe', 'USAGE') AS authenticated_usage,
+        has_sequence_privilege('authenticated', 'public.novalife_sequence_privilege_probe', 'SELECT') AS authenticated_select,
+        has_sequence_privilege('service_role', 'public.novalife_sequence_privilege_probe', 'USAGE') AS service_usage,
+        has_sequence_privilege('service_role', 'public.novalife_sequence_privilege_probe', 'SELECT') AS service_select
+    `);
+    assert.deepEqual(result.rows[0], {
+      anon_usage: false,
+      anon_select: false,
+      authenticated_usage: false,
+      authenticated_select: false,
+      service_usage: false,
+      service_select: false,
+    });
+  } finally {
+    await pool.query("DROP SEQUENCE IF EXISTS public.novalife_sequence_privilege_probe").catch(() => {});
+    await pool.end();
+  }
+});
