@@ -244,10 +244,9 @@ async function main() {
     };
     const handler = async (req, res) => {
       if (req.url === "/healthz" && req.method === "GET") {
-        if (!trustedTransport(req, { trustProxy, directTls })) {
-          safeJson(res, 400, { error: "secure-transport-required" });
-          return;
-        }
+        // This liveness endpoint exposes no state and must also work for
+        // platform-internal healthchecks, where TLS has already terminated
+        // before the request reaches this process.
         safeJson(res, 200, { status: "ok" });
         return;
       }
