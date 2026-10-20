@@ -7,14 +7,14 @@ This document separates the existing browser prototype from the private server t
 - The framework-neutral router, PostgreSQL account/session/care-record repositories, Argon2id login stack, authorization-context loader, target resolver and Node HTTP adapter are implemented and covered by tests.
 - `src/server/postgres-audit-repository.js` persists whitelisted authentication and authorization events. The API waits for audit writes and fails closed when persistence fails; event payloads, passwords and bearer tokens are not written to the audit table.
 - `scripts/novalife-care-api-server.mjs` composes the HTTP adapter, router, PostgreSQL pool, audit writer, bearer-token extractor and trusted target resolver.
-- `migrations/0001` through `0013` contain the intended schema, API helper hardening, public table/sequence privilege lock-down, a restricted server role, active-consent uniqueness, column-scoped consent grants and active-assignment uniqueness. The `0002` file is absent; do not invent or silently renumber it. A role password is deliberately not stored in source control.
+- `migrations/0001` through `0015` contain the intended schema, API helper hardening, public table/sequence privilege lock-down, a restricted server role, active-consent and active-assignment uniqueness, column-scoped consent grants, foreign-key indexes, and explicit restrictive deny-all RLS policies. The `0002` file is absent; do not invent or silently renumber it. A role password is deliberately not stored in source control.
 - All six NovaLife tables in Supabase have RLS enabled and no direct table grants for `anon`, `authenticated`, or `service_role`. The API role receives only the table operations that its routes need.
 - The online portal remains disabled until a real HTTPS API origin is deployed and tested. CI success does not prove production hosting or end-to-end behavior.
-- No production API host, rate limiter at the ingress layer, verified origin list, account-provisioning process or independent security/privacy review has been completed.
+- No production API host, ingress-level rate-limit/WAF rule, verified origin list, account provisioning, or independent security/privacy review has been completed.
 
 ## Restricted database role
 
-The `0009_novalife_restricted_api_role.sql` migration creates a dedicated `novalife_api` login role with no superuser, database-creation, or role-creation powers. It has `BYPASSRLS` only because the API's tables currently have no SQL policies; its explicit grants are limited to six NovaLife tables. This is not a reason to expose that account directly to a browser or mobile app.
+The `0009_novalife_restricted_api_role.sql` migration creates a dedicated `novalife_api` login role with no superuser, database-creation, or role-creation powers. It has `BYPASSRLS` because the server is the trusted authorization boundary; six explicit restrictive deny-all RLS policies protect ordinary SQL/Data API roles, and `novalife_api` is separately limited by its table grants. This is not a reason to expose that account directly to a browser or mobile app.
 
 Before any host starts:
 1. Apply and verify the reviewed `0009` migration.
