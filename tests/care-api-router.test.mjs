@@ -144,6 +144,7 @@ function consentApiSetup({
   recipientRole = "caregiver",
   consents = [],
   additionalAccounts = [],
+  assignments = null,
   now = Date.now(),
 } = {}) {
   const actorId = actorRole === "client" ? "client-1" : "caregiver-1";
@@ -159,6 +160,11 @@ function consentApiSetup({
     ...additionalAccounts.map((account) => [account.id, account]),
   ]);
   const savedConsents = consents.map((item) => ({ ...item }));
+  const activeAssignments = (assignments ?? [
+    { client_id: "client-1", actor_id: "caregiver-1", assignment_role: "caregiver", active: true, valid_from: now - 1000, valid_until: null },
+    { client_id: "client-1", actor_id: "parent-1", assignment_role: "parent", active: true, valid_from: now - 1000, valid_until: null },
+    { client_id: "client-1", actor_id: "guardian-1", assignment_role: "guardian", active: true, valid_from: now - 1000, valid_until: null },
+  ]).map((item) => ({ ...item }));
   const calls = [];
   const pool = {
     calls,
@@ -178,6 +184,23 @@ function consentApiSetup({
         const account = accounts.get(values[0]);
         return { rows: account ? [{ ...account }] : [] };
       }
+      if (sql.includes("SELECT DISTINCT account.id, account.role") &&
+          sql.includes("FROM novalife_client_assignments AS assignment")) {
+        return {
+          rows: activeAssignments.filter((assignment) =>
+            assignment.client_id === values[0] &&
+            assignment.active === true &&
+            assignment.valid_from <= now &&
+            (assignment.valid_until == null || assignment.valid_until > now)
+          ).map((assignment) => {
+            const account = accounts.get(assignment.actor_id);
+            if (!account || account.active !== true ||
+                account.role !== assignment.assignment_role ||
+                !["caregiver", "parent", "guardian"].includes(account.role)) return null;
+            return { id: account.id, role: account.role };
+          }).filter(Boolean),
+        };
+      }
       if (sql.includes("FROM novalife_client_assignments")) return { rows: [] };
       if (sql.includes("SELECT scope") && sql.includes("FROM novalife_consent_grants")) {
         return { rows: [] };
@@ -193,8 +216,17 @@ function consentApiSetup({
       if (sql.includes("INSERT INTO novalife_consent_grants")) {
         const [id, clientId, granteeId, scope, expiresAt] = values;
         const recipient = accounts.get(granteeId);
+        const hasActiveAssignment = activeAssignments.some((assignment) =>
+          assignment.client_id === clientId &&
+          assignment.actor_id === granteeId &&
+          assignment.assignment_role === recipient?.role &&
+          assignment.active === true &&
+          assignment.valid_from <= now &&
+          (assignment.valid_until == null || assignment.valid_until > now)
+        );
         if (!recipient || recipient.active !== true ||
-            !["caregiver", "parent", "guardian"].includes(recipient.role)) {
+            !["caregiver", "parent", "guardian"].includes(recipient.role) ||
+            !hasActiveAssignment) {
           return { rows: [], rowCount: 0 };
         }
         let row = savedConsents.find((grant) =>
@@ -378,4 +410,25 @@ test("consent routes fail closed without a valid session", async () => {
   });
   assert.equal(response.status, 401);
   assert.equal(setup.pool.calls.some((call) => call.sql.includes("FROM novalife_consent_grants")), false);
+});
+
+
+test("consent recipient list contains only the authenticated client's active assigned care team", async () => {
+  const setup = consentApiSetup({
+    additionalAccounts: [{ id: "unassigned-caregiver", role: "caregiver", active: true }],
+  });
+  const router = await setup.routerPromise;
+  const result = await router.handle({
+    method: "GET",
+    url: "/api/consent-recipients",
+    headers: { authorization: `Bearer ${setup.token}` },
+  });
+
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body.recipients, [
+    { id: "caregiver-1", role: "caregiver" },
+    { id: "guardian-1", role: "guardian" },
+    { id: "parent-1", role: "parent" },
+  ]);
+  assert.equal(JSON.stringify(result.body).includes("unassigned-caregiver"), false);
 });
