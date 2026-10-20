@@ -4,7 +4,7 @@ import { createNovaLifePostgresAuth } from "./postgres-auth-runtime.js";
 import { createPostgresAuthorizationContextLoader } from "./postgres-authorization-context.js";
 import { createAuthorizedHandler } from "./authorized-handler.js";
 
-const DATA_RESOURCES = new Set(novaLifeCarePortalResources.filter((resource) => resource !== "care-portal"));
+const DATA_RESOURCES = new Set([...novaLifeCarePortalResources.filter((resource) => resource !== "care-portal"), "mood-report"]);
 const METHODS = Object.freeze({ GET: "read", POST: "create", PUT: "update", PATCH: "update", DELETE: "delete" });
 const MAX_BODY_BYTES = 64 * 1024;
 
