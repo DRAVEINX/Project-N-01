@@ -6,11 +6,11 @@ const DEFAULT_MAX_BODY_BYTES = 64 * 1024;
 function send(res, status, body, extraHeaders = {}) {
   const encoded = JSON.stringify(body);
   res.writeHead(status, {
+    ...extraHeaders,
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
     "x-content-type-options": "nosniff",
     "content-length": Buffer.byteLength(encoded, "utf8"),
-    ...extraHeaders,
   });
   res.end(encoded);
 }
