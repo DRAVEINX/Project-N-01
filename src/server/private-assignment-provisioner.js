@@ -176,7 +176,7 @@ export async function deactivateNovaLifeAssignment({
     if (row) {
       const revoked = await client.query(
         `UPDATE novalife_consent_grants
-            SET revoked_at = now()
+            SET revoked_at = GREATEST(clock_timestamp(), granted_at)
           WHERE client_id = $1
             AND grantee_id = $2
             AND revoked_at IS NULL
