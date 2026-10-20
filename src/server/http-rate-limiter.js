@@ -106,7 +106,10 @@ export function createHttpRateLimiter(options = {}) {
 
   function check(request, clientIp) {
     const { method, pathname } = normalizedRequest(request);
-    if (pathname === "/healthz" && method === "GET") {
+    if ((pathname === "/healthz" && method === "GET") || method === "OPTIONS") {
+      // CORS preflight carries no care payload or credentials. Let the adapter
+      // validate its exact Origin and requested headers without rate-limit
+      // responses masking its CORS feedback.
       return Object.freeze({ allowed: true, status: 200, exempt: true });
     }
     if (typeof clientIp !== "string" || !clientIp || clientIp.length > 64 ||
