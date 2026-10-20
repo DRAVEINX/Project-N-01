@@ -15,6 +15,7 @@ function fakePool({
     { id: "inactive-caregiver", role: "caregiver", active: false },
   ],
   existingAssignment = true,
+  consentsRevoked = [],
   failOn = null,
 } = {}) {
   const calls = [];
@@ -46,8 +47,11 @@ function fakePool({
       }
       if (sql.includes("UPDATE novalife_client_assignments")) {
         return existingAssignment
-          ? { rowCount: 1, rows: [{ client_id: "client-1" }] }
+          ? { rowCount: 1, rows: [{ client_id: "client-1", actor_id: "caregiver-1" }] }
           : { rowCount: 0, rows: [] };
+      }
+      if (sql.includes("UPDATE novalife_consent_grants")) {
+        return { rowCount: consentsRevoked.length, rows: consentsRevoked.map((row) => ({ ...row })) };
       }
       if (sql.includes("INSERT INTO novalife_audit_events")) return { rowCount: 1, rows: [] };
       return { rowCount: 0, rows: [] };
@@ -213,6 +217,53 @@ test("audit storage failure rolls assignment changes back", async () => {
     operatorId: "operator-1",
     idFactory: () => "audit-fail",
   }), /assignment-provisioning-failed/);
+  assert.ok(pool.calls.some((call) => call.sql === "ROLLBACK"));
+  assert.equal(pool.calls.at(-1).sql, "ROLLBACK");
+});
+
+
+test("deactivating a care assignment also revokes and audits all relationship-specific consent grants", async () => {
+  const pool = fakePool({
+    existingAssignment: true,
+    consentsRevoked: [{ id: "grant-1" }, { id: "grant-2" }],
+  });
+  const auditIds = ["audit-consent-1", "audit-consent-2", "audit-assignment-1"];
+  const result = await deactivateNovaLifeAssignment({
+    pool,
+    assignmentId: "assignment-1",
+    operatorId: "operator-1",
+    idFactory: () => auditIds.shift(),
+  });
+
+  assert.deepEqual(result, { deactivated: true });
+  const consentUpdate = pool.calls.find((call) => call.sql.includes("UPDATE novalife_consent_grants"));
+  assert.deepEqual(consentUpdate.values, ["client-1", "caregiver-1"]);
+  const auditCalls = pool.calls.filter((call) => call.sql.includes("INSERT INTO novalife_audit_events"));
+  assert.equal(auditCalls.length, 3);
+  assert.deepEqual(
+    auditCalls.map((call) => [call.values[4], call.values[5], call.values[6]]),
+    [
+      ["delete", "allow", "assignment-deactivation-revoked-consent"],
+      ["delete", "allow", "assignment-deactivation-revoked-consent"],
+      ["deactivate", "allow", "private-admin-assignment-deactivation"],
+    ]
+  );
+  assert.equal(pool.calls.at(-1).sql, "COMMIT");
+});
+
+test("rolls assignment and consent revocation back together if audit storage fails", async () => {
+  const pool = fakePool({
+    existingAssignment: true,
+    consentsRevoked: [{ id: "grant-1" }],
+    failOn: "INSERT INTO novalife_audit_events",
+  });
+  await assert.rejects(
+    deactivateNovaLifeAssignment({
+      pool, assignmentId: "assignment-1", operatorId: "operator-1", idFactory: () => "audit-1",
+    }),
+    /assignment-deactivation-failed/
+  );
+  assert.ok(pool.calls.some((call) => call.sql.includes("UPDATE novalife_consent_grants")));
   assert.ok(pool.calls.some((call) => call.sql === "ROLLBACK"));
   assert.equal(pool.calls.at(-1).sql, "ROLLBACK");
 });
