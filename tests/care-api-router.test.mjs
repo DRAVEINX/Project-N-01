@@ -242,7 +242,11 @@ function consentApiSetup({
     pool,
     authAudit: async () => {},
     authorizationAudit: async (event) => { authorizationEvents.push(event); },
-    extractToken: () => token,
+    extractToken: (request) => {
+      const value = request?.headers?.authorization;
+      const match = typeof value === "string" ? /^Bearer ([A-Za-z0-9_-]{43})$/.exec(value) : null;
+      return match ? match[1] : null;
+    },
     resolveTargetClientId: createCareTargetResolver(),
     now: () => now,
   });
@@ -318,7 +322,7 @@ test("consent grants reject unknown scopes, self-grants, inactive and non-care r
     });
     assert.equal(result.status, 400);
   }
-  assert.equal(setup.pool.calls.filter((call) => call.sql.includes("INSERT INTO novalife_consent_grants")).length, 0);
+  assert.equal(setup.savedConsents.length, 0, "invalid recipients and scopes must never create grants");
 });
 
 test("caregivers cannot grant client consents or inspect the consent-management API", async () => {
