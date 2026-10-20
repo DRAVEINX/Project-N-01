@@ -1,4 +1,8 @@
 const CONSENT_TO_POLICY_SCOPE = Object.freeze({
+  care_plan: "carePlan",
+  care_note: "careNote",
+  care_task: "careTask",
+  care_report: "careReport",
   care_document: "careDocuments",
   medication_overview: "medication",
   care_message: "careMessages",
@@ -6,13 +10,6 @@ const CONSENT_TO_POLICY_SCOPE = Object.freeze({
   team: "careTeam",
   care_consents: "careConsents",
 });
-
-const CORE_CARE_SCOPES = Object.freeze([
-  "care_plan",
-  "care_note",
-  "care_task",
-  "care_report",
-]);
 
 function validIdentifierSegment(value) {
   return typeof value === "string" &&
@@ -91,12 +88,8 @@ export function createPostgresAuthorizationContextLoader({
         .map((row) => row?.scope)
         .filter((scope) => typeof scope === "string"));
 
-      // The policy's "care" scope covers four resource families. Be
-      // conservative: require every underlying explicit grant rather than
-      // broadening a single granular consent into access to all care resources.
-      if (CORE_CARE_SCOPES.every((scope) => scopes.has(scope))) {
-        grantedScopes.push("care");
-      }
+      // Map each active database consent to exactly one policy scope. A
+      // single consent must never broaden access to unrelated care resources.
       for (const [databaseScope, policyScope] of Object.entries(CONSENT_TO_POLICY_SCOPE)) {
         if (scopes.has(databaseScope)) grantedScopes.push(policyScope);
       }
