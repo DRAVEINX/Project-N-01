@@ -85,3 +85,25 @@ test("rejects unknown resources, invalid record data, and missing tenant identif
   }), /plain object/);
   await assert.rejects(repository.get({ clientId: "", resource: "care-note", id: "note-1" }), /clientId must be a non-empty string/);
 });
+
+test("repository rejects unsafe tenant, actor, and record identifiers before querying", async () => {
+  const pool = makePool([]);
+  const repository = createPostgresCareRecordRepository({ pool });
+  const unsafe = [" client-A", "client-A ", "client/A", "client\\\\A", "client?A", "client#A", "client\\u000aA", "x".repeat(201)];
+
+  for (const clientId of unsafe) {
+    await assert.rejects(
+      repository.list({ clientId, resource: "care-note" }),
+      /safe identifier/
+    );
+  }
+  await assert.rejects(
+    repository.get({ clientId: "client-A", resource: "care-note", id: "note\\u0000-1" }),
+    /safe identifier/
+  );
+  await assert.rejects(
+    repository.create({ clientId: "client-A", resource: "care-note", actorId: "staff/other", data: { summary: "x" } }),
+    /safe identifier/
+  );
+  assert.equal(pool.calls.length, 0);
+});
