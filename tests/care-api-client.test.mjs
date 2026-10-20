@@ -187,3 +187,74 @@ test("failed account switch clears the previous in-memory identity", async () =>
   assert.equal(session.isAuthenticated(), false);
   assert.equal(session.getActor(), null);
 });
+
+
+test("consent client lists grants, creates a scoped grant and revokes it with bearer auth", async () => {
+  const calls = [];
+  const api = createCareApiClient({
+    baseUrl: "https://api.example.test",
+    getAccessToken: () => "short-lived-consent-token",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      if (options.method === "POST") {
+        return response(201, { consent: { id: "grant-1", granteeId: "caregiver-1", scope: "care_note" } });
+      }
+      if (options.method === "DELETE") return response(200, { revoked: true });
+      return response(200, { consents: [{ id: "grant-1", scope: "care_note" }] });
+    },
+  });
+
+  assert.equal((await api.listMyConsents()).consents.length, 1);
+  assert.equal(calls[0].url, "https://api.example.test/api/consents");
+  assert.equal(calls[0].options.method, "GET");
+  assert.equal(calls[0].options.headers.authorization, "Bearer short-lived-consent-token");
+
+  const granted = await api.grantConsent({
+    granteeId: "caregiver 1",
+    scope: "care_note",
+    expiresAt: "2030-01-01T00:00:00.000Z",
+  });
+  assert.equal(granted.consent.id, "grant-1");
+  assert.equal(calls[1].url, "https://api.example.test/api/consents");
+  assert.equal(calls[1].options.method, "POST");
+  assert.deepEqual(JSON.parse(calls[1].options.body), {
+    granteeId: "caregiver 1",
+    scope: "care_note",
+    expiresAt: "2030-01-01T00:00:00.000Z",
+  });
+  assert.equal(calls[1].options.credentials, "omit");
+  assert.equal(calls[1].options.cache, "no-store");
+
+  assert.deepEqual(await api.revokeConsent("grant-1"), { revoked: true });
+  assert.equal(calls[2].url, "https://api.example.test/api/consents/grant-1");
+  assert.equal(calls[2].options.method, "DELETE");
+  assert.equal(calls[2].options.headers.authorization, "Bearer short-lived-consent-token");
+});
+
+test("consent client rejects invalid scopes, identifiers and expiry values before fetch", async () => {
+  let calls = 0;
+  const api = createCareApiClient({
+    baseUrl: "https://api.example.test",
+    getAccessToken: () => "token",
+    fetchImpl: async () => { calls += 1; return response(); },
+  });
+
+  assert.throws(() => api.grantConsent({ granteeId: "caregiver-1", scope: "*" }), /not allow-listed/);
+  assert.throws(() => api.grantConsent({ granteeId: "bad/id", scope: "care_note" }), /valid grantee ID/);
+  assert.throws(() => api.grantConsent({ granteeId: "caregiver-1", scope: "care_note", expiresAt: "not-a-date" }), /valid date-time/);
+  assert.throws(() => api.revokeConsent("bad/id"), /valid consent ID/);
+  assert.equal(calls, 0);
+});
+
+test("consent client never sends a request without an in-memory bearer token", async () => {
+  let calls = 0;
+  const api = createCareApiClient({
+    baseUrl: "https://api.example.test",
+    getAccessToken: () => null,
+    fetchImpl: async () => { calls += 1; return response(); },
+  });
+  await assert.rejects(api.listMyConsents(), (error) => error.code === "authentication-required");
+  await assert.rejects(api.grantConsent({ granteeId: "caregiver-1", scope: "care_note" }), (error) => error.code === "authentication-required");
+  await assert.rejects(api.revokeConsent("grant-1"), (error) => error.code === "authentication-required");
+  assert.equal(calls, 0);
+});
