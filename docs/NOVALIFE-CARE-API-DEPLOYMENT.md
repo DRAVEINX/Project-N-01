@@ -7,7 +7,7 @@ This document separates the existing browser prototype from the private server t
 - The framework-neutral router, PostgreSQL account/session/care-record repositories, Argon2id login stack, authorization-context loader, target resolver and Node HTTP adapter are implemented and covered by tests.
 - `src/server/postgres-audit-repository.js` persists whitelisted authentication and authorization events. The API waits for audit writes and fails closed when persistence fails; event payloads, passwords and bearer tokens are not written to the audit table.
 - `scripts/novalife-care-api-server.mjs` composes the HTTP adapter, router, PostgreSQL pool, audit writer, bearer-token extractor and trusted target resolver.
-- `migrations/0001` through `0009` contain the intended schema, API helper hardening, public-table privilege lock-down and a restricted server role. A role password is deliberately not stored in source control.
+- `migrations/0001` through `0012` contain the intended schema, API helper hardening, public table/sequence privilege lock-down, a restricted server role, active-consent uniqueness and column-scoped consent grants. The `0002` file is absent; do not invent or silently renumber it. A role password is deliberately not stored in source control.
 - All six NovaLife tables in Supabase have RLS enabled and no direct table grants for `anon`, `authenticated`, or `service_role`. The API role receives only the table operations that its routes need.
 - The online portal remains disabled until a real HTTPS API origin is deployed and tested. CI success does not prove production hosting or end-to-end behavior.
 - No production API host, rate limiter at the ingress layer, verified origin list, account-provisioning process or independent security/privacy review has been completed.
@@ -23,6 +23,16 @@ Before any host starts:
 4. The server verifies the current database identity and a strict privilege matrix on startup. It refuses to start if the connection is privileged or the grants are wider than expected. TLS certificate verification is enabled by the server.
 
 The API role is powerful enough to bypass RLS on tables for which it has grants. The API's authorization code must therefore remain server-only, and all routes must verify the active actor, client assignment, consent scope and durable audit result on every protected operation. Independent security review is required before sensitive data is used.
+
+## Granular consent mapping
+
+A consent record grants exactly one scope. Core care resources are mapped separately:
+- `care_plan` permits the `care-plan` resource only.
+- `care_note` permits `care-note` only.
+- `care_task` permits `care-task` only.
+- `care_report` permits `care-report` only.
+- `care_document`, `medication_overview`, `care_message`, `roster`, `team`, and `care_consents` each map to their corresponding allow-listed resource.
+A valid consent is not sufficient by itself: the current active assignment and matching recipient/client pair are also required. Expired and revoked consent grants are ignored. A client can grant consent only to an active member of that client's existing assigned care team; the consent API never creates assignments.
 
 ## Host configuration
 
