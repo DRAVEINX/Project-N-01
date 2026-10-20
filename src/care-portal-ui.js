@@ -132,7 +132,9 @@ if (root) {
       try { await session?.logout(); } catch { /* Local session is cleared even if the server is unavailable. */ }
       finally { session = null; setBusy(false); renderLogin("Je bent uitgelogd."); }
     });
+    let currentResource = null;
     const renderRecords = (result, resource) => {
+      currentResource = resource;
       const records = Array.isArray(result?.records) ? result.records : Array.isArray(result) ? result : [];
       const list = root.querySelector("[data-care-records]");
       if (!list) return;
@@ -144,7 +146,10 @@ if (root) {
         const data = record?.data && typeof record.data === "object" ? record.data : record;
         const title = data.title || record.id || resource;
         const detail = data.summary || data.text || data.description || "Gegevens beschikbaar";
-        return '<li><strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(detail) + '</p></li>';
+        const editButton = caregiverRole && record.id
+          ? '<button class="secondary-button" type="button" data-care-edit-id="' + escapeHtml(record.id) + '" data-care-edit-title="' + escapeHtml(data.title || "") + '" data-care-edit-text="' + escapeHtml(data.text || data.summary || data.description || "") + '">Bewerken</button>'
+          : "";
+        return '<li><strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(detail) + '</p>' + editButton + '</li>';
       }).join("") + '</ul>';
     };
     root.querySelectorAll("[data-care-load]").forEach((button) => button.addEventListener("click", async () => {
@@ -162,6 +167,44 @@ if (root) {
         statusText(error?.status === 403 ? "Geen toestemming voor deze gegevens." : "De online dienst is niet beschikbaar.", true);
       } finally { setBusy(false); }
     }));
+    root.querySelector("[data-care-records]")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-care-edit-id]");
+      if (!button || !caregiverRole || busy || !currentResource) return;
+      const list = root.querySelector("[data-care-records]");
+      list.querySelector("[data-care-edit-form]")?.remove();
+      const form = document.createElement("form");
+      form.setAttribute("data-care-edit-form", "");
+      form.innerHTML = '<h4>Registratie bewerken</h4><label for="care-edit-title">Titel</label><input id="care-edit-title" name="title" maxlength="200" required value="' + escapeHtml(button.dataset.careEditTitle || "") + '"><label for="care-edit-text">Beschrijving / rapportage</label><textarea id="care-edit-text" name="text" maxlength="8000" rows="4" required>' + escapeHtml(button.dataset.careEditText || "") + '</textarea><button class="primary-button" type="submit">Wijzigingen opslaan</button><button class="secondary-button" type="button" data-care-edit-cancel>Annuleren</button>';
+      form.dataset.recordId = button.dataset.careEditId;
+      list.prepend(form);
+      form.querySelector("[data-care-edit-cancel]")?.addEventListener("click", () => form.remove());
+    });
+    root.querySelector("[data-care-records]")?.addEventListener("submit", async (event) => {
+      const form = event.target.closest("[data-care-edit-form]");
+      if (!form) return;
+      event.preventDefault();
+      if (busy || !session || !caregiverRole || !currentResource) return;
+      const clientId = root.querySelector("#care-client-id")?.value.trim();
+      const title = form.elements.title.value.trim();
+      const text = form.elements.text.value.trim();
+      if (!clientId || !title || !text) {
+        statusText("Vul een cliënt-ID, titel en beschrijving in.", true);
+        return;
+      }
+      setBusy(true);
+      try {
+        await session.api.update(clientId, currentResource, form.dataset.recordId, {
+          title,
+          text,
+          updatedAt: new Date().toISOString()
+        });
+        const result = await session.api.list(clientId, currentResource, { limit: 50 });
+        renderRecords(result, currentResource);
+        statusText("Registratie bijgewerkt.");
+      } catch (error) {
+        statusText(error?.status === 403 ? "Geen toestemming om deze registratie te wijzigen." : "Wijzigen is niet gelukt. Probeer het later opnieuw.", true);
+      } finally { setBusy(false); }
+    });
     root.querySelector("[data-care-create-form]")?.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (busy || !session || !caregiverRole) return;
