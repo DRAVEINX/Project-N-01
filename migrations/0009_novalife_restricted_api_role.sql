@@ -14,13 +14,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'novalife_api'
   ) THEN
-    CREATE ROLE novalife_api
-      LOGIN
-      NOSUPERUSER
-      NOCREATEDB
-      NOCREATEROLE
-      NOINHERIT
-      BYPASSRLS;
+    EXECUTE 'CREATE ROLE novalife_api LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT BYPASSRLS';
   ELSE
     SELECT rolsuper, rolbypassrls, rolcreatedb, rolcreaterole
       INTO existing_superuser, existing_bypass, existing_createdb, existing_createrole
