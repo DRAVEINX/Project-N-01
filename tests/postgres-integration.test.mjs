@@ -278,3 +278,72 @@ test("NovaLife tables and future public objects are not directly granted to API 
     await pool.end();
   }
 });
+
+
+import { createPostgresAuditRepository } from "../src/server/postgres-audit-repository.js";
+
+test("durable audit repository writes authentication and authorization records", { skip: !databaseUrl }, async () => {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+  const auditIds = [randomUUID(), randomUUID()];
+  const expectedIds = [...auditIds];
+  const audit = createPostgresAuditRepository({ pool, idFactory: () => auditIds.shift() });
+
+  try {
+    await audit.authAudit({
+      event: "login",
+      outcome: "deny",
+      reason: "invalid-credentials",
+      accessToken: "must-never-be-stored",
+      password: "must-never-be-stored",
+    });
+    await audit.authorizationAudit({
+      actorId: "integration-caregiver",
+      clientId: "integration-client",
+      resource: "care-note",
+      action: "read",
+      outcome: "deny",
+      reason: "scope-not-consented",
+      requestId: "integration-request",
+      carePayload: { note: "must-never-be-stored" },
+    });
+
+    const saved = await pool.query(
+      `SELECT id, actor_id, client_id, resource, action, outcome, reason, request_id
+         FROM novalife_audit_events
+        WHERE id = ANY($1::text[])
+        ORDER BY id`,
+      [expectedIds]
+    );
+    assert.equal(saved.rowCount, 2);
+    const authEvent = saved.rows.find((row) => row.id === expectedIds[0]);
+    assert.deepEqual(
+      {
+        actor_id: authEvent.actor_id,
+        client_id: authEvent.client_id,
+        resource: authEvent.resource,
+        action: authEvent.action,
+        outcome: authEvent.outcome,
+        reason: authEvent.reason,
+        request_id: authEvent.request_id,
+      },
+      {
+        actor_id: null,
+        client_id: null,
+        resource: "auth",
+        action: "login",
+        outcome: "deny",
+        reason: "invalid-credentials",
+        request_id: null,
+      }
+    );
+    const authorizationEvent = saved.rows.find((row) => row.id === expectedIds[1]);
+    assert.equal(authorizationEvent.actor_id, "integration-caregiver");
+    assert.equal(authorizationEvent.client_id, "integration-client");
+    assert.equal(authorizationEvent.resource, "care-note");
+    assert.equal(authorizationEvent.reason, "scope-not-consented");
+  } finally {
+    await pool.query("DELETE FROM novalife_audit_events WHERE id = ANY($1::text[])", [expectedIds]).catch(() => {});
+    await pool.end();
+  }
+});
