@@ -48,6 +48,34 @@ jobs:
         run: npm install
       - name: Install PostgreSQL client library for CI integration test
         run: npm install --no-save --package-lock=false pg@8
+      - name: Prepare API roles and the RLS helper privilege fixture
+        run: |
+          psql -h localhost -U postgres -d novalife_test -v ON_ERROR_STOP=1 <<'SQL'
+          DO $roles$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'anon') THEN
+              EXECUTE 'CREATE ROLE anon NOLOGIN';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'authenticated') THEN
+              EXECUTE 'CREATE ROLE authenticated NOLOGIN';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'service_role') THEN
+              EXECUTE 'CREATE ROLE service_role NOLOGIN BYPASSRLS';
+            END IF;
+          END
+          $roles$;
+
+          CREATE FUNCTION public.rls_auto_enable()
+          RETURNS event_trigger
+          LANGUAGE plpgsql
+          SECURITY DEFINER
+          SET search_path TO pg_catalog
+          AS $function$
+          BEGIN
+            RETURN;
+          END;
+          $function$;
+          SQL
       - name: Apply all schema migrations in order to disposable PostgreSQL
         run: |
           for migration in migrations/*.sql; do
