@@ -1,41 +1,63 @@
 # NovaLife care API deployment gate
 
-This document describes what must be supplied by a real hosting environment before the caregiver portal may be enabled. The browser preview server in `scripts/serve.mjs` serves static files only; it is not the care API server.
+This document separates the existing browser prototype from the private server that can serve the online care portal. `scripts/serve.mjs` is a static preview server; it is not the care API.
 
 ## Current state
 
-- The framework-neutral care API router, PostgreSQL repositories, Argon2id login/session stack, authorization context loader, target resolver and Node HTTP adapter are implemented as modules.
-- `src/server/care-target-resolver.js` is a conservative resolver: client accounts can resolve only to their own account ID; care roles require a bounded target selector; legacy unscoped care routes and developer-admin targets resolve to null.
-- For caregiver/parent/guardian accounts, a route selector is only a selector, not permission. The authorization gate must still verify active assignment and unrevoked, unexpired consent from PostgreSQL on every request.
-- The browser portal is wired into `index.html`, but it remains disabled until `window.NOVALIFE_CONFIG.careApiBaseUrl` is set to a real HTTPS API origin.
-- No production API origin, database credentials, durable audit sink, account-provisioning workflow or hosting environment is configured by this repository.
-- Passing CI does not prove production hosting, account assignment, consent or real-device end-to-end behavior.
+- The framework-neutral router, PostgreSQL account/session/care-record repositories, Argon2id login stack, authorization-context loader, target resolver and Node HTTP adapter are implemented and covered by tests.
+- `src/server/postgres-audit-repository.js` persists whitelisted authentication and authorization events. The API waits for audit writes and fails closed when persistence fails; event payloads, passwords and bearer tokens are not written to the audit table.
+- `scripts/novalife-care-api-server.mjs` composes the HTTP adapter, router, PostgreSQL pool, audit writer, bearer-token extractor and trusted target resolver.
+- `migrations/0001` through `0009` contain the intended schema, API helper hardening, public-table privilege lock-down and a restricted server role. A role password is deliberately not stored in source control.
+- All six NovaLife tables in Supabase have RLS enabled and no direct table grants for `anon`, `authenticated`, or `service_role`. The API role receives only the table operations that its routes need.
+- The online portal remains disabled until a real HTTPS API origin is deployed and tested. CI success does not prove production hosting or end-to-end behavior.
+- No production API host, rate limiter at the ingress layer, verified origin list, account-provisioning process or independent security/privacy review has been completed.
 
-## Required host composition
+## Restricted database role
 
-The host must construct one long-lived PostgreSQL pool and one router using `createNovaLifeCareApiRouter` from `src/server/care-api-router.js`. It must provide:
+The `0009_novalife_restricted_api_role.sql` migration creates a dedicated `novalife_api` login role with no superuser, database-creation, or role-creation powers. It has `BYPASSRLS` only because the API's tables currently have no SQL policies; its explicit grants are limited to six NovaLife tables. This is not a reason to expose that account directly to a browser or mobile app.
 
-1. **Private database connection:** credentials injected by the host's secret manager, TLS verification enabled where supported, connection/pool limits, and network access restricted to the API service.
-2. **Durable audit callbacks:** `authAudit` and `authorizationAudit` must persist allow/deny outcomes to access-controlled storage. They must never record passwords, bearer tokens, full health/care payloads or secrets. A failing audit write must fail closed.
-3. **Bearer-token extraction:** `extractToken` must accept only a well-formed `Authorization: Bearer <token>` header, reject duplicates/malformed headers, and never read tokens from URLs, cookies or request bodies.
-4. **Trusted target resolution:** use `createCareTargetResolver` from `src/server/care-target-resolver.js` as a conservative starting point. It prevents client users from selecting another account and fails closed for unscoped routes. Do not weaken it to trust body fields. Care-role selectors must still be checked against database assignments and consent on every request.
-5. **Authorization and consent:** the authorization context must confirm the active, time-valid assignment and current, unrevoked consent for the requested data scope on every operation. Deny by default when assignment, consent, client identity or audit state is missing or ambiguous.
-6. **Secure HTTP boundary:** pass requests through `handleNodeCareApiRequest` only behind verified HTTPS. Configure exact allowed browser origins, keep `allowMissingOrigin` false for browser deployment, and validate any trusted-proxy/TLS callback against the actual hosting topology.
-7. **Abuse controls:** add rate limits for login and mutation routes, request/read timeouts, maximum header sizes, connection limits, security monitoring and a tested incident response process.
-8. **Account lifecycle:** provision accounts through a private administrator/invitation process with identity verification, least privilege, password policy and a way to revoke accounts and assignments. Public registration and self-assigned caregiver roles are not allowed.
-9. **Migrations and operations:** apply reviewed migrations in order; use a least-privileged database role; back up and test restore; document retention/deletion; test audit durability and database outage behavior.
-10. **Client configuration:** only after the API is deployed and tested, inject `window.NOVALIFE_CONFIG = { careApiBaseUrl: "https://<actual-api-origin>" }` before `src/care-portal-ui.js` loads. Replace the placeholder with the real HTTPS origin; never put database credentials or server secrets in frontend configuration.
+Before any host starts:
+1. Apply and verify the reviewed `0009` migration.
+2. Set a strong password for `novalife_api` using Supabase's role-management UI. Do not put the password in GitHub, a chat message, a saved SQL query, or frontend configuration.
+3. Store the private connection string only in the API host's secret manager as `DATABASE_URL`. Configure the connection string to authenticate as `novalife_api`, not `postgres`, `supabase_admin` or `service_role`.
+4. The server verifies the current database identity and a strict privilege matrix on startup. It refuses to start if the connection is privileged or the grants are wider than expected. TLS certificate verification is enabled by the server.
 
-## Required acceptance tests before enabling real users
+The API role is powerful enough to bypass RLS on tables for which it has grants. The API's authorization code must therefore remain server-only, and all routes must verify the active actor, client assignment, consent scope and durable audit result on every protected operation. Independent security review is required before sensitive data is used.
 
-- Login succeeds only for active accounts with valid passwords; unknown, disabled and wrong-password cases return generic errors.
-- Tokens expire, logout revokes tokens, account deactivation invalidates active sessions, and switching accounts clears the previous in-memory session.
-- Client, caregiver, parent, guardian and administrative roles are tested with separate accounts. A client cannot read or infer caregiver-only data by changing the UI or calling the API directly.
-- Caregiver/parent/guardian requests are denied for unassigned clients, expired assignments, revoked/expired consent, insufficient scopes and cross-client record IDs.
-- Missing or failed audit storage, database outages, malformed origins, non-HTTPS requests, invalid tokens and oversized payloads fail closed without leaking personal data.
-- Android phone and tablet are tested separately on real devices; keyboard, TalkBack, text scaling, logout, token expiry and network interruption are verified.
-- An independent security/privacy review and a data-protection assessment are completed before real sensitive care data is stored.
+## Host configuration
+
+Use Node.js 22 or newer. Start with `npm run serve:care-api`. Inject settings through the host's secret manager/environment; do not commit a real `.env` file.
+
+Required settings:
+- `DATABASE_URL`: private PostgreSQL connection URI authenticated as `novalife_api`.
+- `ALLOWED_ORIGINS`: comma-separated, exact origin strings. Include the actual HTTPS web origin plus the exact origins used by the native builds, such as `capacitor://localhost` and `http://localhost`. Never use `*`.
+- `PORT`: port supplied by the host.
+- For production, configure either direct TLS with both `TLS_KEY_PATH` and `TLS_CERT_PATH`, or set `NOVALIFE_TRUST_PROXY=true` only when the platform makes the app port unreachable except through a trusted TLS-terminating proxy and overwrites `X-Forwarded-Proto`.
+- `NOVALIFE_EXTERNAL_RATE_LIMIT_CONFIRMED=true` only after the host/ingress has real rate limits configured for login and mutation routes. The server deliberately refuses production startup without this explicit confirmation.
+- Optional `DATABASE_POOL_SIZE` (1–20; default 5). Connection and SQL timeouts are bounded in the server.
+
+See `deploy/novalife-care-api.env.example` for placeholders only. `/healthz` is a liveness response and does not reveal database details.
+
+## Required host composition and account operations
+
+- Provide a private database connection with TLS verification, restricted network access, connection limits and tested backups/restores.
+- The audit store must be durable and access-controlled. Never write passwords, bearer tokens, entire care payloads or secrets to logs.
+- Bearer tokens are accepted only from a single, well-formed `Authorization: Bearer` header; never accept tokens from a URL, cookie or request body.
+- Use `createCareTargetResolver` and the authorization gate; never trust role, client ID, assignment or scope values sent in a request body.
+- Enforce rate limits in the hosting ingress, request/read timeouts, header limits, security monitoring and a tested incident-response process. The app-level SQL timeout and HTTP body limits are not substitutes for host-level protections.
+- A private account-provisioning/invitation workflow is still required. Public registration and self-assigned caregiver, parent, guardian or admin roles are prohibited. The API role cannot insert accounts, change roles, create assignments or grant consent.
+- Keep the frontend portal disabled until API deployment and all required acceptance tests have passed. Then set `window.NOVALIFE_CONFIG.careApiBaseUrl` to the actual HTTPS API origin before `src/care-portal-ui.js` loads. Never place database credentials or server secrets in client configuration.
+
+## Acceptance tests before real users
+
+- Valid/invalid login behavior, inactive accounts, token expiry/revocation, account switching and session deactivation.
+- Client, caregiver, parent and guardian roles tested using separate accounts and realistic assignments/consents.
+- Denials for unassigned clients, expired assignments, revoked/expired consent, missing scopes and cross-client record IDs.
+- Audit outage, database outage, invalid token/origin, non-HTTPS transport, oversized payloads and rate-limit behavior fail closed without leaking care data.
+- RLS enabled and API-table grants verified against the intended privilege matrix. Confirm ordinary Supabase API roles cannot read or write NovaLife tables.
+- Android phone and tablet tested separately on real devices; keyboard, TalkBack, text scaling, logout, session expiry and network interruption verified.
+- Independent security/privacy review and a data-protection assessment completed before real sensitive care data is stored.
 
 ## Release rule
 
-Do not enable the online portal for real users, advertise it as a production care system, or submit a public release until the host composition and acceptance tests above are implemented and independently verified. Existing local mood reporting remains separate from the caregiver API; do not imply that an online mood endpoint exists until a separately authorized and tested route is delivered.
+Do not enable the online portal for real users, describe the app as a production care system, or submit a public release until the deployment and acceptance criteria above are independently verified. Existing local mood reporting remains separate from the caregiver API: an endpoint existing in the router does not mean the Android app is already wired to a deployed backend.
