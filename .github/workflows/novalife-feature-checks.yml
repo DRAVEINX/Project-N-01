@@ -41,3 +41,8 @@ jobs:
           node --check tests/smoke.test.mjs
           node --check tests/life-suite.test.mjs
           node --check tests/authorization-policy.test.mjs
+          node --check src/server/postgres-audit-repository.js
+          node --check src/server/node-care-api-adapter.js
+          node --check scripts/novalife-care-api-server.mjs
+          node --check tests/postgres-audit-repository.test.mjs
+          node --check tests/postgres-integration.test.mjs
