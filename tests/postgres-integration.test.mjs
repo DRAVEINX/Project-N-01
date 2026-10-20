@@ -224,3 +224,57 @@ test("mood-report is accepted by the durable care-record schema", { skip: !datab
     await pool.end();
   }
 });
+
+
+test("NovaLife tables and future public objects are not directly granted to API roles", { skip: !databaseUrl }, async () => {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+  const tables = [
+    "novalife_accounts",
+    "novalife_sessions",
+    "novalife_client_assignments",
+    "novalife_consent_grants",
+    "novalife_audit_events",
+    "novalife_care_records",
+  ];
+
+  try {
+    const existing = await pool.query(`
+      SELECT role_name, table_name,
+             has_table_privilege(role_name, format('public.%I', table_name), 'SELECT') AS can_select,
+             has_table_privilege(role_name, format('public.%I', table_name), 'INSERT') AS can_insert,
+             has_table_privilege(role_name, format('public.%I', table_name), 'UPDATE') AS can_update,
+             has_table_privilege(role_name, format('public.%I', table_name), 'DELETE') AS can_delete
+      FROM (VALUES ('anon'), ('authenticated'), ('service_role')) AS roles(role_name)
+      CROSS JOIN unnest($1::text[]) AS t(table_name)
+      ORDER BY role_name, table_name
+    `, [tables]);
+
+    assert.equal(existing.rowCount, 18);
+    for (const row of existing.rows) {
+      assert.equal(row.can_select, false, `${row.role_name} must not SELECT ${row.table_name}`);
+      assert.equal(row.can_insert, false, `${row.role_name} must not INSERT ${row.table_name}`);
+      assert.equal(row.can_update, false, `${row.role_name} must not UPDATE ${row.table_name}`);
+      assert.equal(row.can_delete, false, `${row.role_name} must not DELETE ${row.table_name}`);
+    }
+
+    await pool.query("CREATE TABLE public.novalife_default_acl_probe (id integer)");
+    const probe = await pool.query(`
+      SELECT c.relrowsecurity AS rls_enabled,
+             has_table_privilege('anon', 'public.novalife_default_acl_probe', 'SELECT') AS anon_select,
+             has_table_privilege('authenticated', 'public.novalife_default_acl_probe', 'SELECT') AS authenticated_select,
+             has_table_privilege('service_role', 'public.novalife_default_acl_probe', 'SELECT') AS service_role_select
+      FROM pg_catalog.pg_class c
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relname = 'novalife_default_acl_probe'
+    `);
+    assert.equal(probe.rowCount, 1);
+    assert.equal(probe.rows[0].rls_enabled, true, "automatic RLS trigger must protect new tables");
+    assert.equal(probe.rows[0].anon_select, false);
+    assert.equal(probe.rows[0].authenticated_select, false);
+    assert.equal(probe.rows[0].service_role_select, false);
+  } finally {
+    await pool.query("DROP TABLE IF EXISTS public.novalife_default_acl_probe").catch(() => {});
+    await pool.end();
+  }
+});
