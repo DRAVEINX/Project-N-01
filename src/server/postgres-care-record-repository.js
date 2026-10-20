@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 const CARE_RESOURCES = new Set([
+  "mood-report",
   "care-plan",
   "care-note",
   "care-task",
