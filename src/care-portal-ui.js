@@ -122,6 +122,7 @@ if (root) {
           ${clientRole ? '<button class="secondary-button" type="button" data-care-mood>Mijn stemming rapporteren</button>' : ""}
         </div>
         <p class="section-subtitle">Alleen gegevens waarvoor dit account toegang heeft, worden door de server teruggegeven. Een functie kan leeg zijn wanneer de organisatie die nog niet heeft ingericht.</p>
+        ${caregiverRole ? '<details class="care-record-editor"><summary>Nieuwe rapportage of zorgtaak toevoegen</summary><form data-care-create-form><label for="care-create-resource">Soort registratie</label><select id="care-create-resource" name="resource" required><option value="care-note">Rapportage / notitie</option><option value="care-task">Zorgtaak</option><option value="care-report">Zorgverslag</option><option value="care-plan">Zorgplan-item</option></select><label for="care-create-title">Titel</label><input id="care-create-title" name="title" maxlength="200" required><label for="care-create-text">Beschrijving / rapportage</label><textarea id="care-create-text" name="text" maxlength="8000" rows="4" required></textarea><button class="primary-button" type="submit">Beveiligd opslaan</button></form></details>' : ""}
         <div data-care-records aria-live="polite"><p class="inline-status">Kies een functie om beveiligde gegevens op te vragen.</p></div>
         ${clientRole ? '<form data-care-mood-form hidden><label for="care-mood-text">Hoe voel je je vandaag?</label><textarea id="care-mood-text" maxlength="4000" required rows="3"></textarea><button class="primary-button" type="submit">Stemming veilig versturen</button></form>' : ""}
         <p class="inline-status" role="status" aria-live="polite" data-care-status></p>
@@ -142,13 +143,41 @@ if (root) {
         const records = Array.isArray(result?.records) ? result.records : Array.isArray(result) ? result : [];
         const list = root.querySelector("[data-care-records]");
         if (!records.length) list.innerHTML = '<p class="inline-status">Geen gegevens gevonden of beschikbaar.</p>';
-        else list.innerHTML = '<ul>' + records.map((record) => '<li><strong>' + escapeHtml(record.title || record.id || resource) + '</strong><p>' + escapeHtml(record.summary || record.text || record.description || "Gegevens beschikbaar") + '</p></li>').join("") + '</ul>';
+        else list.innerHTML = '<ul>' + records.map((record) => { const data = record?.data && typeof record.data === "object" ? record.data : record; return '<li><strong>' + escapeHtml(data.title || record.id || resource) + '</strong><p>' + escapeHtml(data.summary || data.text || data.description || "Gegevens beschikbaar") + '</p></li>'; }).join("") + '</ul>';
         statusText("Gegevens opgevraagd. De server bepaalt welke records je mag zien.");
       } catch (error) {
         root.querySelector("[data-care-records]").innerHTML = '<p class="inline-status" data-error="true">De gegevens konden niet worden geladen.</p>';
         statusText(error?.status === 403 ? "Geen toestemming voor deze gegevens." : "De online dienst is niet beschikbaar.", true);
       } finally { setBusy(false); }
     }));
+    root.querySelector("[data-care-create-form]")?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (busy || !session || !caregiverRole) return;
+      const clientId = root.querySelector("#care-client-id")?.value.trim();
+      if (!clientId) { statusText("Vul eerst het cliënt-ID in.", true); return; }
+      const form = event.currentTarget;
+      const data = new FormData(form);
+      const resource = String(data.get("resource") || "");
+      const allowedCreateResources = new Set(["care-note", "care-task", "care-report", "care-plan"]);
+      if (!allowedCreateResources.has(resource)) { statusText("Deze registratie is niet toegestaan.", true); return; }
+      const title = String(data.get("title") || "").trim();
+      const text = String(data.get("text") || "").trim();
+      if (!title || !text) { statusText("Vul zowel een titel als een beschrijving in.", true); return; }
+      setBusy(true);
+      try {
+        await session.api.create(clientId, resource, {
+          title,
+          text,
+          createdAt: new Date().toISOString()
+        });
+        form.reset();
+        statusText("Registratie opgeslagen. De server heeft de toegang gecontroleerd.");
+        const loadButton = root.querySelector('[data-care-load="' + resource + '"]');
+        if (loadButton) loadButton.click();
+      } catch (error) {
+        statusText(error?.status === 403 ? "Geen toestemming om deze registratie voor deze cliënt op te slaan." : "Opslaan is niet gelukt. Probeer het later opnieuw.", true);
+      } finally { setBusy(false); }
+    });
     root.querySelector("[data-care-mood]")?.addEventListener("click", () => {
       const form = root.querySelector("[data-care-mood-form]");
       if (form) form.hidden = !form.hidden;
