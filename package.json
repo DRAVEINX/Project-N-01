@@ -9,6 +9,7 @@
     "serve": "node scripts/serve.mjs",
     "serve:care-api": "node scripts/novalife-care-api-server.mjs",
     "provision:care-account": "node scripts/provision-novalife-account.mjs",
+    "manage:care-assignment": "node scripts/manage-novalife-assignment.mjs",
     "build:mobile": "node scripts/prepare-mobile.mjs",
     "android:sync": "npm run build:mobile && cap sync android"
   },
