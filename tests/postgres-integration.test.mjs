@@ -561,3 +561,58 @@ test("NovaLife foreign-key support indexes are installed", { skip: !databaseUrl 
     await pool.end();
   }
 });
+
+
+test("all NovaLife tables have explicit restrictive deny-all RLS policies", { skip: !databaseUrl }, async () => {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+  const expectedTables = [
+    "novalife_accounts",
+    "novalife_sessions",
+    "novalife_client_assignments",
+    "novalife_consent_grants",
+    "novalife_audit_events",
+    "novalife_care_records",
+  ];
+
+  try {
+    const policies = await pool.query(
+      `SELECT tablename, permissive, roles, cmd, qual, with_check
+         FROM pg_catalog.pg_policies
+        WHERE schemaname = 'public'
+          AND policyname = 'novalife_restrict_direct_access'
+        ORDER BY tablename`
+    );
+    assert.deepEqual(
+      policies.rows.map((row) => row.tablename).sort(),
+      [...expectedTables].sort()
+    );
+    for (const policy of policies.rows) {
+      assert.equal(policy.permissive, "RESTRICTIVE", policy.tablename);
+      assert.ok(policy.roles.includes("public"), policy.tablename);
+      assert.equal(policy.cmd, "ALL", policy.tablename);
+      assert.match(policy.qual, /false/i, policy.tablename + " USING expression");
+      assert.match(policy.with_check, /false/i, policy.tablename + " WITH CHECK expression");
+    }
+
+    const role = await pool.query(
+      `SELECT rolbypassrls
+         FROM pg_catalog.pg_roles
+        WHERE rolname = 'novalife_api'`
+    );
+    assert.equal(role.rows[0]?.rolbypassrls, true);
+
+    const client = await pool.connect();
+    try {
+      await client.query("SET ROLE novalife_api");
+      const access = await client.query("SELECT count(*)::integer AS rows FROM public.novalife_accounts");
+      assert.equal(access.rowCount, 1, "the restricted server role can query through its audited API path");
+      await client.query("RESET ROLE");
+    } finally {
+      await client.query("RESET ROLE").catch(() => {});
+      client.release();
+    }
+  } finally {
+    await pool.end();
+  }
+});
