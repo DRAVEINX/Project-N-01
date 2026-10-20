@@ -94,21 +94,61 @@ export async function handleNodeCareApiRequest(req, res, router, {
   }
   const method = String(req.method ?? "GET").toUpperCase();
   const pathname = String(req.url ?? "/").split("?")[0];
+  const origin = req.headers?.origin;
+  const originAllowed = typeof origin === "string" && allowedOrigins.includes(origin);
+  const corsHeaders = originAllowed ? {
+    "access-control-allow-origin": origin,
+    "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "access-control-allow-headers": "Authorization, Content-Type, X-Request-Id",
+    "access-control-max-age": "600",
+    "vary": "Origin",
+  } : {};
   if (!pathname.startsWith("/api/care/") && !pathname.startsWith("/api/auth/")) {
-    send(res, 404, { error: "not-found" });
+    send(res, 404, { error: "not-found" }, corsHeaders);
     return;
   }
   try {
     if (!await isSecureRequest(req)) {
-      send(res, 400, { error: "secure-transport-required" });
+      send(res, 400, { error: "secure-transport-required" }, corsHeaders);
       return;
     }
   } catch {
-    send(res, 400, { error: "secure-transport-required" });
+    send(res, 400, { error: "secure-transport-required" }, corsHeaders);
     return;
   }
 
-  const origin = req.headers?.origin;
+  if (method === "OPTIONS") {
+    if (typeof origin !== "string") {
+      send(res, 403, { error: "origin-required" });
+      return;
+    }
+    if (!originAllowed) {
+      send(res, 403, { error: "origin-not-allowed" });
+      return;
+    }
+    const requestedMethod = String(req.headers?.["access-control-request-method"] ?? "").toUpperCase();
+    const allowedMethods = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
+    if (!allowedMethods.has(requestedMethod)) {
+      send(res, 405, { error: "method-not-allowed" }, corsHeaders);
+      return;
+    }
+    const requestedHeaders = String(req.headers?.["access-control-request-headers"] ?? "")
+      .split(",").map((header) => header.trim().toLowerCase()).filter(Boolean);
+    const allowedHeaders = new Set(["authorization", "content-type", "x-request-id"]);
+    if (requestedHeaders.some((header) => !allowedHeaders.has(header))) {
+      send(res, 403, { error: "header-not-allowed" }, corsHeaders);
+      return;
+    }
+    res.writeHead(204, {
+      ...corsHeaders,
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+      "content-length": "0",
+    });
+    res.end();
+    return;
+  }
+
   if (BODY_METHODS.has(method)) {
     if (typeof origin !== "string") {
       if (!allowMissingOrigin) {
@@ -128,7 +168,7 @@ export async function handleNodeCareApiRequest(req, res, router, {
     send(res, Number.isInteger(error?.status) ? error.status : 400, {
       error: error?.message === "request-body-too-large" ? "request-body-too-large" :
         error?.message === "json-content-type-required" ? "json-content-type-required" : "invalid-request",
-    });
+    }, corsHeaders);
     return;
   }
 
@@ -142,9 +182,12 @@ export async function handleNodeCareApiRequest(req, res, router, {
     });
     const status = Number.isInteger(result?.status) ? result.status : 503;
     const responseBody = result && Object.hasOwn(result, "body") ? result.body : { error: "care-data-unavailable" };
-    send(res, status, responseBody, result?.headers && typeof result.headers === "object" ? result.headers : {});
+    send(res, status, responseBody, {
+      ...(result?.headers && typeof result.headers === "object" ? result.headers : {}),
+      ...corsHeaders,
+    });
   } catch {
-    if (!res.headersSent) send(res, 503, { error: "care-data-unavailable" });
+    if (!res.headersSent) send(res, 503, { error: "care-data-unavailable" }, corsHeaders);
     else res.destroy();
   }
 }
