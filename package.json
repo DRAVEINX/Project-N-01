@@ -8,6 +8,7 @@
     "test": "node --test",
     "serve": "node scripts/serve.mjs",
     "serve:care-api": "node scripts/novalife-care-api-server.mjs",
+    "provision:care-account": "node scripts/provision-novalife-account.mjs",
     "build:mobile": "node scripts/prepare-mobile.mjs",
     "android:sync": "npm run build:mobile && cap sync android"
   },
