@@ -165,10 +165,36 @@ export async function deactivateNovaLifeAssignment({
       `UPDATE novalife_client_assignments
           SET active = FALSE
         WHERE id = $1 AND active = TRUE
-        RETURNING client_id`,
+        RETURNING client_id, actor_id`,
       [assignmentId]
     );
     const row = updated?.rows?.[0];
+
+    // Ending a relationship must permanently revoke its existing consent
+    // grants. Otherwise those grants could become effective again if the same
+    // person is assigned to this client at a later date.
+    if (row) {
+      const revoked = await client.query(
+        `UPDATE novalife_consent_grants
+            SET revoked_at = now()
+          WHERE client_id = $1
+            AND grantee_id = $2
+            AND revoked_at IS NULL
+          RETURNING id`,
+        [row.client_id, row.actor_id]
+      );
+      for (const _grant of revoked?.rows ?? []) {
+        await writeAudit(client, {
+          operatorId,
+          clientId: row.client_id,
+          action: "delete",
+          outcome: "allow",
+          reason: "assignment-deactivation-revoked-consent",
+          idFactory,
+        });
+      }
+    }
+
     await writeAudit(client, {
       operatorId,
       clientId: row?.client_id ?? null,
