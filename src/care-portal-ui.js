@@ -172,8 +172,7 @@ if (root) {
         });
         form.reset();
         statusText("Registratie opgeslagen. De server heeft de toegang gecontroleerd.");
-        const loadButton = root.querySelector('[data-care-load="' + resource + '"]');
-        if (loadButton) loadButton.click();
+        statusText("Registratie opgeslagen. Je kunt de bijbehorende lijst openen om de opgeslagen gegevens te controleren.");
       } catch (error) {
         statusText(error?.status === 403 ? "Geen toestemming om deze registratie voor deze cliënt op te slaan." : "Opslaan is niet gelukt. Probeer het later opnieuw.", true);
       } finally { setBusy(false); }
