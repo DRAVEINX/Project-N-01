@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { novaLifeCarePortalResources } from "./care-portal-handler.js";
 import { createPostgresCareRecordRepository } from "./postgres-care-record-repository.js";
 import { createNovaLifePostgresAuth } from "./postgres-auth-runtime.js";
@@ -7,6 +8,12 @@ import { createAuthorizedHandler } from "./authorized-handler.js";
 const DATA_RESOURCES = new Set([...novaLifeCarePortalResources.filter((resource) => resource !== "care-portal"), "mood-report"]);
 const METHODS = Object.freeze({ GET: "read", POST: "create", PUT: "update", PATCH: "update", DELETE: "delete" });
 const MAX_BODY_BYTES = 64 * 1024;
+const CONSENT_SCOPES = new Set([
+  "mood", "journal", "care_plan", "care_note", "care_task", "care_report",
+  "care_document", "medication_overview", "care_message", "roster", "team",
+  "care_consents",
+]);
+const CONSENT_GRANTEE_ROLES = new Set(["caregiver", "parent", "guardian"]);
 
 function json(status, body) {
   return Object.freeze({
@@ -165,6 +172,127 @@ export async function createNovaLifeCareApiRouter({
     }
   }
 
+  const consentHandlers = new Map();
+
+  const listOwnConsents = createAuthorizedHandler({
+    resource: "consent-management",
+    action: "read",
+    authenticate,
+    loadAuthorizationContext,
+    audit: authorizationAudit,
+    handler: async (_request, context) => {
+      const result = await pool.query(
+        `SELECT id, grantee_id, scope, granted_at, expires_at, revoked_at
+           FROM novalife_consent_grants
+          WHERE client_id = $1
+          ORDER BY granted_at DESC, id ASC
+          LIMIT 200`,
+        [context.clientId]
+      );
+      return json(200, {
+        consents: (result?.rows ?? []).map((row) => ({
+          id: row.id,
+          granteeId: row.grantee_id,
+          scope: row.scope,
+          grantedAt: row.granted_at,
+          expiresAt: row.expires_at,
+          revokedAt: row.revoked_at,
+        })),
+      });
+    },
+  });
+
+  const grantOwnConsent = createAuthorizedHandler({
+    resource: "consent-management",
+    action: "create",
+    authenticate,
+    loadAuthorizationContext,
+    audit: authorizationAudit,
+    handler: async (request, context) => {
+      const parsed = validateBody(request);
+      if (parsed.error) return json(400, { error: parsed.error });
+      const body = parsed.data;
+      const allowedFields = new Set(["granteeId", "scope", "expiresAt"]);
+      if (Object.keys(body).some((key) => !allowedFields.has(key)) ||
+          typeof body.granteeId !== "string" || !validSegment(body.granteeId) ||
+          body.granteeId === context.actor.id ||
+          typeof body.scope !== "string" || !CONSENT_SCOPES.has(body.scope)) {
+        return json(400, { error: "invalid-consent-request" });
+      }
+
+      let expiresAt = null;
+      if (body.expiresAt !== undefined && body.expiresAt !== null && body.expiresAt !== "") {
+        if (typeof body.expiresAt !== "string") return json(400, { error: "invalid-consent-expiry" });
+        const parsedExpiry = Date.parse(body.expiresAt);
+        if (!Number.isFinite(parsedExpiry)) return json(400, { error: "invalid-consent-expiry" });
+        const nowValue = typeof now === "function" ? now() : Date.now();
+        const nowMs = nowValue instanceof Date ? nowValue.getTime() : Number(nowValue);
+        if (!Number.isFinite(nowMs) || parsedExpiry <= nowMs) {
+          return json(400, { error: "invalid-consent-expiry" });
+        }
+        expiresAt = new Date(parsedExpiry).toISOString();
+      }
+
+      const result = await pool.query(
+        `INSERT INTO novalife_consent_grants
+           (id, client_id, grantee_id, scope, granted_by, expires_at)
+         SELECT $1, $2, account.id, $4, $2, $5
+           FROM novalife_accounts AS account
+          WHERE account.id = $3
+            AND account.active = TRUE
+            AND account.role IN ('caregiver', 'parent', 'guardian')
+         ON CONFLICT (client_id, grantee_id, scope) WHERE revoked_at IS NULL
+         DO UPDATE SET
+           granted_by = EXCLUDED.granted_by,
+           granted_at = now(),
+           expires_at = EXCLUDED.expires_at
+         RETURNING id, grantee_id, scope, granted_at, expires_at, revoked_at`,
+        [randomUUID(), context.clientId, body.granteeId, body.scope, expiresAt]
+      );
+      const row = result?.rows?.[0];
+      if (!row) return json(400, { error: "invalid-consent-recipient" });
+      return json(201, {
+        consent: {
+          id: row.id,
+          granteeId: row.grantee_id,
+          scope: row.scope,
+          grantedAt: row.granted_at,
+          expiresAt: row.expires_at,
+          revokedAt: row.revoked_at,
+        },
+      });
+    },
+  });
+
+  const revokeOwnConsent = createAuthorizedHandler({
+    resource: "consent-management",
+    action: "delete",
+    authenticate,
+    loadAuthorizationContext,
+    audit: authorizationAudit,
+    handler: async (request, context) => {
+      const grantId = request.params?.consentId;
+      if (typeof grantId !== "string" || !validSegment(grantId)) {
+        return json(404, { error: "not-found" });
+      }
+      const result = await pool.query(
+        `UPDATE novalife_consent_grants
+            SET revoked_at = now()
+          WHERE id = $1
+            AND client_id = $2
+            AND revoked_at IS NULL
+          RETURNING id`,
+        [grantId, context.clientId]
+      );
+      if (!result?.rows?.length) return json(404, { error: "not-found" });
+      return json(200, { revoked: true });
+    },
+  });
+
+  consentHandlers.set("read", listOwnConsents);
+  consentHandlers.set("create", grantOwnConsent);
+  consentHandlers.set("delete", revokeOwnConsent);
+
   return Object.freeze({
     async handle(request) {
       const method = String(request?.method ?? "GET").toUpperCase();
@@ -210,6 +338,38 @@ export async function createNovaLifeCareApiRouter({
           return revoked ? json(200, { loggedOut: true }) : json(401, { error: "unauthenticated" });
         } catch {
           return json(503, { error: "authentication-unavailable" });
+        }
+      }
+
+      if (requestUrl.pathname === "/api/consents") {
+        const action = METHODS[method];
+        if (action !== "read" && action !== "create") return json(405, { error: "method-not-allowed" });
+        const handler = consentHandlers.get(action);
+        const adapted = Object.freeze({
+          ...request,
+          query: requestUrl.searchParams,
+          params: Object.freeze({ ...(request?.params ?? {}), targetClientId: null, consentId: null }),
+        });
+        try { return await handler(adapted); }
+        catch {
+          return json(503, { error: "consent-management-unavailable" });
+        }
+      }
+
+      if (requestUrl.pathname.startsWith("/api/consents/")) {
+        if (method !== "DELETE") return json(405, { error: "method-not-allowed" });
+        const rawId = requestUrl.pathname.slice("/api/consents/".length);
+        let consentId;
+        try { consentId = decodeURIComponent(rawId); } catch { return json(404, { error: "not-found" }); }
+        if (!validSegment(consentId) || consentId.includes("/")) return json(404, { error: "not-found" });
+        try {
+          return await consentHandlers.get("delete")(Object.freeze({
+            ...request,
+            query: requestUrl.searchParams,
+            params: Object.freeze({ ...(request?.params ?? {}), targetClientId: null, consentId }),
+          }));
+        } catch {
+          return json(503, { error: "consent-management-unavailable" });
         }
       }
 
