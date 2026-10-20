@@ -38,7 +38,7 @@ test("PostgreSQL authorization context excludes expired assignments and revoked 
   const context = await loader(caregiver, {});
 
   assert.deepEqual(context.assignedClientIds, ["client-1", "client-2"]);
-  assert.deepEqual(context.grantedScopes, ["care", "careDocuments"]);
+  assert.deepEqual(context.grantedScopes, ["carePlan", "careNote", "careTask", "careReport", "careDocuments"]);
   assert.equal(context.clientId, "client-1");
   assert.equal(context.now, Date.parse("2026-10-20T12:00:00.000Z"));
   assert.match(pool.calls[0].sql, /active = TRUE/);
