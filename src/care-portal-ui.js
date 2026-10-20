@@ -132,6 +132,21 @@ if (root) {
       try { await session?.logout(); } catch { /* Local session is cleared even if the server is unavailable. */ }
       finally { session = null; setBusy(false); renderLogin("Je bent uitgelogd."); }
     });
+    const renderRecords = (result, resource) => {
+      const records = Array.isArray(result?.records) ? result.records : Array.isArray(result) ? result : [];
+      const list = root.querySelector("[data-care-records]");
+      if (!list) return;
+      if (!records.length) {
+        list.innerHTML = '<p class="inline-status">Geen gegevens gevonden of beschikbaar.</p>';
+        return;
+      }
+      list.innerHTML = '<ul>' + records.map((record) => {
+        const data = record?.data && typeof record.data === "object" ? record.data : record;
+        const title = data.title || record.id || resource;
+        const detail = data.summary || data.text || data.description || "Gegevens beschikbaar";
+        return '<li><strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(detail) + '</p></li>';
+      }).join("") + '</ul>';
+    };
     root.querySelectorAll("[data-care-load]").forEach((button) => button.addEventListener("click", async () => {
       if (busy || !session) return;
       const clientId = clientRole ? actor.id : root.querySelector("#care-client-id")?.value.trim();
@@ -140,10 +155,7 @@ if (root) {
       setBusy(true);
       try {
         const result = await session.api.list(clientId, resource, { limit: 50 });
-        const records = Array.isArray(result?.records) ? result.records : Array.isArray(result) ? result : [];
-        const list = root.querySelector("[data-care-records]");
-        if (!records.length) list.innerHTML = '<p class="inline-status">Geen gegevens gevonden of beschikbaar.</p>';
-        else list.innerHTML = '<ul>' + records.map((record) => { const data = record?.data && typeof record.data === "object" ? record.data : record; return '<li><strong>' + escapeHtml(data.title || record.id || resource) + '</strong><p>' + escapeHtml(data.summary || data.text || data.description || "Gegevens beschikbaar") + '</p></li>'; }).join("") + '</ul>';
+        renderRecords(result, resource);
         statusText("Gegevens opgevraagd. De server bepaalt welke records je mag zien.");
       } catch (error) {
         root.querySelector("[data-care-records]").innerHTML = '<p class="inline-status" data-error="true">De gegevens konden niet worden geladen.</p>';
@@ -171,8 +183,15 @@ if (root) {
           createdAt: new Date().toISOString()
         });
         form.reset();
-        statusText("Registratie opgeslagen. De server heeft de toegang gecontroleerd.");
-        statusText("Registratie opgeslagen. Je kunt de bijbehorende lijst openen om de opgeslagen gegevens te controleren.");
+        // Refresh directly while the form is busy; do not simulate a button click,
+        // because busy-state guards intentionally ignore user-triggered actions.
+        try {
+          const result = await session.api.list(clientId, resource, { limit: 50 });
+          renderRecords(result, resource);
+        } catch {
+          // The record was saved successfully; a failed refresh must not report save failure.
+        }
+        statusText("Registratie opgeslagen. De lijst is bijgewerkt als de dienst bereikbaar was.");
       } catch (error) {
         statusText(error?.status === 403 ? "Geen toestemming om deze registratie voor deze cliënt op te slaan." : "Opslaan is niet gelukt. Probeer het later opnieuw.", true);
       } finally { setBusy(false); }
