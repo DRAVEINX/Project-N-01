@@ -11,7 +11,7 @@ function fixture(overrides = {}) {
     authenticate: async () => ({ id: "caregiver-1", role: "caregiver", active: true }),
     loadAuthorizationContext: async () => {
       calls.context++;
-      return { clientId: "client-1", assignedClientIds: ["client-1"], grantedScopes: ["care"] };
+      return { clientId: "client-1", assignedClientIds: ["client-1"], grantedScopes: ["carePlan"] };
     },
     audit: async (event) => calls.audit.push(event),
     handler: async (_request, context) => {
@@ -37,7 +37,7 @@ test("authorized request is audited before the protected handler runs", async ()
 test("missing assignment is denied and protected handler is never called", async () => {
   const { run, calls } = fixture({
     loadAuthorizationContext: async () => ({
-      clientId: "client-2", assignedClientIds: ["client-1"], grantedScopes: ["care"]
+      clientId: "client-2", assignedClientIds: ["client-1"], grantedScopes: ["carePlan"]
     })
   });
   assert.deepEqual(await run({}), { status: 403, body: { error: "forbidden" } });
@@ -104,7 +104,7 @@ test("request-supplied client and permission fields cannot replace trusted conte
       return {
         clientId: "client-1",
         assignedClientIds: ["client-1"],
-        grantedScopes: ["care"]
+        grantedScopes: ["carePlan"]
       };
     }
   });
@@ -193,7 +193,7 @@ test("missing trusted client ID is denied and safely audited before handler", as
     loadAuthorizationContext: async () => ({
       clientId: null,
       assignedClientIds: ["client-1"],
-      grantedScopes: ["care"]
+      grantedScopes: ["carePlan"]
     }),
     audit: async (entry) => {
       order.push("audit");
@@ -223,12 +223,12 @@ test("malformed assignment and consent collections fail closed", async (t) => {
   const cases = [
     {
       name: "missing assignment collection",
-      context: { clientId: "client-1", assignedClientIds: null, grantedScopes: ["care"] },
+      context: { clientId: "client-1", assignedClientIds: null, grantedScopes: ["carePlan"] },
       reason: "client-not-assigned"
     },
     {
       name: "non-array consent collection",
-      context: { clientId: "client-1", assignedClientIds: ["client-1"], grantedScopes: "care" },
+      context: { clientId: "client-1", assignedClientIds: ["client-1"], grantedScopes: "carePlan" },
       reason: "scope-not-consented"
     }
   ];
@@ -324,7 +324,7 @@ test("trusted actor snapshot excludes arbitrary and nested authenticator payload
     loadAuthorizationContext: async (actor) => {
       assert.equal(Object.hasOwn(actor, "metadata"), false);
       assert.equal(Object.hasOwn(actor, "internalToken"), false);
-      return { clientId: "client-1", assignedClientIds: ["client-1"], grantedScopes: ["care"] };
+      return { clientId: "client-1", assignedClientIds: ["client-1"], grantedScopes: ["carePlan"] };
     },
     handler: async (_request, context) => {
       handlerActor = context.actor;
@@ -347,14 +347,14 @@ test("audit actor and client identifiers reject control characters and oversized
     {
       name: "client identifier with control character",
       actor: { id: "caregiver-1", role: "caregiver", active: true },
-      context: { clientId: "client-1\u007finjected", assignedClientIds: ["client-1\u007finjected"], grantedScopes: ["care"] },
+      context: { clientId: "client-1\u007finjected", assignedClientIds: ["client-1\u007finjected"], grantedScopes: ["carePlan"] },
       expectedActorId: "caregiver-1",
       expectedClientId: null
     },
     {
       name: "oversized client identifier",
       actor: { id: "caregiver-1", role: "caregiver", active: true },
-      context: { clientId: "c".repeat(257), assignedClientIds: ["c".repeat(257)], grantedScopes: ["care"] },
+      context: { clientId: "c".repeat(257), assignedClientIds: ["c".repeat(257)], grantedScopes: ["carePlan"] },
       expectedActorId: "caregiver-1",
       expectedClientId: null
     }
@@ -390,7 +390,7 @@ test("authorization context loader cannot mutate trusted actor identity", async 
       return {
         clientId: "client-1",
         assignedClientIds: ["client-1"],
-        grantedScopes: ["care"]
+        grantedScopes: ["carePlan"]
       };
     },
     handler: async (_request, context) => {
@@ -414,7 +414,7 @@ test("protected handler receives a frozen minimal authorization context", async 
     loadAuthorizationContext: async () => ({
       clientId: "client-1",
       assignedClientIds: ["client-1"],
-      grantedScopes: ["care"],
+      grantedScopes: ["carePlan"],
       internalNotes: "must not be forwarded",
       databaseHandle: { secret: "must not be forwarded" }
     }),
