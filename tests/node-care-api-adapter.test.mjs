@@ -222,3 +222,67 @@ test("Node adapter keeps security response headers fixed against router override
   assert.equal(res.headers["x-custom-header"], "allowed");
   assert.deepEqual(JSON.parse(res.body), { ok: true });
 });
+
+
+test("Node adapter handles valid CORS preflight without reaching the API router", async () => {
+  const api = router();
+  const res = response();
+  await handleNodeCareApiRequest(request({
+    method: "OPTIONS",
+    headers: {
+      origin: "https://app.example",
+      "access-control-request-method": "PATCH",
+      "access-control-request-headers": "authorization, content-type, x-request-id",
+    },
+  }), res, api, { allowedOrigins: ["https://app.example"] });
+
+  assert.equal(res.status, 204);
+  assert.equal(res.headers["access-control-allow-origin"], "https://app.example");
+  assert.equal(res.headers["access-control-allow-methods"], "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  assert.match(res.headers["access-control-allow-headers"], /Authorization/);
+  assert.equal(api.calls.length, 0);
+});
+
+test("Node adapter denies CORS preflight from untrusted origins or with unapproved headers", async () => {
+  const api = router();
+  const untrusted = response();
+  await handleNodeCareApiRequest(request({
+    method: "OPTIONS",
+    headers: {
+      origin: "https://attacker.example",
+      "access-control-request-method": "GET",
+      "access-control-request-headers": "authorization",
+    },
+  }), untrusted, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(untrusted.status, 403);
+
+  const unsafeHeader = response();
+  await handleNodeCareApiRequest(request({
+    method: "OPTIONS",
+    headers: {
+      origin: "https://app.example",
+      "access-control-request-method": "GET",
+      "access-control-request-headers": "authorization, x-not-allowed",
+    },
+  }), unsafeHeader, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(unsafeHeader.status, 403);
+  assert.equal(api.calls.length, 0);
+});
+
+test("Node adapter adds exact CORS origin to actual responses only for allow-listed callers", async () => {
+  const api = router({ status: 200, body: { ok: true } });
+  const allowed = response();
+  await handleNodeCareApiRequest(request({
+    method: "GET",
+    headers: { origin: "https://app.example" },
+  }), allowed, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(allowed.headers["access-control-allow-origin"], "https://app.example");
+  assert.equal(allowed.headers.vary, "Origin");
+
+  const denied = response();
+  await handleNodeCareApiRequest(request({
+    method: "GET",
+    headers: { origin: "https://attacker.example" },
+  }), denied, api, { allowedOrigins: ["https://app.example"] });
+  assert.equal(denied.headers["access-control-allow-origin"], undefined);
+});
