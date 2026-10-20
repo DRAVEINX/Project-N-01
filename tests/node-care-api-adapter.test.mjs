@@ -192,3 +192,27 @@ test("Node adapter hides unexpected router errors behind a no-store 503 response
   assert.equal(res.headers["cache-control"], "no-store");
   assert.doesNotMatch(res.body, /sensitive database connection details/);
 });
+
+test("Node adapter keeps security response headers fixed against router overrides", async () => {
+  const api = router({
+    status: 200,
+    body: { ok: true },
+    headers: {
+      "content-type": "text/html",
+      "cache-control": "public, max-age=3600",
+      "x-content-type-options": "unsafe",
+      "content-length": "1",
+      "x-custom-header": "allowed",
+    },
+  });
+  const res = response();
+  await handleNodeCareApiRequest(request(), res, api);
+
+  assert.equal(res.status, 200);
+  assert.equal(res.headers["content-type"], "application/json; charset=utf-8");
+  assert.equal(res.headers["cache-control"], "no-store");
+  assert.equal(res.headers["x-content-type-options"], "nosniff");
+  assert.equal(Number(res.headers["content-length"]), Buffer.byteLength(res.body, "utf8"));
+  assert.equal(res.headers["x-custom-header"], "allowed");
+  assert.deepEqual(JSON.parse(res.body), { ok: true });
+});
