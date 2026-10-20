@@ -17,7 +17,7 @@ const MAX_RECORD_ID = 200;
 
 function requiredId(value, label) {
   if (typeof value !== "string" || value.length === 0 || value.length > MAX_RECORD_ID ||
-      value.trim() !== value || /[\\u0000-\\u001F\\u007F/\\\\?#]/.test(value)) {
+      value.trim() !== value || /[\u0000-\u001F\u007F/\\?#]/.test(value)) {
     throw new TypeError(label + " must be a safe identifier of at most 200 characters");
   }
   return value;
