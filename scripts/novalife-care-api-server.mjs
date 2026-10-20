@@ -116,6 +116,26 @@ function validateDatabaseRole(row) {
       throw new Error("database role has unexpected privileges on " + table);
     }
   }
+
+  const expectedConsentColumns = {
+    consent_id_insert: true,
+    consent_client_id_insert: true,
+    consent_grantee_id_insert: true,
+    consent_scope_insert: true,
+    consent_granted_by_insert: true,
+    consent_expires_at_insert: true,
+    consent_granted_by_update: true,
+    consent_granted_at_update: true,
+    consent_expires_at_update: true,
+    consent_revoked_at_update: true,
+    consent_client_id_update: false,
+    consent_scope_update: false,
+  };
+  for (const [privilege, expectedValue] of Object.entries(expectedConsentColumns)) {
+    if (row[privilege] !== expectedValue) {
+      throw new Error("database role has unexpected column privilege: " + privilege);
+    }
+  }
 }
 
 async function main() {
@@ -183,6 +203,18 @@ async function main() {
              has_table_privilege(current_user, 'public.novalife_consent_grants', 'INSERT') AS novalife_consent_grants_insert,
              has_table_privilege(current_user, 'public.novalife_consent_grants', 'UPDATE') AS novalife_consent_grants_update,
              has_table_privilege(current_user, 'public.novalife_consent_grants', 'DELETE') AS novalife_consent_grants_delete,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'id', 'INSERT') AS consent_id_insert,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'client_id', 'INSERT') AS consent_client_id_insert,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'grantee_id', 'INSERT') AS consent_grantee_id_insert,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'scope', 'INSERT') AS consent_scope_insert,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'granted_by', 'INSERT') AS consent_granted_by_insert,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'expires_at', 'INSERT') AS consent_expires_at_insert,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'granted_by', 'UPDATE') AS consent_granted_by_update,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'granted_at', 'UPDATE') AS consent_granted_at_update,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'expires_at', 'UPDATE') AS consent_expires_at_update,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'revoked_at', 'UPDATE') AS consent_revoked_at_update,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'client_id', 'UPDATE') AS consent_client_id_update,
+             has_column_privilege(current_user, 'public.novalife_consent_grants', 'scope', 'UPDATE') AS consent_scope_update,
              has_table_privilege(current_user, 'public.novalife_audit_events', 'SELECT') AS novalife_audit_events_select,
              has_table_privilege(current_user, 'public.novalife_audit_events', 'INSERT') AS novalife_audit_events_insert,
              has_table_privilege(current_user, 'public.novalife_audit_events', 'UPDATE') AS novalife_audit_events_update,
