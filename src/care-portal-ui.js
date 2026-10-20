@@ -72,12 +72,190 @@ if (root) {
       return;
     }
     if (clientRole) {
-      root.innerHTML = '<section class="panel care-portal-panel" aria-labelledby="care-portal-title"><h3 id="care-portal-title">Mijn persoonlijke ruimte</h3><p>Je kunt hier zelf doorgeven hoe je je voelt. Begeleidersgegevens en zorgdossiers zijn niet zichtbaar in deze ruimte.</p><form data-care-mood-form><label for="care-mood-text">Hoe voel je je vandaag?</label><textarea id="care-mood-text" maxlength="4000" required rows="4" aria-describedby="care-mood-help"></textarea><p id="care-mood-help" class="section-subtitle">Schrijf in je eigen woorden. Deel alleen wat je wilt delen.</p><button class="primary-button" type="submit">Stemming veilig versturen</button></form><button class="secondary-button" type="button" data-care-mood-history>Mijn eerdere stemmingsrapportages bekijken</button><div data-care-mood-records aria-live="polite"><p class="section-subtitle">Je eerdere rapportages verschijnen hier wanneer je ze opvraagt.</p></div><button class="secondary-button" type="button" data-care-logout>Uitloggen</button><p class="inline-status" role="status" aria-live="polite" data-care-status></p></section>';
+      root.innerHTML = `
+        <section class="panel care-portal-panel" aria-labelledby="care-portal-title">
+          <h3 id="care-portal-title">Mijn persoonlijke ruimte</h3>
+          <p>Je kunt hier zelf doorgeven hoe je je voelt. Begeleidersgegevens en zorgdossiers zijn niet zichtbaar in deze ruimte.</p>
+          <form data-care-mood-form>
+            <label for="care-mood-text">Hoe voel je je vandaag?</label>
+            <textarea id="care-mood-text" maxlength="4000" required rows="4" aria-describedby="care-mood-help"></textarea>
+            <p id="care-mood-help" class="section-subtitle">Schrijf in je eigen woorden. Deel alleen wat je wilt delen.</p>
+            <button class="primary-button" type="submit">Stemming veilig versturen</button>
+          </form>
+          <button class="secondary-button" type="button" data-care-mood-history>Mijn eerdere stemmingsrapportages bekijken</button>
+          <div data-care-mood-records aria-live="polite"><p class="section-subtitle">Je eerdere rapportages verschijnen hier wanneer je ze opvraagt.</p></div>
+          <hr>
+          <h4>Mijn toestemmingen</h4>
+          <p class="section-subtitle">Bekijk welke gegevens je met je toegewezen begeleiding deelt. Je kunt toestemming geven of later intrekken. Dit maakt geen nieuwe begeleidingsrelatie aan.</p>
+          <button class="secondary-button" type="button" data-care-consent-manage>Mijn toestemmingen beheren</button>
+          <section class="care-record-editor" data-care-consent-panel hidden aria-labelledby="care-consent-title">
+            <h4 id="care-consent-title">Toestemmingen voor mijn begeleiding</h4>
+            <form data-care-consent-form hidden>
+              <label for="care-consent-recipient">Begeleider, ouder of voogd</label>
+              <select id="care-consent-recipient" name="granteeId" required>
+                <option value="">Kies iemand uit je toegewezen begeleiding</option>
+              </select>
+              <label for="care-consent-scope">Welke gegevens mag die persoon bekijken?</label>
+              <select id="care-consent-scope" name="scope" required>
+                <option value="mood">Mijn stemming</option>
+                <option value="journal">Dagboek en notities</option>
+                <option value="care_plan">Zorgplan</option>
+                <option value="care_note">Rapportages en notities</option>
+                <option value="care_task">Zorgtaken</option>
+                <option value="care_report">Zorgverslagen</option>
+                <option value="care_document">Documenten</option>
+                <option value="medication_overview">Medicatieoverzicht</option>
+                <option value="care_message">Zorgberichten</option>
+                <option value="roster">Rooster</option>
+                <option value="team">Begeleidingsteam</option>
+                <option value="care_consents">Toestemmingsregistraties</option>
+              </select>
+              <label for="care-consent-expiry">Toestemming geldig tot (optioneel)</label>
+              <input id="care-consent-expiry" name="expiresAt" type="datetime-local">
+              <p class="section-subtitle">Laat dit veld leeg voor toestemming zonder einddatum. Je kunt toestemming altijd intrekken.</p>
+              <button class="primary-button" type="submit">Toestemming geven</button>
+            </form>
+            <div data-care-consents-list aria-live="polite"><p class="section-subtitle">Je toestemmingen worden geladen wanneer je dit onderdeel opent.</p></div>
+            <p class="inline-status" role="status" aria-live="polite" data-care-consent-status></p>
+          </section>
+          <button class="secondary-button" type="button" data-care-logout>Uitloggen</button>
+          <p class="inline-status" role="status" aria-live="polite" data-care-status></p>
+        </section>`;
+
+      const consentLabels = {
+        mood: "Mijn stemming",
+        journal: "Dagboek en notities",
+        care_plan: "Zorgplan",
+        care_note: "Rapportages en notities",
+        care_task: "Zorgtaken",
+        care_report: "Zorgverslagen",
+        care_document: "Documenten",
+        medication_overview: "Medicatieoverzicht",
+        care_message: "Zorgberichten",
+        roster: "Rooster",
+        team: "Begeleidingsteam",
+        care_consents: "Toestemmingsregistraties",
+      };
+      const roleLabels = { caregiver: "begeleider", parent: "ouder", guardian: "voogd" };
+      const consentStatus = (message, error = false) => {
+        const status = root.querySelector("[data-care-consent-status]");
+        if (status) {
+          status.textContent = message;
+          status.setAttribute("data-error", error ? "true" : "false");
+        }
+      };
+
+      async function loadConsentData() {
+        const [consentResult, recipientResult] = await Promise.all([
+          session.api.listMyConsents(),
+          session.api.listMyConsentRecipients(),
+        ]);
+        const consents = Array.isArray(consentResult?.consents) ? consentResult.consents : [];
+        const recipients = Array.isArray(recipientResult?.recipients) ? recipientResult.recipients : [];
+        const select = root.querySelector("#care-consent-recipient");
+        const form = root.querySelector("[data-care-consent-form]");
+        const previousRecipient = select?.value || "";
+        if (select) {
+          select.innerHTML = '<option value="">Kies iemand uit je toegewezen begeleiding</option>' +
+            recipients.map((recipient) =>
+              '<option value="' + escapeHtml(recipient.id) + '">' +
+              escapeHtml(roleLabels[recipient.role] || "begeleider") + ' — ' + escapeHtml(recipient.id) +
+              '</option>'
+            ).join("");
+          if (recipients.some((recipient) => recipient.id === previousRecipient)) select.value = previousRecipient;
+        }
+        if (form) form.hidden = recipients.length === 0;
+        const list = root.querySelector("[data-care-consents-list]");
+        if (list) {
+          if (!consents.length) {
+            list.innerHTML = '<p class="section-subtitle">Er zijn nog geen toestemmingen geregistreerd.</p>';
+          } else {
+            const now = Date.now();
+            list.innerHTML = '<ul>' + consents.map((consent) => {
+              const expired = consent.expiresAt && Date.parse(consent.expiresAt) <= now;
+              const revoked = Boolean(consent.revokedAt);
+              const status = revoked ? "ingetrokken" : expired ? "verlopen" : "actief";
+              const date = consent.expiresAt ? ' — geldig tot ' + escapeHtml(consent.expiresAt) : "";
+              const revoke = !revoked && !expired
+                ? '<button class="secondary-button" type="button" data-care-consent-revoke="' + escapeHtml(consent.id) + '">Intrekken</button>'
+                : "";
+              return '<li><strong>' + escapeHtml(consentLabels[consent.scope] || consent.scope) +
+                '</strong><p class="section-subtitle">' + escapeHtml(status) + ' — ' +
+                escapeHtml(consent.granteeId) + date + '</p>' + revoke + '</li>';
+            }).join("") + '</ul>';
+          }
+        }
+        if (!recipients.length) {
+          consentStatus("Er is nog geen actieve begeleiding aan je profiel gekoppeld. Vraag de organisatiebeheerder eerst je begeleiding te koppelen.");
+        } else {
+          consentStatus("Je toestemmingen zijn opgehaald. Alleen je eigen toegewezen begeleiding verschijnt in deze lijst.");
+        }
+      }
+
       root.querySelector("[data-care-logout]")?.addEventListener("click", async () => {
         setBusy(true);
         try { await session?.logout(); } catch { /* Local session is cleared even if the server is unavailable. */ }
         finally { session = null; setBusy(false); renderLogin("Je bent uitgelogd."); }
       });
+      root.querySelector("[data-care-consent-manage]")?.addEventListener("click", async () => {
+        if (busy || !session) return;
+        const panel = root.querySelector("[data-care-consent-panel]");
+        if (!panel) return;
+        panel.hidden = false;
+        setBusy(true);
+        consentStatus("Toestemmingen laden...");
+        try {
+          await loadConsentData();
+        } catch {
+          consentStatus("Je toestemmingen konden niet worden geladen. Probeer het later opnieuw.", true);
+        } finally { setBusy(false); }
+      });
+      root.querySelector("[data-care-consent-form]")?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (busy || !session) return;
+        const recipient = root.querySelector("#care-consent-recipient")?.value;
+        const scope = root.querySelector("#care-consent-scope")?.value;
+        const expiryField = root.querySelector("#care-consent-expiry");
+        if (!recipient || !scope) {
+          consentStatus("Kies een toegewezen begeleider en de gegevens waarvoor je toestemming geeft.", true);
+          return;
+        }
+        const body = { granteeId: recipient, scope };
+        if (expiryField?.value) {
+          const expiry = new Date(expiryField.value);
+          if (!Number.isFinite(expiry.getTime()) || expiry.getTime() <= Date.now()) {
+            consentStatus("Kies een einddatum die in de toekomst ligt.", true);
+            return;
+          }
+          body.expiresAt = expiry.toISOString();
+        }
+        setBusy(true);
+        try {
+          await session.api.grantConsent(body);
+          if (expiryField) expiryField.value = "";
+          await loadConsentData();
+          consentStatus("Toestemming opgeslagen. Je kunt deze later weer intrekken.");
+        } catch (error) {
+          consentStatus(error?.status === 400
+            ? "Deze toestemming kan niet worden opgeslagen. Controleer je selectie en of de begeleider nog aan je profiel is gekoppeld."
+            : "De toestemming kon niet worden opgeslagen. Probeer het later opnieuw.", true);
+        } finally { setBusy(false); }
+      });
+      root.querySelector("[data-care-consents-list]")?.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-care-consent-revoke]");
+        if (!button || busy || !session) return;
+        setBusy(true);
+        try {
+          await session.api.revokeConsent(button.dataset.careConsentRevoke);
+          await loadConsentData();
+          consentStatus("Toestemming ingetrokken.");
+        } catch (error) {
+          consentStatus(error?.status === 404
+            ? "Deze toestemming is al ingetrokken of niet meer beschikbaar."
+            : "Toestemming intrekken is niet gelukt. Probeer het later opnieuw.", true);
+        } finally { setBusy(false); }
+      });
+
       root.querySelector("[data-care-mood-history]")?.addEventListener("click", async () => {
         if (busy || !session) return;
         setBusy(true);
