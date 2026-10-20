@@ -149,3 +149,66 @@ test("composed PostgreSQL HTTP boundary supports login, current actor and logout
     await pool.end();
   }
 });
+
+
+test("RLS helper migration denies direct execution to public API roles", { skip: !databaseUrl }, async () => {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+
+  try {
+    const result = await pool.query(`
+      SELECT role_name,
+             has_function_privilege(role_name, 'public.rls_auto_enable()', 'EXECUTE') AS can_execute
+      FROM (VALUES ('anon'), ('authenticated'), ('service_role')) AS roles(role_name)
+      ORDER BY role_name
+    `);
+    assert.deepEqual(
+      result.rows.map((row) => ({ role: row.role_name, canExecute: row.can_execute })),
+      [
+        { role: "anon", canExecute: false },
+        { role: "authenticated", canExecute: false },
+        { role: "service_role", canExecute: false },
+      ]
+    );
+
+    const helper = await pool.query(`
+      SELECT p.prosecdef AS security_definer
+      FROM pg_catalog.pg_proc p
+      JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.proname = 'rls_auto_enable'
+    `);
+    assert.equal(helper.rowCount, 1, "RLS helper must remain installed for the event trigger");
+    assert.equal(helper.rows[0].security_definer, true);
+  } finally {
+    await pool.end();
+  }
+});
+
+test("mood-report is accepted by the durable care-record schema", { skip: !databaseUrl }, async () => {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+  const actorId = randomUUID();
+  const email = `mood-integration-${actorId}@example.invalid`;
+  const recordId = randomUUID();
+
+  try {
+    await pool.query(
+      `INSERT INTO novalife_accounts (id, email_normalized, password_hash, role, active)
+       VALUES ($1, $2, $3, 'client', TRUE)`,
+      [actorId, email, "integration-only-password-hash-placeholder"]
+    );
+    const saved = await pool.query(
+      `INSERT INTO novalife_care_records
+         (client_id, resource, record_id, data, created_by, updated_by)
+       VALUES ($1, 'mood-report', $2, $3::jsonb, $1, $1)
+       RETURNING resource`,
+      [actorId, recordId, JSON.stringify({ mood: "okay" })]
+    );
+    assert.equal(saved.rowCount, 1);
+    assert.equal(saved.rows[0].resource, "mood-report");
+  } finally {
+    await pool.query("DELETE FROM novalife_care_records WHERE client_id = $1", [actorId]).catch(() => {});
+    await pool.query("DELETE FROM novalife_accounts WHERE id = $1", [actorId]).catch(() => {});
+    await pool.end();
+  }
+});
