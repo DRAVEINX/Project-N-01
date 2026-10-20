@@ -5,8 +5,21 @@ const DEFAULT_MAX_BODY_BYTES = 64 * 1024;
 
 function send(res, status, body, extraHeaders = {}) {
   const encoded = JSON.stringify(body);
+  // HTTP header names are case-insensitive. Filter invariant headers case-
+  // insensitively so mixed-case duplicates cannot bypass the security defaults.
+  const invariantHeaders = new Set([
+    "content-type",
+    "cache-control",
+    "x-content-type-options",
+    "content-length",
+  ]);
+  const safeExtraHeaders = Object.fromEntries(
+    Object.entries(extraHeaders).filter(([name]) =>
+      !invariantHeaders.has(name.toLowerCase())
+    )
+  );
   res.writeHead(status, {
-    ...extraHeaders,
+    ...safeExtraHeaders,
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
     "x-content-type-options": "nosniff",
