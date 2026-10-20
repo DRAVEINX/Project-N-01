@@ -479,3 +479,58 @@ test("future public sequences are not granted to Supabase API roles", { skip: !d
     await pool.end();
   }
 });
+
+
+test("unique active care assignment index prevents duplicate active relationships", { skip: !databaseUrl }, async () => {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+  const clientId = randomUUID();
+  const caregiverId = randomUUID();
+  const operatorId = randomUUID();
+  const passwordHash = "assignment-integration-only-password-hash";
+
+  try {
+    await pool.query(
+      `INSERT INTO novalife_accounts (id, email_normalized, password_hash, role, active)
+       VALUES ($1, $2, $3, 'client', TRUE),
+              ($4, $5, $3, 'caregiver', TRUE)`,
+      [clientId, `client-${clientId}@example.invalid`, passwordHash, caregiverId, `caregiver-${caregiverId}@example.invalid`]
+    );
+    await pool.query(
+      `INSERT INTO novalife_client_assignments
+         (id, actor_id, client_id, assignment_role, active, created_by)
+       VALUES ($1, $2, $3, 'caregiver', TRUE, $4)`,
+      [randomUUID(), caregiverId, clientId, clientId]
+    );
+
+    await assert.rejects(
+      pool.query(
+        `INSERT INTO novalife_client_assignments
+           (id, actor_id, client_id, assignment_role, active, created_by)
+         VALUES ($1, $2, $3, 'caregiver', TRUE, $4)`,
+        [randomUUID(), caregiverId, clientId, clientId]
+      ),
+      (error) => error?.code === "23505"
+    );
+
+    await pool.query(
+      "UPDATE novalife_client_assignments SET active = FALSE WHERE actor_id = $1 AND client_id = $2",
+      [caregiverId, clientId]
+    );
+    await pool.query(
+      `INSERT INTO novalife_client_assignments
+         (id, actor_id, client_id, assignment_role, active, created_by)
+       VALUES ($1, $2, $3, 'caregiver', TRUE, $4)`,
+      [randomUUID(), caregiverId, clientId, clientId]
+    );
+    const count = await pool.query(
+      "SELECT count(*)::integer AS total FROM novalife_client_assignments WHERE actor_id=$1 AND client_id=$2",
+      [caregiverId, clientId]
+    );
+    assert.equal(count.rows[0].total, 2, "a former inactive assignment remains available as history");
+  } finally {
+    await pool.query("DELETE FROM novalife_client_assignments WHERE client_id = $1 OR actor_id = $2", [clientId, caregiverId]).catch(() => {});
+    await pool.query("DELETE FROM novalife_accounts WHERE id = ANY($1::text[])", [[clientId, caregiverId]]).catch(() => {});
+    await pool.end();
+  }
+});
