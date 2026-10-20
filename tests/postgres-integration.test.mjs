@@ -415,6 +415,36 @@ test("restricted API role has only the table privileges required by server route
         .then((result) => result.rows[0].can_create),
       false
     );
+
+    const consentColumns = await pool.query(`
+      SELECT
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'id', 'INSERT') AS insert_id,
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'client_id', 'INSERT') AS insert_client_id,
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'grantee_id', 'INSERT') AS insert_grantee_id,
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'scope', 'INSERT') AS insert_scope,
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'granted_by', 'INSERT') AS insert_granted_by,
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'expires_at', 'INSERT') AS insert_expires_at,
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'granted_by', 'UPDATE') AS update_granted_by,
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'granted_at', 'UPDATE') AS update_granted_at,
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'expires_at', 'UPDATE') AS update_expires_at,
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'revoked_at', 'UPDATE') AS update_revoked_at,
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'client_id', 'UPDATE') AS update_client_id,
+        has_column_privilege('novalife_api', 'public.novalife_consent_grants', 'scope', 'UPDATE') AS update_scope
+    `);
+    assert.deepEqual(consentColumns.rows[0], {
+      insert_id: true,
+      insert_client_id: true,
+      insert_grantee_id: true,
+      insert_scope: true,
+      insert_granted_by: true,
+      insert_expires_at: true,
+      update_granted_by: true,
+      update_granted_at: true,
+      update_expires_at: true,
+      update_revoked_at: true,
+      update_client_id: false,
+      update_scope: false,
+    });
   } finally {
     await pool.end();
   }
