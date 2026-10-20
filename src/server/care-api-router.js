@@ -202,6 +202,34 @@ export async function createNovaLifeCareApiRouter({
     },
   });
 
+  const listConsentRecipients = createAuthorizedHandler({
+    resource: "consent-management",
+    action: "read",
+    authenticate,
+    loadAuthorizationContext,
+    audit: authorizationAudit,
+    handler: async (_request, context) => {
+      const result = await pool.query(
+        `SELECT DISTINCT account.id, account.role
+           FROM novalife_client_assignments AS assignment
+           JOIN novalife_accounts AS account ON account.id = assignment.actor_id
+          WHERE assignment.client_id = $1
+            AND assignment.active = TRUE
+            AND assignment.valid_from <= now()
+            AND (assignment.valid_until IS NULL OR assignment.valid_until > now())
+            AND assignment.assignment_role = account.role
+            AND account.active = TRUE
+            AND account.role IN ('caregiver', 'parent', 'guardian')
+          ORDER BY account.role, account.id
+          LIMIT 100`,
+        [context.clientId]
+      );
+      return json(200, {
+        recipients: (result?.rows ?? []).map((row) => ({ id: row.id, role: row.role })),
+      });
+    },
+  });
+
   const grantOwnConsent = createAuthorizedHandler({
     resource: "consent-management",
     action: "create",
@@ -241,6 +269,16 @@ export async function createNovaLifeCareApiRouter({
           WHERE account.id = $3
             AND account.active = TRUE
             AND account.role IN ('caregiver', 'parent', 'guardian')
+            AND EXISTS (
+              SELECT 1
+                FROM novalife_client_assignments AS assignment
+               WHERE assignment.actor_id = account.id
+                 AND assignment.client_id = $2
+                 AND assignment.assignment_role = account.role
+                 AND assignment.active = TRUE
+                 AND assignment.valid_from <= now()
+                 AND (assignment.valid_until IS NULL OR assignment.valid_until > now())
+            )
          ON CONFLICT (client_id, grantee_id, scope) WHERE revoked_at IS NULL
          DO UPDATE SET
            granted_by = EXCLUDED.granted_by,
@@ -290,6 +328,7 @@ export async function createNovaLifeCareApiRouter({
   });
 
   consentHandlers.set("read", listOwnConsents);
+  consentHandlers.set("recipients", listConsentRecipients);
   consentHandlers.set("create", grantOwnConsent);
   consentHandlers.set("delete", revokeOwnConsent);
 
@@ -338,6 +377,19 @@ export async function createNovaLifeCareApiRouter({
           return revoked ? json(200, { loggedOut: true }) : json(401, { error: "unauthenticated" });
         } catch {
           return json(503, { error: "authentication-unavailable" });
+        }
+      }
+
+      if (requestUrl.pathname === "/api/consent-recipients") {
+        if (method !== "GET") return json(405, { error: "method-not-allowed" });
+        try {
+          return await consentHandlers.get("recipients")(Object.freeze({
+            ...request,
+            query: requestUrl.searchParams,
+            params: Object.freeze({ ...(request?.params ?? {}), targetClientId: null, consentId: null }),
+          }));
+        } catch {
+          return json(503, { error: "consent-management-unavailable" });
         }
       }
 
