@@ -534,3 +534,30 @@ test("unique active care assignment index prevents duplicate active relationship
     await pool.end();
   }
 });
+
+
+test("NovaLife foreign-key support indexes are installed", { skip: !databaseUrl }, async () => {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: databaseUrl, max: 1 });
+  const expected = [
+    "novalife_care_records_created_by_idx",
+    "novalife_care_records_updated_by_idx",
+    "novalife_client_assignments_created_by_idx",
+    "novalife_consent_grants_granted_by_idx",
+    "novalife_consent_grants_grantee_idx",
+  ];
+
+  try {
+    const result = await pool.query(
+      `SELECT indexname FROM pg_catalog.pg_indexes
+        WHERE schemaname = 'public' AND indexname = ANY($1::text[])`,
+      [expected]
+    );
+    assert.deepEqual(
+      result.rows.map((row) => row.indexname).sort(),
+      [...expected].sort()
+    );
+  } finally {
+    await pool.end();
+  }
+});
