@@ -1,31 +1,32 @@
 # PlanSamen — ontwikkelplan
 
 ## Productdoel
-Een toegankelijke planningsapp voor Android-telefoons en tablets waarmee cliënten en begeleiders samen afspraken kunnen plannen. De interface moet rustig, voorspelbaar en bruikbaar zijn met pictogrammen, duidelijke taal, grote aanraakdoelen, schermlezers en instelbare tekstgrootte.
+Een toegankelijke planningsapp voor Android-telefoons en tablets waarmee cliënten en begeleiders afspraken kunnen plannen. De interface moet rustig, voorspelbaar en bruikbaar zijn met pictogrammen, duidelijke taal, grote aanraakdoelen, schermlezers en instelbare tekstgrootte.
 
-## Werk in deze eerste ontwikkelstap
-- Productnaam ingesteld op PlanSamen in de appweergave en Android-appconfiguratie.
-- Telefoon- en tabletvarianten blijven afzonderlijke installeerbare pakketten.
-- Overlappende afspraken worden nu geweigerd in plaats van via een bevestigingsvenster alsnog opgeslagen te kunnen worden.
-- Exacte dubbele begintijden blijven geblokkeerd.
-- Afspraken hebben nu een keuze uit grote, herkenbare pictogrammen; het gekozen pictogram wordt bij de afspraak getoond.
-- De pictogramkeuze heeft toetsenbordfocus-styling en een responsive indeling voor telefoon en tablet.
-- GitHub CI: smoke tests, JavaScript-syntaxiscontrole, projectbestandscontrole en webprototypepakket zijn geslaagd in run 695 op commit `fd5d843efc7a956153580b5f0313f56c941507ed`.
-- De backend-architectuur is beschreven in [PLAN-SAMEN-BACKEND-ONTWERP.md](./PLAN-SAMEN-BACKEND-ONTWERP.md).
-- De uitvoerbare prototype- en toekomstige backendacceptatiecriteria staan in [PLAN-SAMEN-ACCEPTATIETESTS.md](./PLAN-SAMEN-ACCEPTATIETESTS.md).
-- Het voorgestelde endpoint-, autorisatie- en foutcodecontract staat in [PLAN-SAMEN-API-CONTRACT.md](./PLAN-SAMEN-API-CONTRACT.md).
-- De rolmatrix en verplichte beveiligingsgevallen staan in [PLAN-SAMEN-AUTORISATIEMATRIX.md](./PLAN-SAMEN-AUTORISATIEMATRIX.md).
-- Bestaande app-onderdelen blijven behouden; PlanSamen wordt op een aparte featurebranch ontwikkeld.
+## In de huidige featurebranch uitgewerkt
+- PlanSamen is als afzonderlijke feature ontwikkeld; bestaande apponderdelen en telefoon-/tabletvarianten worden niet vervangen.
+- Het prototype biedt een toegankelijk startgedeelte met grote cliënt- en begeleiderknoppen. Deze knoppen openen nog steeds dezelfde lokale omgeving; ze zijn geen aparte accounts.
+- Afspraken kunnen een herkenbaar pictogram krijgen.
+- Exacte dubbele begintijden en overlappende afspraken binnen hetzelfde lokale profiel worden geblokkeerd. Afspraken die exact op elkaars eindtijd aansluiten blijven mogelijk.
+- Een afspraak kan 0, 5, 10, 15 of 30 minuten vrije ruimte na afloop reserveren voor reizen of rust. De overlapcontrole houdt ook rekening met een buffer die doorloopt tot na middernacht.
+- Weekreeksen zijn herkenbaar in de agenda. Het bewerken van de reeks-hoofdafspraak meldt dat alle afspraken in die reeks worden aangepast. Een losse reeksafspraak is als zodanig gemarkeerd en wijzigen ervan geldt alleen voor die afspraak.
+- Verwijderen vraagt expliciete bevestiging voor het verwijderen van de hele reeks versus alleen één afspraak.
+- De bediening heeft grote pictogramkeuzes, toetsenbordfocus, responsieve telefoon-/tabletstijlen en lokale, versleutelde gegevensopslag.
 
-## Verplichte vervolgstappen
-1. Maak een afzonderlijk, toegankelijk startscherm voor cliënt en begeleider, met eenvoudige taal en grote pictogramknoppen.
+## Ontwerp- en testdocumenten
+- Backend-architectuur: [PLAN-SAMEN-BACKEND-ONTWERP.md](./PLAN-SAMEN-BACKEND-ONTWERP.md).
+- Prototype- en backendacceptatiecriteria: [PLAN-SAMEN-ACCEPTATIETESTS.md](./PLAN-SAMEN-ACCEPTATIETESTS.md).
+- API-, autorisatie- en foutcodecontract: [PLAN-SAMEN-API-CONTRACT.md](./PLAN-SAMEN-API-CONTRACT.md).
+- Rollen en beveiligingsgevallen: [PLAN-SAMEN-AUTORISATIEMATRIX.md](./PLAN-SAMEN-AUTORISATIEMATRIX.md).
+
+## Volgende verplichte stappen
+1. Test de planning met cliënten en begeleiders, ook met TalkBack, grote tekst en pictogrammen, en verwerk feedback.
 2. Kies en autoriseer een afzonderlijke PlanSamen-hosting- en identity-provider; wijzig of hergebruik NovaLife niet.
-3. Bouw echte accounts en rolgebaseerde autorisatie. De huidige lokale profielen zijn geen afzonderlijke accounts en geven geen veilige toegang tussen apparaten.
-4. Voeg een beveiligde backend en gedeelde agenda toe, met toestemming en auditregistratie voor wijzigingen door begeleiding.
-5. Controleer conflicten server-side binnen één atomaire database-transactie, zodat twee gelijktijdige gebruikers niet allebei conflicterende afspraken kunnen opslaan. De clientcontrole alleen is daarvoor niet voldoende.
-6. Voeg terugkerende afspraken, uitzonderingen, reistijd/buffertijd en begrijpelijke conflictmeldingen toe.
-7. Test met cliënten en begeleiders, waaronder mensen die pictogrammen, schermlezers of grotere tekst gebruiken.
-8. Voer tests uit op echte Android-telefoons en tablets en controleer afzonderlijke APK/AAB-builds voordat een release wordt gedeeld.
+3. Bouw echte accounts en server-side rolgebaseerde autorisatie. Lokale profielen zijn geen afzonderlijke accounts en geven geen veilige toegang tussen apparaten.
+4. Voeg beveiligde online synchronisatie en auditregistratie toe voor wijzigingen door begeleiding.
+5. Controleer conflicten aan de serverkant binnen één atomaire databasetransactie. De clientcontrole alleen beschermt niet tegen gelijktijdige opslagen vanaf meerdere apparaten.
+6. Werk uitzonderingen en het beheer van terugkerende afspraken uit voor een online gedeelde agenda.
+7. Voer tests uit op echte Android-telefoons en tablets en controleer afzonderlijke APK/AAB-builds voordat een release wordt gedeeld.
 
 ## Eerlijke status
-Dit is een ontwikkelstart op basis van de bestaande toegankelijke web/Capacitor-prototype. De huidige versie heeft nog geen echte online accounts of gedeelde synchronisatie. De app is niet productierijp en mag nog niet worden gebruikt voor echte gevoelige cliëntgegevens totdat authenticatie, server-side conflictcontrole, privacy- en beveiligingstesten zijn afgerond. De huidige featurebranch heeft een groene CI-controle in run 695. Dit bevestigt de geautomatiseerde checks, niet dat de app al productiegeschikt is. Er zijn in deze stap geen APK- of AAB-bestanden gebouwd.
+Dit blijft een lokale web/Capacitor-prototype. Echte online accounts, online gedeelde synchronisatie en server-side conflictcontrole zijn nog niet aangesloten. Het prototype is niet productierijp en mag nog niet worden gebruikt met echte gevoelige cliëntgegevens totdat authenticatie, serverbeveiliging, privacybeleid en relevante tests zijn afgerond. De automatische controles zijn zichtbaar bij de commits van de featurebranch. Een groene CI-run bewijst dat de gecontroleerde tests en verpakkingsstappen slagen; het bewijst niet dat de app productiegeschikt is. Er zijn in deze stap geen nieuwe APK- of AAB-bestanden gebouwd.
