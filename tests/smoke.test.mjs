@@ -967,3 +967,28 @@ test("appointment conflict messages explain reserved buffer time in Dutch and En
   assert.ok(lifeSuite.includes("reserved travel/rest time"), "English guidance should mention reserved transition time");
   assert.ok(lifeSuite.includes("reserved buffer time"), "English conflict message should explain buffer conflicts");
 });
+
+test("PlanSamen blocks overlapping shifts for the same support worker", () => {
+  const minutesStart = lifeSuite.indexOf("  function minutes(value) {");
+  const minutesEnd = lifeSuite.indexOf("\\n  function bufferMinutes", minutesStart);
+  const conflictStart = lifeSuite.indexOf("  function shiftConflict(candidate, pool) {");
+  const conflictEnd = lifeSuite.indexOf("\\n    function formData", conflictStart);
+  assert.notEqual(minutesStart, -1, "missing time-to-minutes helper");
+  assert.ok(minutesEnd > minutesStart, "time-to-minutes helper should have a complete body");
+  assert.notEqual(conflictStart, -1, "missing shift conflict helper");
+  assert.ok(conflictEnd > conflictStart, "shift conflict helper should have a complete body");
+  const minutesHelper = lifeSuite.slice(minutesStart, minutesEnd);
+  const shiftHelper = lifeSuite.slice(conflictStart, conflictEnd);
+  const createConflict = new Function("visibleItems", minutesHelper + "\\n" + shiftHelper + "\\nreturn shiftConflict;");
+  const shiftConflict = createConflict(() => []);
+  const existing = { id: "shift-1", workerId: "worker-1", date: "2026-10-22", start: "10:00", end: "11:00" };
+  const candidate = { id: "shift-2", workerId: "worker-1", date: "2026-10-22", start: "10:30", end: "11:30" };
+  assert.equal(shiftConflict(candidate, [existing])?.id, "shift-1", "overlapping shifts for the same support worker must conflict");
+  assert.equal(shiftConflict({ ...candidate, start: "11:00", end: "12:00" }, [existing]), null, "back-to-back shifts must be allowed");
+  assert.equal(shiftConflict({ ...candidate, workerId: "worker-2" }, [existing]), null, "different support workers may work at the same time");
+  assert.equal(shiftConflict({ ...candidate, date: "2026-10-23" }, [existing]), null, "the same support worker may work at a different time on another date");
+  assert.equal(shiftConflict({ ...existing, end: "12:00" }, [existing]), null, "editing the same shift must not conflict with itself");
+  assert.ok(lifeSuite.includes('const shiftOverlap=shiftConflict(item,visibleItems("shifts","roster"));if(shiftOverlap){setStatus(t("shiftOverlap"),true);return;}'), "shift saving must be blocked before existing data is changed");
+  assert.ok(lifeSuite.includes("Deze begeleider heeft op deze datum al een dienst die overlapt."), "Dutch conflict feedback should be available");
+  assert.ok(lifeSuite.includes("This support worker already has an overlapping shift on this date."), "English conflict feedback should be available");
+});
