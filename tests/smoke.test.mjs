@@ -1213,3 +1213,91 @@ test("PlanSamen appointment rules ignore cancelled entries and the appointment b
   assert.equal(findAppointmentConflict({ ...candidate, status: "cancelled" }, [existing]), null);
   assert.throws(() => findAppointmentConflict(candidate, null), /existingAppointments must be an array/);
 });
+
+
+test("PlanSamen appointment service requires trusted identity and an active relationship", async () => {
+  const { createAppointmentService, AppointmentRuleError } = await import("../backend/plansamen/appointment-service.mjs").then(async service => ({
+    ...service,
+    AppointmentRuleError: (await import("../backend/plansamen/appointment-rules.mjs")).AppointmentRuleError
+  }));
+  const calls = [];
+  const repository = {
+    hasActiveRelationship: async (caregiverId, clientId) => {
+      calls.push(["relationship", caregiverId, clientId]);
+      return caregiverId === "worker-1" && clientId === "client-a";
+    },
+    withTransaction: async callback => callback({
+      findPotentialConflicts: async () => [],
+      insertAppointment: async row => ({ id: "new-appointment", ...row })
+    })
+  };
+  const service = createAppointmentService(repository);
+  const input = {
+    clientId: "client-a", caregiverId: "worker-1",
+    startsAt: "2026-10-22T10:00:00Z", endsAt: "2026-10-22T10:30:00Z",
+    title: "Check-in"
+  };
+
+  await assert.rejects(service.create({ actor: null, input }),
+    error => error instanceof AppointmentRuleError && error.code === "UNAUTHENTICATED");
+  await assert.rejects(service.create({ actor: { userId: "client-b", role: "client" }, input }),
+    error => error instanceof AppointmentRuleError && error.code === "FORBIDDEN");
+  await assert.rejects(service.create({ actor: { userId: "worker-2", role: "caregiver" }, input }),
+    error => error instanceof AppointmentRuleError && error.code === "FORBIDDEN");
+  assert.ok(calls.some(call => call[0] === "relationship" && call[1] === "worker-2"));
+});
+
+test("PlanSamen appointment service sets creator from trusted actor and blocks overlaps", async () => {
+  const { createAppointmentService } = await import("../backend/plansamen/appointment-service.mjs");
+  const { AppointmentRuleError } = await import("../backend/plansamen/appointment-rules.mjs");
+  const base = {
+    clientId: "client-a", caregiverId: null,
+    startsAt: "2026-10-22T10:00:00Z", endsAt: "2026-10-22T10:30:00Z",
+    status: "cancelled", createdByUserId: "spoofed-user"
+  };
+  let inserted = null;
+  let shouldConflict = false;
+  const repository = {
+    hasActiveRelationship: async () => false,
+    withTransaction: async callback => callback({
+      findPotentialConflicts: async () => shouldConflict ? [{
+        id: "other", clientId: "client-a", caregiverId: null,
+        startsAt: "2026-10-22T10:15:00Z", endsAt: "2026-10-22T10:45:00Z",
+        status: "scheduled", title: "Confidential"
+      }] : [],
+      insertAppointment: async row => (inserted = { id: "new", ...row })
+    })
+  };
+  const service = createAppointmentService(repository);
+  const actor = { userId: "client-a", role: "client" };
+  const created = await service.create({ actor, input: { ...base, title: "  afspraak  " } });
+  assert.equal(created.createdByUserId, "client-a");
+  assert.equal(created.status, "scheduled");
+  assert.equal(created.title, "afspraak");
+  assert.equal(inserted.createdByUserId, "client-a");
+
+  shouldConflict = true;
+  await assert.rejects(service.create({ actor, input: base }),
+    error => error instanceof AppointmentRuleError && error.code === "APPOINTMENT_OVERLAP");
+});
+
+test("PlanSamen appointment service maps database exclusion violations to a safe conflict error", async () => {
+  const { createAppointmentService } = await import("../backend/plansamen/appointment-service.mjs");
+  const { AppointmentRuleError } = await import("../backend/plansamen/appointment-rules.mjs");
+  const repository = {
+    hasActiveRelationship: async () => true,
+    withTransaction: async callback => callback({
+      findPotentialConflicts: async () => [],
+      insertAppointment: async () => { throw Object.assign(new Error("private SQL details"), { code: "23P01" }); }
+    })
+  };
+  const service = createAppointmentService(repository);
+  await assert.rejects(service.create({
+    actor: { userId: "client-a", role: "client" },
+    input: {
+      clientId: "client-a", startsAt: "2026-10-22T10:00:00Z",
+      endsAt: "2026-10-22T10:30:00Z", title: "Afspraak"
+    }
+  }), error => error instanceof AppointmentRuleError &&
+    error.code === "APPOINTMENT_OVERLAP" && !error.message.includes("private SQL details"));
+});
