@@ -937,3 +937,24 @@ test("PlanSamen blocks appointment overlaps per profile but allows back-to-back 
   assert.match(lifeSuite, /select\(t\("bufferAfter"\),"bufferMins"/, "the appointment form should expose the accessible buffer choice");
   assert.match(lifeSuite, /bufferMins:Number\(v\.bufferMins\)\|\|0/, "the chosen transition buffer must be saved with the appointment");
 });
+
+
+test("weekly appointment series clearly explains edit and deletion scope", () => {
+  const noticeStart = lifeSuite.indexOf("  function appointmentSeriesNotice(a) {");
+  const noticeEnd = lifeSuite.indexOf("\\n  function agendaView()", noticeStart);
+  assert.notEqual(noticeStart, -1, "missing appointment series notice");
+  assert.ok(noticeEnd > noticeStart, "appointment series notice should have a complete body");
+  const noticeSource = lifeSuite.slice(noticeStart, noticeEnd);
+  const createNotice = new Function("t", "esc", `${noticeSource}\\nreturn appointmentSeriesNotice;`);
+  const notice = createNotice(
+    key => key === "seriesRootHint" ? "Whole series" : "Only this appointment",
+    value => String(value)
+  );
+  assert.match(notice({ id: "weekly-root", seriesId: "weekly-root", repeat: "weekly" }), /Whole series/);
+  assert.match(notice({ id: "occurrence", seriesId: "weekly-root", repeat: "none" }), /Only this appointment/);
+  assert.equal(notice(null), "");
+  assert.ok(lifeSuite.includes('esc(t("seriesOccurrence"))'), "series occurrences should be identified in the appointment list");
+  assert.ok(lifeSuite.includes('window.confirm(seriesRoot?t("deleteWholeSeriesConfirm"):t("deleteItem"))'), "deleting the series root should ask for explicit whole-series confirmation");
+  assert.ok(lifeSuite.includes("Dit is één afspraak uit een wekelijkse reeks."), "Dutch editing guidance should be available");
+  assert.ok(lifeSuite.includes("This is one appointment in a weekly series."), "English editing guidance should be available");
+});
