@@ -954,7 +954,9 @@ test("weekly appointment series clearly explains edit and deletion scope", () =>
   assert.match(notice({ id: "occurrence", seriesId: "weekly-root", repeat: "none" }), /Only this appointment/);
   assert.equal(notice(null), "");
   assert.ok(lifeSuite.includes('esc(t("seriesOccurrence"))'), "series occurrences should be identified in the appointment list");
-  assert.ok(lifeSuite.includes('window.confirm(seriesRoot?t("deleteWholeSeriesConfirm"):t("deleteItem"))'), "deleting the series root should ask for explicit whole-series confirmation");
+  assert.ok(lifeSuite.includes('const seriesOccurrence=Boolean(target.seriesId&&!seriesRoot);const confirmation=seriesRoot?t("deleteWholeSeriesConfirm"):(seriesOccurrence?t("deleteSeriesOccurrenceConfirm"):t("deleteItem"));if(!window.confirm(confirmation))return;'), "deletion should confirm whether one appointment or the whole series is removed");
+  assert.ok(lifeSuite.includes("De rest van de weekreeks blijft staan."), "Dutch occurrence deletion guidance should be available");
+  assert.ok(lifeSuite.includes("The rest of the weekly series will stay."), "English occurrence deletion guidance should be available");
   assert.ok(lifeSuite.includes("Dit is één afspraak uit een wekelijkse reeks."), "Dutch editing guidance should be available");
   assert.ok(lifeSuite.includes("This is one appointment in a weekly series."), "English editing guidance should be available");
 });
