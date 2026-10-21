@@ -479,8 +479,22 @@
     const value = Number(a && a.bufferMins);
     return Number.isFinite(value) ? Math.max(0, Math.min(120, value)) : 0;
   }
+  function dateStartMinutes(value) {
+    const dateText = String(value || "");
+    const date = new Date(dateText + "T00:00:00.000Z");
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateText) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0,10) !== dateText) return NaN;
+    return Math.floor(date.getTime() / 60000);
+  }
+  function appointmentStartMinutes(item) {
+    const start = dateStartMinutes(item.date);
+    return Number.isFinite(start) ? start + minutes(item.start) : NaN;
+  }
+  function appointmentEndMinutes(item) {
+    const start = dateStartMinutes(item.date);
+    return Number.isFinite(start) ? start + minutes(item.end) + bufferMinutes(item) : NaN;
+  }
   function overlap(a,b) {
-    return a.date === b.date && minutes(a.start) < minutes(b.end) + bufferMinutes(b) && minutes(b.start) < minutes(a.end) + bufferMinutes(a);
+    return appointmentStartMinutes(a) < appointmentEndMinutes(b) && appointmentStartMinutes(b) < appointmentEndMinutes(a);
   }
   function appointmentConflict(candidate, pool) {
     const candidates = Array.isArray(pool) ? pool : visibleItems("appointments","calendar");
@@ -491,7 +505,7 @@
       const candidateSeries = candidate.seriesId || (candidate.repeat === "weekly" ? candidate.id : "");
       const otherSeries = a.seriesId || (a.repeat === "weekly" ? a.id : "");
       if (candidateSeries && otherSeries && candidateSeries === otherSeries) return false;
-      return a.date === candidate.date && (a.start === candidate.start || overlap(a,candidate));
+      return (a.date === candidate.date && a.start === candidate.start) || overlap(a,candidate);
     });
     return conflicting.find(a => a.start === candidate.start) || conflicting[0] || null;
   }
