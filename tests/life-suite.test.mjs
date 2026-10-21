@@ -31,7 +31,9 @@ test("calendar validates times and hard-blocks exact duplicates and every overla
   assert.match(js, /function overlap\(a,b\)/);
   assert.match(js, /function appointmentConflict\(candidate/);
   assert.match(js, /exactDuplicate/);
-  assert.match(js, /window\.confirm\(t\("overlap"\)/);
+  assert.match(js, /overlapBlocked/);
+  assert.match(js, /if\(foundConflicts\.length\)/);
+  assert.doesNotMatch(js, /window\.confirm\(t\("overlap"\)/);
   assert.match(js, /calendarMode === "month"/);
   assert.match(js, /mode-week/);
   assert.match(js, /edit-appointment/);
