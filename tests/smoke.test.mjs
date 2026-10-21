@@ -1060,3 +1060,17 @@ test("PlanSamen backend reference schema blocks overlapping caregiver appointmen
   assert.match(schema, /ALTER TABLE plansamen_roster_shifts FORCE ROW LEVEL SECURITY/);
   assert.match(schema, /Intentionally no client-facing policies yet/);
 });
+
+test("PlanSamen backend reference schema documents least-privilege role and relationship gates", async () => {
+  const schema = await readFile(new URL("../backend/plansamen/reference-schema.sql", import.meta.url), "utf8");
+  assert.match(schema, /Protect profile role fields from self-promotion/);
+  assert.match(schema, /active relationship exists/);
+  assert.match(schema, /assigned_caregiver_user_id must be NULL or match an active relationship/);
+  assert.match(schema, /Relationship revocation must be atomic/);
+  assert.match(schema, /clients must never read raw audit logs/);
+  assert.match(schema, /Keep default-deny until the trusted auth model/);
+  for (const table of ["plansamen_profiles", "plansamen_relationships", "plansamen_appointments", "plansamen_roster_shifts", "plansamen_audit_events"]) {
+    assert.match(schema, new RegExp("ALTER TABLE " + table + " ENABLE ROW LEVEL SECURITY"));
+    assert.match(schema, new RegExp("ALTER TABLE " + table + " FORCE ROW LEVEL SECURITY"));
+  }
+});
