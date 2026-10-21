@@ -8,6 +8,9 @@ Een toegankelijke planningsapp voor Android-telefoons en tablets waarmee cliënt
 - Telefoon- en tabletvarianten blijven afzonderlijke installeerbare pakketten.
 - Overlappende afspraken worden nu geweigerd in plaats van via een bevestigingsvenster alsnog opgeslagen te kunnen worden.
 - Exacte dubbele begintijden blijven geblokkeerd.
+- Afspraken hebben nu een keuze uit grote, herkenbare pictogrammen; het gekozen pictogram wordt bij de afspraak getoond.
+- De pictogramkeuze heeft toetsenbordfocus-styling en een responsive indeling voor telefoon en tablet.
+- GitHub CI: smoke tests, JavaScript-syntaxiscontrole, projectbestandscontrole en webprototypepakket zijn geslaagd in run 682.
 - Bestaande app-onderdelen blijven behouden; PlanSamen wordt op een aparte featurebranch ontwikkeld.
 
 ## Verplichte vervolgstappen
