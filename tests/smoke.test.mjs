@@ -1023,7 +1023,7 @@ test("appointment conflict feedback is specific within a profile and private acr
   assert.notEqual(helperStart, -1, "missing appointment conflict feedback helper");
   assert.ok(helperEnd > helperStart, "appointment conflict feedback helper should have a complete body");
   const helperSource = lifeSuite.slice(helperStart, helperEnd);
-  const createFeedback = new Function("state", "t", "prettyDate", helperSource + "\\nreturn appointmentConflictFeedback;");
+  const createFeedback = new Function("state", "t", "prettyDate", helperSource + "\nreturn appointmentConflictFeedback;");
   const translations = {
     exactDuplicate: "Exact duplicate",
     overlapBlocked: "Overlapping appointment",
