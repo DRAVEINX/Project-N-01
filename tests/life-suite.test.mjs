@@ -27,7 +27,7 @@ test("life suite is wired into the existing app without replacing its core views
   }
 });
 
-test("calendar validates times, blocks exact duplicates and asks before overlaps", () => {
+test("calendar validates times and hard-blocks exact duplicates and every overlap", () => {
   assert.match(js, /function overlap\(a,b\)/);
   assert.match(js, /function appointmentConflict\(candidate/);
   assert.match(js, /exactDuplicate/);
@@ -136,8 +136,8 @@ test("sensitive module never writes readable personal records as standalone loca
 test("Android phone and tablet have separate installable build variants and responsive tablet layout", () => {
   assert.match(androidVariantScript, /applicationIdSuffix "\.phone"/);
   assert.match(androidVariantScript, /applicationIdSuffix "\.tablet"/);
-  assert.match(androidVariantScript, /Project N-01 Telefoon/);
-  assert.match(androidVariantScript, /Project N-01 Tablet/);
+  assert.match(androidVariantScript, /PlanSamen Telefoon/);
+  assert.match(androidVariantScript, /PlanSamen Tablet/);
   assert.match(androidWorkflow, /assemblePhoneDebug assembleTabletDebug/);
   assert.match(androidWorkflow, /assemblePhoneRelease bundlePhoneRelease assembleTabletRelease bundleTabletRelease/);
   assert.match(androidWorkflow, /project-n-01-phone-release-candidate/);
