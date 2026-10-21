@@ -911,7 +911,7 @@ test("PlanSamen blocks appointment overlaps per profile but allows back-to-back 
   assert.match(overlapHelper, /minutes\(b\.start\) < minutes\(a\.end\)/);
   assert.match(conflictHelper, /if \(a\.id === candidate\.id\) return false/);
   assert.match(conflictHelper, /a\.profileId \|\| "self"/);
-  assert.match(conflictHelper, /a\.start === candidate\.start \|\| overlap\(a,candidate\)/);
+  assert.match(conflictHelper, /\(a\.date === candidate\.date && a\.start === candidate\.start\) \|\| overlap\(a,candidate\)/);
 
   const createHelpers = new Function("state", "visibleItems", `${overlapHelper}\n${conflictHelper}\nreturn { overlap, appointmentConflict };`);
   const helpers = createHelpers({ currentProfileId: "client-1" }, () => []);
@@ -929,6 +929,11 @@ test("PlanSamen blocks appointment overlaps per profile but allows back-to-back 
   const withOwnBuffer = { ...base, start: "10:00", end: "10:30", bufferMins: 15 };
   const laterAppointment = { ...existing, id: "later", start: "10:40", end: "11:00" };
   assert.equal(helpers.appointmentConflict(withOwnBuffer, [laterAppointment])?.id, "later", "a new appointment's own transition buffer must also reserve time");
+
+  const late = { ...existing, id: "late", date: "2026-10-22", start: "23:30", end: "23:45", bufferMins: 30 };
+  const nextDay = { ...base, id: "next-day", date: "2026-10-23", start: "00:10", end: "00:30" };
+  assert.equal(helpers.appointmentConflict(nextDay, [late])?.id, "late", "a buffer that runs past midnight must block a too-early next-day appointment");
+  assert.equal(helpers.appointmentConflict({ ...nextDay, start: "00:15" }, [late]), null, "the exact next-day buffer boundary must remain available");
   assert.match(lifeSuite, /select\(t\("bufferAfter"\),"bufferMins"/, "the appointment form should expose the accessible buffer choice");
   assert.match(lifeSuite, /bufferMins:Number\(v\.bufferMins\)\|\|0/, "the chosen transition buffer must be saved with the appointment");
 });
