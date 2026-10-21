@@ -1121,3 +1121,42 @@ test("PlanSamen API scaffold fails closed until authentication and database are 
   const unknown = await fetch(`${baseUrl}/not-an-api-route`);
   assert.equal(unknown.status, 404);
 });
+
+test("PlanSamen API boundary returns secure headers and rejects all data routes without a backend", async (t) => {
+  const { createPlanSamenApiServer } = await import("../backend/plansamen/server.mjs");
+  const server = createPlanSamenApiServer();
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  t.after(() => new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve())));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  for (const [method, path] of [
+    ["GET", "/api/v1/me"],
+    ["POST", "/api/v1/auth/register"],
+    ["POST", "/api/v1/clients/client-a/appointments"],
+    ["PATCH", "/api/v1/clients/client-a/appointments/appointment-a"],
+    ["DELETE", "/api/v1/clients/client-a/appointments/appointment-a"],
+    ["POST", "/api/v1/relationships/relationship-a/revoke"],
+    ["POST", "/api/v1/me/roster-shifts"]
+  ]) {
+    const response = await fetch(baseUrl + path, { method });
+    assert.equal(response.status, 503, `${method} ${path} must fail closed`);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(response.headers.get("x-frame-options"), "DENY");
+    assert.equal(response.headers.get("content-security-policy"), "default-src 'none'; frame-ancestors 'none'");
+    const body = await response.json();
+    assert.equal(body.error.code, "BACKEND_NOT_CONFIGURED");
+    assert.ok(body.error.requestId);
+    assert.equal(JSON.stringify(body).includes("client-a"), false);
+  }
+
+  const wrongMethod = await fetch(baseUrl + "/api/v1/healthz", { method: "POST" });
+  assert.equal(wrongMethod.status, 503);
+  const unknown = await fetch(baseUrl + "/outside");
+  assert.equal(unknown.status, 404);
+  assert.equal((await unknown.json()).error.code, "NOT_FOUND");
+});
