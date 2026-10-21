@@ -1,6 +1,6 @@
 # PlanSamen backend ontwerp
 
-Status: ontwerp; nog niet gekoppeld aan een database of productieomgeving.
+Status: ontwerp; nog niet gekoppeld aan een database of productieomgeving. De PostgreSQL-referentiestructuur staat in [`backend/plansamen/reference-schema.sql`](../backend/plansamen/reference-schema.sql); dit is nadrukkelijk geen uitgerolde migratie en heeft nog geen toegangsbeleid.
 
 ## Doel
 
