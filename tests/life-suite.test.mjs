@@ -166,3 +166,10 @@ test("Windows desktop MSI and iOS archive pipelines are configured separately", 
   assert.match(iosWorkflow, /project-n-01-ios-unsigned-archive/);
   assert.equal(packageConfig.devDependencies["@capacitor/ios"], "8.5.3");
 });
+
+test("PlanSamen acceptance checklist covers honest, accessible client/caregiver entry", async () => {
+  const acceptance = await readFile(new URL("../docs/PLAN-SAMEN-ACCEPTATIETESTS.md", import.meta.url), "utf8");
+  assert.match(acceptance, /UI-05[\s\S]*aparte accounts/i);
+  assert.match(acceptance, /UI-06[\s\S]*horizontale overloop/i);
+  assert.match(acceptance, /dezelfde lokale omgeving openen/i);
+});
