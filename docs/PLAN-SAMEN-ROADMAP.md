@@ -10,7 +10,7 @@ Een toegankelijke planningsapp voor Android-telefoons en tablets waarmee cliënt
 - Exacte dubbele begintijden blijven geblokkeerd.
 - Afspraken hebben nu een keuze uit grote, herkenbare pictogrammen; het gekozen pictogram wordt bij de afspraak getoond.
 - De pictogramkeuze heeft toetsenbordfocus-styling en een responsive indeling voor telefoon en tablet.
-- GitHub CI: smoke tests, JavaScript-syntaxiscontrole, projectbestandscontrole en webprototypepakket zijn geslaagd in run 682. Dit is een eerdere geslaagde codecontrole; latere documentatiecommits zijn niet daarmee getest.
+- GitHub CI: smoke tests, JavaScript-syntaxiscontrole, projectbestandscontrole en webprototypepakket zijn geslaagd in run 695 op commit `fd5d843efc7a956153580b5f0313f56c941507ed`.
 - De backend-architectuur is beschreven in [PLAN-SAMEN-BACKEND-ONTWERP.md](./PLAN-SAMEN-BACKEND-ONTWERP.md).
 - De uitvoerbare prototype- en toekomstige backendacceptatiecriteria staan in [PLAN-SAMEN-ACCEPTATIETESTS.md](./PLAN-SAMEN-ACCEPTATIETESTS.md).
 - Het voorgestelde endpoint-, autorisatie- en foutcodecontract staat in [PLAN-SAMEN-API-CONTRACT.md](./PLAN-SAMEN-API-CONTRACT.md).
@@ -28,4 +28,4 @@ Een toegankelijke planningsapp voor Android-telefoons en tablets waarmee cliënt
 8. Voer tests uit op echte Android-telefoons en tablets en controleer afzonderlijke APK/AAB-builds voordat een release wordt gedeeld.
 
 ## Eerlijke status
-Dit is een ontwikkelstart op basis van de bestaande toegankelijke web/Capacitor-prototype. De huidige versie heeft nog geen echte online accounts of gedeelde synchronisatie. De app is niet productierijp en mag nog niet worden gebruikt voor echte gevoelige cliëntgegevens totdat authenticatie, server-side conflictcontrole, privacy- en beveiligingstesten zijn afgerond. De nieuwe documentatie is vastgelegd, maar voor de laatste documentatiecommits is nog geen groene CI-status bevestigd. Er zijn in deze stap geen APK- of AAB-bestanden gebouwd.
+Dit is een ontwikkelstart op basis van de bestaande toegankelijke web/Capacitor-prototype. De huidige versie heeft nog geen echte online accounts of gedeelde synchronisatie. De app is niet productierijp en mag nog niet worden gebruikt voor echte gevoelige cliëntgegevens totdat authenticatie, server-side conflictcontrole, privacy- en beveiligingstesten zijn afgerond. De huidige featurebranch heeft een groene CI-controle in run 695. Dit bevestigt de geautomatiseerde checks, niet dat de app al productiegeschikt is. Er zijn in deze stap geen APK- of AAB-bestanden gebouwd.
