@@ -970,16 +970,16 @@ test("appointment conflict messages explain reserved buffer time in Dutch and En
 
 test("PlanSamen blocks overlapping shifts for the same support worker", () => {
   const minutesStart = lifeSuite.indexOf("  function minutes(value) {");
-  const minutesEnd = lifeSuite.indexOf("\\n  function bufferMinutes", minutesStart);
+  const minutesEnd = lifeSuite.indexOf("function bufferMinutes(", minutesStart);
   const conflictStart = lifeSuite.indexOf("  function shiftConflict(candidate, pool) {");
-  const conflictEnd = lifeSuite.indexOf("\\n    function formData", conflictStart);
+  const conflictEnd = lifeSuite.indexOf("function formData(", conflictStart);
   assert.notEqual(minutesStart, -1, "missing time-to-minutes helper");
   assert.ok(minutesEnd > minutesStart, "time-to-minutes helper should have a complete body");
   assert.notEqual(conflictStart, -1, "missing shift conflict helper");
   assert.ok(conflictEnd > conflictStart, "shift conflict helper should have a complete body");
   const minutesHelper = lifeSuite.slice(minutesStart, minutesEnd);
   const shiftHelper = lifeSuite.slice(conflictStart, conflictEnd);
-  const createConflict = new Function("visibleItems", minutesHelper + "\\n" + shiftHelper + "\\nreturn shiftConflict;");
+  const createConflict = new Function("visibleItems", minutesHelper + "\n" + shiftHelper + "\nreturn shiftConflict;");
   const shiftConflict = createConflict(() => []);
   const existing = { id: "shift-1", workerId: "worker-1", date: "2026-10-22", start: "10:00", end: "11:00" };
   const candidate = { id: "shift-2", workerId: "worker-1", date: "2026-10-22", start: "10:30", end: "11:30" };
