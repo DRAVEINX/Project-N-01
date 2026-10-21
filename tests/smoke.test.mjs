@@ -886,7 +886,7 @@ test("daily progress restoration accepts only explicit completed booleans", asyn
 
 
 test("PlanSamen homepage offers accessible client and caregiver shortcuts without claiming real accounts", () => {
-  assert.match(html, /class="role-entry-panel"/);
+  assert.match(html, /class="[^"]*\brole-entry-panel\b[^"]*"/);
   assert.match(html, /id="role-entry-title"/);
   assert.match(html, /Ik ben cliënt/);
   assert.match(html, /Ik ben begeleider/);
