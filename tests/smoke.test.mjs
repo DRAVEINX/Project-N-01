@@ -1004,3 +1004,15 @@ test("appointments can be assigned to a support worker and show the assignment",
   assert.ok(lifeSuite.includes("Support worker for this appointment"), "English assignment label should be available");
   assert.ok(lifeSuite.includes("const sameWorker = Boolean(candidate.workerId && a.workerId && a.workerId === candidate.workerId)"), "appointment conflict checks should consider a shared assigned worker across profiles");
 });
+
+test("deleting a support worker keeps appointment links consistent and permission-safe", () => {
+  assert.ok(lifeSuite.includes('const linkedAppointments=state.appointments.filter(a=>a.workerId===id)'), "worker deletion should find linked appointments");
+  assert.ok(lifeSuite.includes('const linkedShifts=state.shifts.filter(s=>s.workerId===id)'), "worker deletion should find linked roster shifts");
+  assert.ok(lifeSuite.includes('linkedAppointments.some(a=>!canModify("calendar",a))||linkedShifts.some(s=>!canModify("roster",s))'), "worker deletion should respect permissions for linked records");
+  assert.ok(lifeSuite.includes('state.appointments=state.appointments.map(a=>a.workerId===id?Object.assign({},a,{workerId:"",updatedAt:now}):a)'), "appointments should remain but lose a removed worker assignment");
+  assert.ok(lifeSuite.includes('state.shifts=state.shifts.filter(s=>s.workerId!==id)'), "roster shifts for the removed worker should be deleted");
+  assert.ok(lifeSuite.includes("Bestaande afspraken blijven bestaan, maar de koppeling met deze begeleider wordt verwijderd."), "Dutch confirmation should explain what happens to assigned appointments");
+  assert.ok(lifeSuite.includes("Existing appointments will remain, but their assignment to this support worker will be cleared."), "English confirmation should explain what happens to assigned appointments");
+  assert.ok(lifeSuite.includes("waarvoor je geen wijzigtoestemming hebt"), "Dutch permission feedback should explain why linked records block deletion");
+  assert.ok(lifeSuite.includes("you do not have permission to change"), "English permission feedback should explain why linked records block deletion");
+});
