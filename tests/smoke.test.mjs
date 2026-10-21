@@ -941,11 +941,11 @@ test("PlanSamen blocks appointment overlaps per profile but allows back-to-back 
 
 test("weekly appointment series clearly explains edit and deletion scope", () => {
   const noticeStart = lifeSuite.indexOf("  function appointmentSeriesNotice(a) {");
-  const noticeEnd = lifeSuite.indexOf("\\n  function agendaView()", noticeStart);
+  const noticeEnd = lifeSuite.indexOf("  function agendaView()", noticeStart);
   assert.notEqual(noticeStart, -1, "missing appointment series notice");
   assert.ok(noticeEnd > noticeStart, "appointment series notice should have a complete body");
   const noticeSource = lifeSuite.slice(noticeStart, noticeEnd);
-  const createNotice = new Function("t", "esc", `${noticeSource}\\nreturn appointmentSeriesNotice;`);
+  const createNotice = new Function("t", "esc", noticeSource + "\nreturn appointmentSeriesNotice;");
   const notice = createNotice(
     key => key === "seriesRootHint" ? "Whole series" : "Only this appointment",
     value => String(value)
