@@ -173,3 +173,17 @@ test("PlanSamen acceptance checklist covers honest, accessible client/caregiver 
   assert.match(acceptance, /UI-06[\s\S]*horizontale overloop/i);
   assert.match(acceptance, /dezelfde lokale omgeving openen/i);
 });
+
+test("PlanSamen reference database schema enables RLS and atomic client overlap prevention", async () => {
+  const schema = await readFile(new URL("../backend/plansamen/reference-schema.sql", import.meta.url), "utf8");
+  assert.match(schema, /NOT a deployed migration/);
+  assert.match(schema, /CREATE EXTENSION IF NOT EXISTS btree_gist/);
+  assert.match(schema, /plansamen_client_appointments_no_overlap/);
+  assert.match(schema, /tstzrange\(starts_at, ends_at, '\[\)'\) WITH &&/);
+  assert.match(schema, /CHECK \(ends_at > starts_at\)/);
+  assert.match(schema, /ALTER TABLE plansamen_profiles ENABLE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_relationships ENABLE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_appointments ENABLE ROW LEVEL SECURITY/);
+  assert.match(schema, /Intentionally no client-facing policies yet/);
+  assert.match(schema, /Never apply this to NovaLife/);
+});
