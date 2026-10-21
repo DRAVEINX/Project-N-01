@@ -10,6 +10,7 @@ Een toegankelijke planningsapp voor Android-telefoons en tablets waarmee cliënt
 - Exacte dubbele begintijden en overlappende afspraken binnen hetzelfde lokale profiel worden geblokkeerd. Afspraken die exact op elkaars eindtijd aansluiten blijven mogelijk.
 - Een afspraak kan 0, 5, 10, 15 of 30 minuten vrije ruimte na afloop reserveren voor reizen of rust. De overlapcontrole houdt ook rekening met een buffer die doorloopt tot na middernacht.
 - Weekreeksen zijn herkenbaar in de agenda. Het bewerken van de reeks-hoofdafspraak meldt dat alle afspraken in die reeks worden aangepast. Een losse reeksafspraak is als zodanig gemarkeerd en wijzigen ervan geldt alleen voor die afspraak.
+- Het begeleidersrooster blokkeert overlappende diensten voor dezelfde begeleider op dezelfde datum; aansluitende diensten en diensten van andere begeleiders blijven toegestaan.
 - Verwijderen vraagt expliciete bevestiging voor het verwijderen van de hele reeks versus alleen één afspraak.
 - De bediening heeft grote pictogramkeuzes, toetsenbordfocus, responsieve telefoon-/tabletstijlen en lokale, versleutelde gegevensopslag.
 
