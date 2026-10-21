@@ -11,6 +11,7 @@ Deze testset beschrijft zowel de uitvoerbare prototypecontroles als de vereisten
 | UI-03 | Navigeer met het toetsenbord | Bedienbare onderdelen krijgen zichtbare focus en de focusvolgorde is logisch. |
 | UI-04 | Voeg een afspraak met pictogram toe en open die opnieuw | Het gekozen pictogram blijft zichtbaar; elke pictogramkeuze heeft ook een tekstlabel. |
 | UI-05 | Navigeer op het startgedeelte naar cliënt- en begeleiderknoppen | Beide grote knoppen zijn bereikbaar; de interface suggereert niet dat er al aparte accounts zijn. |
+| UI-06 | Open het startgedeelte op telefoon en tablet | Knoppen staan naast elkaar op brede schermen en onder elkaar op smalle schermen; geen horizontale overloop. |
 | CAL-01 | Voeg een afspraak toe van 10:00 tot 10:30 | De afspraak wordt opgeslagen. |
 | CAL-02 | Voeg voor hetzelfde profiel een afspraak toe van 10:15 tot 10:45 | Opslaan wordt geblokkeerd met een begrijpelijke conflictmelding. |
 | CAL-03 | Voeg voor hetzelfde profiel een afspraak toe van 10:30 tot 11:00 | Toegestaan: aansluitende afspraken zonder buffer overlappen niet. |
