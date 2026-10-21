@@ -960,3 +960,10 @@ test("weekly appointment series clearly explains edit and deletion scope", () =>
   assert.ok(lifeSuite.includes("Dit is één afspraak uit een wekelijkse reeks."), "Dutch editing guidance should be available");
   assert.ok(lifeSuite.includes("This is one appointment in a weekly series."), "English editing guidance should be available");
 });
+
+test("appointment conflict messages explain reserved buffer time in Dutch and English", () => {
+  assert.ok(lifeSuite.includes("gereserveerde reistijd/rust vallen niet op"), "Dutch guidance should mention reserved transition time");
+  assert.ok(lifeSuite.includes("gereserveerde vrije tijd"), "Dutch conflict message should explain buffer conflicts");
+  assert.ok(lifeSuite.includes("reserved travel/rest time"), "English guidance should mention reserved transition time");
+  assert.ok(lifeSuite.includes("reserved buffer time"), "English conflict message should explain buffer conflicts");
+});
