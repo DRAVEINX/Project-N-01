@@ -8,7 +8,8 @@
     "test": "node --test",
     "serve": "node scripts/serve.mjs",
     "build:mobile": "node scripts/prepare-mobile.mjs",
-    "android:sync": "npm run build:mobile && cap sync android"
+    "android:sync": "npm run build:mobile && cap sync android",
+    "serve:plansamen-api": "node backend/plansamen/start.mjs"
   },
   "engines": {
     "node": ">=22"
