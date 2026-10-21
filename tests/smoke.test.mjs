@@ -1087,3 +1087,37 @@ test("PlanSamen API contract specifies authenticated routes, safe errors, revoca
   assert.match(contract, /Geen service-role-sleutel in clientbundel/);
   assert.match(contract, /Geen productiegebruik met echte cliëntgegevens/);
 });
+
+test("PlanSamen API scaffold fails closed until authentication and database are configured", async (t) => {
+  const { createPlanSamenApiServer } = await import("../backend/plansamen/server.mjs");
+  const server = createPlanSamenApiServer();
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  t.after(() => new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve())));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  const health = await fetch(`${baseUrl}/api/v1/healthz`);
+  assert.equal(health.status, 200);
+  assert.equal(health.headers.get("cache-control"), "no-store");
+  assert.deepEqual(await health.json(), {
+    status: "prototype",
+    backendConfigured: false,
+    acceptsPersonalData: false
+  });
+
+  const protectedAttempt = await fetch(`${baseUrl}/api/v1/clients/other-user/appointments`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ title: "private appointment", client_user_id: "other-user" })
+  });
+  assert.equal(protectedAttempt.status, 503);
+  const failure = await protectedAttempt.json();
+  assert.equal(failure.error.code, "BACKEND_NOT_CONFIGURED");
+  assert.equal(JSON.stringify(failure).includes("private appointment"), false);
+
+  const unknown = await fetch(`${baseUrl}/not-an-api-route`);
+  assert.equal(unknown.status, 404);
+});
