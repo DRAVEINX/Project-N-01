@@ -118,3 +118,8 @@ Dit blijft een contract, geen werkende API. Alle routes vereisen een geverifieer
 ## Releasepoort
 
 Geen productiegebruik met echte cliëntgegevens totdat de identity-provider, database, concrete RLS-policies, transacties, privacy-/bewaarbeleid en Android-telefoon- en tabletacceptatietests zijn geïmplementeerd en geverifieerd.
+
+
+## Lokaal starten en veilig controleren
+
+De scaffold kan lokaal worden gestart met `npm run serve:plansamen-api`. Standaard luistert deze alleen op `127.0.0.1` en poort `4179`; stel desgewenst `PORT` in op een geldige poort tussen 1 en 65535. De server accepteert geen persoonsgegevens en is niet bedoeld voor publieke hosting. Controleer met `curl -i http://127.0.0.1:4179/api/v1/healthz`; de status moet expliciet `backendConfigured: false` en `acceptsPersonalData: false` melden. Alle andere API-routes horen `503 BACKEND_NOT_CONFIGURED` terug te geven. Dit startscript voegt geen authenticatie of database toe.
