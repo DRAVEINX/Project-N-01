@@ -9,7 +9,7 @@ Deze testset is een voorbereidingsdocument. De huidige prototypeversie gebruikt 
 | UI-01 | Open de app op een smal telefoonscherm | Geen horizontale pagina-overloop; knoppen blijven bereikbaar |
 | UI-02 | Open de app op een tabletbreedte | De agenda gebruikt de beschikbare ruimte en blijft goed leesbaar |
 | UI-03 | Navigeer met toetsenbord | Alle bedienbare onderdelen krijgen zichtbare focus |
-| UI-04 | Voeg een afspraak toe met pictogram | Het gekozen pictogram blijft zichtbaar na opslaan en opnieuw openen |
+| UI-04 | Voeg een afspraak toe met pictogram | Het gekozen pictogram blijft zichtbaar na opslaan en opnieuw openen |\n| UI-05 | Open het startscherm en navigeer met toetsenbord naar cliënt/begeleider | Beide grote knoppen zijn bereikbaar met zichtbare focus; de melding maakt duidelijk dat dit nog geen aparte accounts zijn |\n| UI-06 | Open het startscherm op telefoon en tablet | Knoppen staan naast elkaar op brede schermen en onder elkaar op smalle schermen; geen horizontale overloop |
 | CAL-01 | Voeg een afspraak toe van 10:00 tot 10:30 | Afspraak wordt opgeslagen |
 | CAL-02 | Voeg een afspraak toe van 10:15 tot 10:45 voor dezelfde cliënt | Opslaan wordt geblokkeerd met een begrijpelijke melding |
 | CAL-03 | Voeg een afspraak toe van 10:30 tot 11:00 | Toegestaan: afspraken die elkaar exact raken overlappen niet |
@@ -37,7 +37,7 @@ Deze testset is een voorbereidingsdocument. De huidige prototypeversie gebruikt 
 - Test met TalkBack: labels worden uitgesproken, focusvolgorde is logisch en pictogrammen hebben tekstlabels.
 - Test tekstvergroting: titel, datum, tijd en conflictmelding blijven volledig leesbaar.
 - Controleer contrast, grote aanraakdoelen en foutmeldingen in eenvoudige taal.
-- Laat cliënten en begeleiders de belangrijkste taken uitvoeren zonder uitleg van de ontwikkelaar.
+- Laat cliënten en begeleiders de belangrijkste taken uitvoeren zonder uitleg van de ontwikkelaar.\n- Controleer dat de cliënt- en begeleiderknop in het huidige prototype nog dezelfde lokale omgeving openen en nergens wordt gesuggereerd dat er al aparte online accounts bestaan.
 - Test offline, bij wegvallende verbinding en na opnieuw aanmelden; meldingen moeten duidelijk maken of een afspraak daadwerkelijk is opgeslagen.
 
 ## Go/no-go
