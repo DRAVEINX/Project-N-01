@@ -75,9 +75,13 @@ CREATE TABLE IF NOT EXISTS plansamen_audit_events (
 );
 
 ALTER TABLE plansamen_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE plansamen_profiles FORCE ROW LEVEL SECURITY;
 ALTER TABLE plansamen_relationships ENABLE ROW LEVEL SECURITY;
+ALTER TABLE plansamen_relationships FORCE ROW LEVEL SECURITY;
 ALTER TABLE plansamen_appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE plansamen_appointments FORCE ROW LEVEL SECURITY;
 ALTER TABLE plansamen_audit_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE plansamen_audit_events FORCE ROW LEVEL SECURITY;
 
 -- Intentionally no client-facing policies yet. RLS denies access by default.
 -- Before use, add and test policies tied to the selected trusted auth provider,
