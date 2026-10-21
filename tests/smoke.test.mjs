@@ -883,3 +883,16 @@ test("daily progress restoration accepts only explicit completed booleans", asyn
   assert.match(restore, /if \(!Array\.isArray\(saved\)\) continue/);
   assert.match(restore, /input\.checked = saved\[index\] === true/);
 });
+
+
+test("PlanSamen homepage offers accessible client and caregiver shortcuts without claiming real accounts", () => {
+  assert.match(html, /class="role-entry-panel"/);
+  assert.match(html, /id="role-entry-title"/);
+  assert.match(html, /Ik ben cliënt/);
+  assert.match(html, /Ik ben begeleider/);
+  assert.match(html, /class="role-entry-card"[^>]*data-view="life"/);
+  assert.match(html, /beide knoppen openen dezelfde lokale omgeving/i);
+  assert.match(css, /\.role-entry-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css, /@media\(max-width:600px\)\{\.role-entry-grid\{grid-template-columns:1fr\}/);
+  assert.match(css, /\.role-entry-card:focus-visible|button:focus-visible/);
+});
