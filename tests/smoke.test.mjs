@@ -1047,3 +1047,16 @@ test("appointment conflict feedback is specific within a profile and private acr
   assert.ok(lifeSuite.includes("Details of that appointment are hidden."), "English cross-profile feedback should explain the privacy boundary");
   assert.ok(lifeSuite.includes("De gegevens van die afspraak worden niet getoond."), "Dutch cross-profile feedback should explain the privacy boundary");
 });
+
+test("PlanSamen backend reference schema blocks overlapping caregiver appointments and shifts", async () => {
+  const schema = await readFile(new URL("../backend/plansamen/reference-schema.sql", import.meta.url), "utf8");
+  assert.match(schema, /CONSTRAINT plansamen_client_appointments_no_overlap[\s\S]*?EXCLUDE USING gist/);
+  assert.match(schema, /CONSTRAINT plansamen_caregiver_appointments_no_overlap[\s\S]*?EXCLUDE USING gist[\s\S]*?assigned_caregiver_user_id WITH =/);
+  assert.match(schema, /WHERE \(status = 'scheduled' AND assigned_caregiver_user_id IS NOT NULL\)/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS plansamen_roster_shifts/);
+  assert.match(schema, /CONSTRAINT plansamen_caregiver_shifts_no_overlap[\s\S]*?EXCLUDE USING gist[\s\S]*?caregiver_user_id WITH =/);
+  assert.match(schema, /tstzrange\(starts_at, ends_at, '\[\)'\)/);
+  assert.match(schema, /ALTER TABLE plansamen_roster_shifts ENABLE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_roster_shifts FORCE ROW LEVEL SECURITY/);
+  assert.match(schema, /Intentionally no client-facing policies yet/);
+});
