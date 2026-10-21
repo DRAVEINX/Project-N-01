@@ -920,6 +920,8 @@ test("PlanSamen blocks appointment overlaps per profile but allows back-to-back 
   assert.equal(helpers.appointmentConflict(base, [existing])?.id, "existing", "overlapping appointments for the same profile must conflict");
   assert.equal(helpers.appointmentConflict({ ...base, start: "11:00", end: "12:00" }, [existing]), null, "appointments that touch at the end time must be allowed");
   assert.equal(helpers.appointmentConflict({ ...base, profileId: "client-2" }, [existing]), null, "appointments belonging to another profile must not conflict");
+  assert.equal(helpers.appointmentConflict({ ...base, profileId: "client-2", workerId: "shared-worker" }, [{ ...existing, workerId: "shared-worker" }])?.id, "existing", "the same assigned support worker must not be double-booked across profiles when the worker identity is shared");
+  assert.equal(helpers.appointmentConflict({ ...base, profileId: "client-2", workerId: "worker-2" }, [{ ...existing, workerId: "worker-1" }]), null, "different profiles with different assigned workers may have simultaneous appointments");
   assert.equal(helpers.appointmentConflict({ ...base, start: "10:00", end: "10:45" }, [existing])?.id, "existing", "identical start times must conflict");
 
   const buffered = { ...existing, id: "buffered", start: "10:00", end: "10:30", bufferMins: 15 };
@@ -991,4 +993,14 @@ test("PlanSamen blocks overlapping shifts for the same support worker", () => {
   assert.ok(lifeSuite.includes('const shiftOverlap=shiftConflict(item,visibleItems("shifts","roster"));if(shiftOverlap){setStatus(t("shiftOverlap"),true);return;}'), "shift saving must be blocked before existing data is changed");
   assert.ok(lifeSuite.includes("Deze begeleider heeft op deze datum al een dienst die overlapt."), "Dutch conflict feedback should be available");
   assert.ok(lifeSuite.includes("This support worker already has an overlapping shift on this date."), "English conflict feedback should be available");
+});
+
+test("appointments can be assigned to a support worker and show the assignment", () => {
+  assert.ok(lifeSuite.includes('select(t("appointmentWorker"),"workerId"'), "appointment form should offer a support worker selector");
+  assert.ok(lifeSuite.includes("workerId:v.workerId||\"\""), "the selected support worker should be stored with the appointment");
+  assert.ok(lifeSuite.includes('const worker = a.workerId ? state.workers.find(w => w.id === a.workerId'), "appointment cards should resolve the assigned support worker");
+  assert.ok(lifeSuite.includes('esc(t("assignedTo")) + ": " + esc(worker.name)'), "appointment cards should show the assigned support worker's name");
+  assert.ok(lifeSuite.includes("Begeleider voor deze afspraak"), "Dutch assignment label should be available");
+  assert.ok(lifeSuite.includes("Support worker for this appointment"), "English assignment label should be available");
+  assert.ok(lifeSuite.includes("const sameWorker = Boolean(candidate.workerId && a.workerId && a.workerId === candidate.workerId)"), "appointment conflict checks should consider a shared assigned worker across profiles");
 });
