@@ -53,16 +53,53 @@ CREATE TABLE IF NOT EXISTS plansamen_appointments (
     EXCLUDE USING gist (
       client_user_id WITH =,
       tstzrange(starts_at, ends_at, '[)') WITH &&
-    ) WHERE (status = 'scheduled')
+    ) WHERE (status = 'scheduled'),
+  -- A caregiver must not be assigned to two clients at overlapping times.
+  -- NULL assignments are excluded by PostgreSQL equality semantics.
+  CONSTRAINT plansamen_caregiver_appointments_no_overlap
+    EXCLUDE USING gist (
+      assigned_caregiver_user_id WITH =,
+      tstzrange(starts_at, ends_at, '[)') WITH &&
+    ) WHERE (status = 'scheduled' AND assigned_caregiver_user_id IS NOT NULL)
 );
 
 CREATE INDEX IF NOT EXISTS plansamen_appointments_client_start_idx
   ON plansamen_appointments (client_user_id, starts_at)
   WHERE status = 'scheduled';
 
+CREATE INDEX IF NOT EXISTS plansamen_appointments_assigned_caregiver_start_idx
+  ON plansamen_appointments (assigned_caregiver_user_id, starts_at)
+  WHERE status = 'scheduled' AND assigned_caregiver_user_id IS NOT NULL;
+
 CREATE INDEX IF NOT EXISTS plansamen_relationships_active_idx
   ON plansamen_relationships (caregiver_user_id, client_user_id)
   WHERE status = 'active';
+
+-- Caregiver roster shifts. This is a reference schema only, not deployed.
+-- The database prevents concurrent/overlapping shifts for the same caregiver.
+CREATE TABLE IF NOT EXISTS plansamen_roster_shifts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  caregiver_user_id uuid NOT NULL REFERENCES plansamen_profiles(user_id) ON DELETE RESTRICT,
+  created_by_user_id uuid NOT NULL REFERENCES plansamen_profiles(user_id) ON DELETE RESTRICT,
+  starts_at timestamptz NOT NULL,
+  ends_at timestamptz NOT NULL,
+  status text NOT NULL DEFAULT 'scheduled'
+    CHECK (status IN ('scheduled', 'cancelled')),
+  label text NOT NULL DEFAULT '' CHECK (length(label) <= 200),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CHECK (ends_at > starts_at),
+  CONSTRAINT plansamen_caregiver_shifts_no_overlap
+    EXCLUDE USING gist (
+      caregiver_user_id WITH =,
+      tstzrange(starts_at, ends_at, '[)') WITH &&
+    ) WHERE (status = 'scheduled')
+);
+
+CREATE INDEX IF NOT EXISTS plansamen_roster_shifts_caregiver_start_idx
+  ON plansamen_roster_shifts (caregiver_user_id, starts_at)
+  WHERE status = 'scheduled';
+
 
 CREATE TABLE IF NOT EXISTS plansamen_audit_events (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -80,6 +117,8 @@ ALTER TABLE plansamen_relationships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plansamen_relationships FORCE ROW LEVEL SECURITY;
 ALTER TABLE plansamen_appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plansamen_appointments FORCE ROW LEVEL SECURITY;
+ALTER TABLE plansamen_roster_shifts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE plansamen_roster_shifts FORCE ROW LEVEL SECURITY;
 ALTER TABLE plansamen_audit_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plansamen_audit_events FORCE ROW LEVEL SECURITY;
 
