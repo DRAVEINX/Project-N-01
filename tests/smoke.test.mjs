@@ -912,4 +912,13 @@ test("PlanSamen blocks appointment overlaps per profile but allows back-to-back 
   assert.match(conflictHelper, /if \(a\.id === candidate\.id\) return false/);
   assert.match(conflictHelper, /a\.profileId \|\| "self"/);
   assert.match(conflictHelper, /a\.start === candidate\.start \|\| overlap\(a,candidate\)/);
+
+  const createHelpers = new Function("state", "visibleItems", `${overlapHelper}\n${conflictHelper}\nreturn { overlap, appointmentConflict };`);
+  const helpers = createHelpers({ currentProfileId: "client-1" }, () => []);
+  const base = { id: "candidate", profileId: "client-1", date: "2026-10-22", start: "10:30", end: "11:30" };
+  const existing = { id: "existing", profileId: "client-1", date: "2026-10-22", start: "10:00", end: "11:00" };
+  assert.equal(helpers.appointmentConflict(base, [existing])?.id, "existing", "overlapping appointments for the same profile must conflict");
+  assert.equal(helpers.appointmentConflict({ ...base, start: "11:00", end: "12:00" }, [existing]), null, "appointments that touch at the end time must be allowed");
+  assert.equal(helpers.appointmentConflict({ ...base, profileId: "client-2" }, [existing]), null, "appointments belonging to another profile must not conflict");
+  assert.equal(helpers.appointmentConflict({ ...base, start: "10:00", end: "10:45" }, [existing])?.id, "existing", "identical start times must conflict");
 });
