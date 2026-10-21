@@ -921,4 +921,14 @@ test("PlanSamen blocks appointment overlaps per profile but allows back-to-back 
   assert.equal(helpers.appointmentConflict({ ...base, start: "11:00", end: "12:00" }, [existing]), null, "appointments that touch at the end time must be allowed");
   assert.equal(helpers.appointmentConflict({ ...base, profileId: "client-2" }, [existing]), null, "appointments belonging to another profile must not conflict");
   assert.equal(helpers.appointmentConflict({ ...base, start: "10:00", end: "10:45" }, [existing])?.id, "existing", "identical start times must conflict");
+
+  const buffered = { ...existing, id: "buffered", start: "10:00", end: "10:30", bufferMins: 15 };
+  const afterBuffer = { ...base, id: "after-buffer", start: "10:40", end: "11:00" };
+  assert.equal(helpers.appointmentConflict(afterBuffer, [buffered])?.id, "buffered", "an appointment must be blocked during another appointment's transition buffer");
+  assert.equal(helpers.appointmentConflict({ ...afterBuffer, start: "10:45" }, [buffered]), null, "the exact end of a transition buffer must be available");
+  const withOwnBuffer = { ...base, start: "10:00", end: "10:30", bufferMins: 15 };
+  const laterAppointment = { ...existing, id: "later", start: "10:40", end: "11:00" };
+  assert.equal(helpers.appointmentConflict(withOwnBuffer, [laterAppointment])?.id, "later", "a new appointment's own transition buffer must also reserve time");
+  assert.match(lifeSuite, /select\(t\("bufferAfter"\),"bufferMins"/, "the appointment form should expose the accessible buffer choice");
+  assert.match(lifeSuite, /bufferMins:Number\(v\.bufferMins\)\|\|0/, "the chosen transition buffer must be saved with the appointment");
 });
