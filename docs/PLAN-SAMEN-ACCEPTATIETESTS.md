@@ -21,6 +21,8 @@ Deze testset beschrijft zowel de uitvoerbare prototypecontroles als de vereisten
 | CAL-07 | Laat een buffer na middernacht doorlopen | Een afspraak op de volgende dag wordt tot het buffereinde geblokkeerd, maar niet langer. |
 | CAL-08 | Maak een weekreeks en open zowel de hoofdafspraak als een losse reeksafspraak | De agenda geeft aan of de hele reeks of alleen één afspraak wordt bewerkt. |
 | CAL-09 | Verwijder de hoofdafspraak van een weekreeks of een losse reeksafspraak | De bevestiging vermeldt expliciet of de hele reeks of alleen die afspraak wordt verwijderd. |
+| ROSTER-01 | Plan twee overlappende diensten voor dezelfde begeleider op dezelfde datum | De tweede dienst wordt geweigerd met een begrijpelijke melding. |
+| ROSTER-02 | Plan aansluitende diensten of diensten van verschillende begeleiders | Beide diensten zijn toegestaan. |
 | ACC-01 | Vergrendel de kluis en probeer privégegevens te openen | Gegevens blijven afgeschermd tot de juiste wachtzin wordt ingevoerd. |
 
 ## B. Verplicht vóór een online pilot
