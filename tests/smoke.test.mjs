@@ -1016,3 +1016,34 @@ test("deleting a support worker keeps appointment links consistent and permissio
   assert.ok(lifeSuite.includes("waarvoor je geen wijzigtoestemming hebt"), "Dutch permission feedback should explain why linked records block deletion");
   assert.ok(lifeSuite.includes("you do not have permission to change"), "English permission feedback should explain why linked records block deletion");
 });
+
+test("appointment conflict feedback is specific within a profile and private across profiles", () => {
+  const helperStart = lifeSuite.indexOf("  function appointmentConflictFeedback(candidate, conflict, exactDuplicate) {");
+  const helperEnd = lifeSuite.indexOf("  function shiftConflict(", helperStart);
+  assert.notEqual(helperStart, -1, "missing appointment conflict feedback helper");
+  assert.ok(helperEnd > helperStart, "appointment conflict feedback helper should have a complete body");
+  const helperSource = lifeSuite.slice(helperStart, helperEnd);
+  const createFeedback = new Function("state", "t", "prettyDate", helperSource + "\\nreturn appointmentConflictFeedback;");
+  const translations = {
+    exactDuplicate: "Exact duplicate",
+    overlapBlocked: "Overlapping appointment",
+    conflictWith: "Conflicts with",
+    workerBusyConflict: "Assigned support worker is busy; private details are hidden"
+  };
+  const feedback = createFeedback({ currentProfileId: "client-1" }, key => translations[key] || key, date => date);
+  const ownConflict = { profileId: "client-1", title: "Doctor appointment", date: "2026-10-22", start: "10:00", end: "10:30" };
+  const specific = feedback({ profileId: "client-1" }, ownConflict, false);
+  assert.match(specific, /Overlapping appointment/);
+  assert.match(specific, /Conflicts with: Doctor appointment/);
+  assert.match(specific, /2026-10-22 · 10:00–10:30/);
+  const otherProfileConflict = { ...ownConflict, profileId: "client-2", title: "Private support meeting" };
+  const privateMessage = feedback({ profileId: "client-1" }, otherProfileConflict, false);
+  assert.equal(privateMessage, translations.workerBusyConflict);
+  assert.ok(!privateMessage.includes("Private support meeting"), "cross-profile feedback must not disclose another client's appointment title");
+  assert.equal(feedback({ profileId: "client-1" }, ownConflict, true).startsWith("Exact duplicate"), true);
+  assert.equal(feedback({ profileId: "client-1" }, null, false), "");
+  assert.ok(lifeSuite.includes('const exactDuplicate=foundConflicts.find(item=>item.conflict.date===item.candidate.date&&item.conflict.start===item.candidate.start);'), "an exact duplicate must match both date and start time");
+  assert.ok(lifeSuite.includes("appointmentConflictFeedback(first.candidate,first.conflict,false)"), "normal overlap feedback should name the existing appointment only in the same profile");
+  assert.ok(lifeSuite.includes("Details of that appointment are hidden."), "English cross-profile feedback should explain the privacy boundary");
+  assert.ok(lifeSuite.includes("De gegevens van die afspraak worden niet getoond."), "Dutch cross-profile feedback should explain the privacy boundary");
+});
