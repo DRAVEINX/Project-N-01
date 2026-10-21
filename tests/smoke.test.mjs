@@ -1160,3 +1160,56 @@ test("PlanSamen API boundary returns secure headers and rejects all data routes 
   assert.equal(unknown.status, 404);
   assert.equal((await unknown.json()).error.code, "NOT_FOUND");
 });
+
+test("PlanSamen appointment rules validate intervals and allow adjacent appointments", async () => {
+  const { validateAppointmentInterval, intervalsOverlap, AppointmentRuleError } =
+    await import("../backend/plansamen/appointment-rules.mjs");
+  const first = {
+    id: "a1", clientId: "client-a", caregiverId: "worker-1",
+    startsAt: "2026-10-22T10:00:00Z", endsAt: "2026-10-22T10:30:00Z",
+    status: "scheduled"
+  };
+  const adjacent = { ...first, id: "a2", startsAt: first.endsAt, endsAt: "2026-10-22T11:00:00Z" };
+  assert.deepEqual(validateAppointmentInterval(first), {
+    start: Date.parse(first.startsAt), end: Date.parse(first.endsAt)
+  });
+  assert.equal(intervalsOverlap(first, adjacent), false);
+  assert.throws(() => validateAppointmentInterval({ ...first, endsAt: first.startsAt }),
+    error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR");
+  assert.throws(() => validateAppointmentInterval({ ...first, startsAt: "not-a-date" }),
+    error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR");
+});
+
+test("PlanSamen appointment rules detect client and caregiver conflicts without leaking private data", async () => {
+  const { findAppointmentConflict } = await import("../backend/plansamen/appointment-rules.mjs");
+  const existing = {
+    id: "existing", clientId: "client-a", caregiverId: "worker-1",
+    startsAt: "2026-10-22T10:00:00Z", endsAt: "2026-10-22T10:30:00Z",
+    status: "scheduled", title: "Private medical appointment", notes: "private notes"
+  };
+  const sameClient = { ...existing, id: "candidate", startsAt: "2026-10-22T10:15:00Z", endsAt: "2026-10-22T10:45:00Z" };
+  const clientConflict = findAppointmentConflict(sameClient, [existing]);
+  assert.deepEqual(clientConflict, { code: "APPOINTMENT_OVERLAP", scope: "client" });
+  assert.equal(JSON.stringify(clientConflict).includes("Private medical appointment"), false);
+  assert.equal(JSON.stringify(clientConflict).includes("private notes"), false);
+
+  const otherClientSameWorker = {
+    ...sameClient, clientId: "client-b", caregiverId: "worker-1"
+  };
+  assert.deepEqual(findAppointmentConflict(otherClientSameWorker, [existing]),
+    { code: "APPOINTMENT_OVERLAP", scope: "caregiver" });
+});
+
+test("PlanSamen appointment rules ignore cancelled entries and the appointment being updated", async () => {
+  const { findAppointmentConflict } = await import("../backend/plansamen/appointment-rules.mjs");
+  const existing = {
+    id: "a1", clientId: "client-a", caregiverId: null,
+    startsAt: "2026-10-22T10:00:00Z", endsAt: "2026-10-22T10:30:00Z",
+    status: "scheduled"
+  };
+  const candidate = { ...existing, startsAt: "2026-10-22T10:10:00Z", endsAt: "2026-10-22T10:20:00Z" };
+  assert.equal(findAppointmentConflict(candidate, [{ ...existing, status: "cancelled" }]), null);
+  assert.equal(findAppointmentConflict(candidate, [existing]), null, "updating the same row must not conflict with itself");
+  assert.equal(findAppointmentConflict({ ...candidate, status: "cancelled" }, [existing]), null);
+  assert.throws(() => findAppointmentConflict(candidate, null), /existingAppointments must be an array/);
+});
