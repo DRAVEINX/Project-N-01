@@ -31,7 +31,7 @@ jobs:
           test -f src/styles.css
           test -f src/app.js
           test -f backend/plansamen/server.mjs
-  test -f backend/plansamen/start.mjs
+          test -f backend/plansamen/start.mjs
           test -f src/life-suite.js
           test -f src/life-suite.css
           test -f src/secure-storage.js
