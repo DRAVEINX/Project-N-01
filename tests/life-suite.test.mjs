@@ -37,6 +37,10 @@ test("calendar validates times and hard-blocks exact duplicates and every overla
   assert.match(js, /calendarMode === "month"/);
   assert.match(js, /mode-week/);
   assert.match(js, /edit-appointment/);
+  assert.match(js, /ls-pictogram-picker/);
+  assert.match(js, /pictogram:v\.pictogram\|\|"📅"/);
+  assert.match(js, /ls-appointment-icon/);
+  assert.match(css, /\.ls-pictogram-choice:focus-within/);
 });
 
 test("roster includes support-worker photos and editable dated shifts", () => {
