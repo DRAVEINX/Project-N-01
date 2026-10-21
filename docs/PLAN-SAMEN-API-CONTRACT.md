@@ -59,3 +59,62 @@ Foutmeldingen zijn kort en begrijpelijk in de app; interne SQL-, token- of stack
 - Of begeleiders zelf ook een conflictregel krijgen wanneer zij aan meerdere cliënten afspraken toewijzen.
 
 Zonder deze besluiten is dit contract voorbereiding en geen productierijpe online functie.
+
+
+## Uitbreiding: concrete route- en foutafspraken
+
+Dit blijft een contract, geen werkende API. Alle routes vereisen een geverifieerde sessie, behalve login/registratie en een minimale gezondheidscontrole. De server bepaalt de rol en actuele relatie; clientvelden zijn nooit bewijs van toestemming.
+
+| Methode | Route | Doel en autorisatie |
+|---|---|---|
+| GET | `/api/v1/me` | Eigen profiel en server-toegekende rol ophalen |
+| PATCH | `/api/v1/me` | Alleen beperkte profielvelden aanpassen; rol en user-ID zijn niet wijzigbaar |
+| GET | `/api/v1/relationships` | Alleen eigen relaties en relevante uitnodigingen bekijken |
+| POST | `/api/v1/relationships/invitations` | Uitnodiging maken met eenmalige, verlopende token; server valideert de bevoegdheid |
+| POST | `/api/v1/relationships/{id}/accept` | Alleen beoogde ontvanger mag een uitnodiging accepteren |
+| POST | `/api/v1/relationships/{id}/revoke` | Bevoegde cliënt of beheerder trekt relatie in; direct effect op volgende aanvraag |
+| GET | `/api/v1/clients/{clientId}/appointments` | Alleen de cliënt zelf of begeleider met actieve relatie |
+| POST | `/api/v1/clients/{clientId}/appointments` | Zelfde relatiecontrole; server valideert tijd, toewijzing en overlap |
+| PATCH | `/api/v1/clients/{clientId}/appointments/{id}` | Autorisatie en overlap opnieuw controleren |
+| DELETE | `/api/v1/clients/{clientId}/appointments/{id}` | Annuleren/verwijderen volgens vastgesteld bewaarbeleid |
+| GET/POST | `/api/v1/me/roster-shifts` | Begeleider beheert eigen diensten; server controleert overlap |
+| GET | `/api/v1/healthz` | Minimale status zonder persoonsgegevens |
+
+### Standaard foutcodes
+
+| HTTP | Code | Betekenis |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Ongeldige invoer of tijdsduur |
+| 401 | `UNAUTHENTICATED` | Geen geldige sessie |
+| 403 | `FORBIDDEN` | Geen toestemming; onthul geen bestaan van andere cliënten |
+| 404 | `NOT_FOUND` | Niet bestaand of bewust niet zichtbaar object |
+| 409 | `APPOINTMENT_OVERLAP` | Database weigert een overlap |
+| 409 | `RELATIONSHIP_NOT_ACTIVE` | Relatie ontbreekt of is ingetrokken |
+| 409 | `INVITATION_EXPIRED` | Uitnodiging verlopen of al gebruikt |
+| 429 | `RATE_LIMITED` | Te veel pogingen |
+| 500 | `INTERNAL_ERROR` | Generieke fout met request-ID; geen stacktrace of SQL-details |
+
+### Intrekking moet atomair zijn
+
+1. Begin een transactie en vergrendel de relatie-rij.
+2. Controleer actor en bevoegdheid aan de serverkant.
+3. Zet de status op `revoked` en leg de tijd vast.
+4. Schrijf een minimale auditgebeurtenis zonder medische details of vrije notities.
+5. Commit. Elke volgende API-/RLS-controle moet de relatie weigeren, ook als de client oude gegevens cachet.
+6. Annuleer cliëntafspraken niet automatisch; volg een apart vastgesteld overdrachts- en bewaarbeleid.
+
+### Verplichte negatieve integratietests
+
+- Anonieme gebruiker kan geen profielen, relaties, afspraken of diensten lezen of schrijven.
+- Cliënt A kan geen gegevens van cliënt B lezen, wijzigen of verwijderen.
+- Een gebruiker kan zichzelf niet promoveren tot begeleider, ouder, voogd of beheerder.
+- Een begeleider zonder actieve relatie of na intrekking krijgt geen toegang met een oud relatie-ID.
+- Toewijzing aan een begeleider zonder actieve relatie wordt server-side geweigerd.
+- Twee gelijktijdige overlappende verzoeken voor dezelfde cliënt of begeleider slaan maximaal één keer op.
+- Aansluitende intervallen zijn toegestaan; geannuleerde afspraken blokkeren geen nieuwe afspraak.
+- Geen service-role-sleutel in clientbundel, APK/AAB, logs of Git-history.
+- Accountverwijdering, export, bewaartermijnen en ouder-/voogdetoestemming zijn getest voordat echte cliëntgegevens worden gebruikt.
+
+## Releasepoort
+
+Geen productiegebruik met echte cliëntgegevens totdat de identity-provider, database, concrete RLS-policies, transacties, privacy-/bewaarbeleid en Android-telefoon- en tabletacceptatietests zijn geïmplementeerd en geverifieerd.
