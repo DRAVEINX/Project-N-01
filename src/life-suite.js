@@ -482,7 +482,7 @@
   function dateStartMinutes(value) {
     const dateText = String(value || "");
     const date = new Date(dateText + "T00:00:00.000Z");
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateText) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0,10) !== dateText) return NaN;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateText) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0,10) !== dateText) return NaN;
     return Math.floor(date.getTime() / 60000);
   }
   function appointmentStartMinutes(item) {
