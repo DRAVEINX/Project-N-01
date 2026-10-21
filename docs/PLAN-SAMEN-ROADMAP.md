@@ -12,7 +12,7 @@ Een toegankelijke planningsapp voor Android-telefoons en tablets waarmee cliënt
 - De pictogramkeuze heeft toetsenbordfocus-styling en een responsive indeling voor telefoon en tablet.
 - GitHub CI: smoke tests, JavaScript-syntaxiscontrole, projectbestandscontrole en webprototypepakket zijn geslaagd in run 682. Dit is een eerdere geslaagde codecontrole; latere documentatiecommits zijn niet daarmee getest.
 - De backend-architectuur is beschreven in [PLAN-SAMEN-BACKEND-ONTWERP.md](./PLAN-SAMEN-BACKEND-ONTWERP.md).
-- De uitvoerbare prototype- en toekomstige backendacceptatiecriteria staan in [PLAN-SAMEN-ACCEPTATIETESTS.md](./PLAN-SAMEN-ACCEPTATIETESTS.md).
+- De uitvoerbare prototype- en toekomstige backendacceptatiecriteria staan in [PLAN-SAMEN-ACCEPTATIETESTS.md](./PLAN-SAMEN-ACCEPTATIETESTS.md).\n- Het voorgestelde endpoint-, autorisatie- en foutcodecontract staat in [PLAN-SAMEN-API-CONTRACT.md](./PLAN-SAMEN-API-CONTRACT.md).
 - Bestaande app-onderdelen blijven behouden; PlanSamen wordt op een aparte featurebranch ontwikkeld.
 
 ## Verplichte vervolgstappen
