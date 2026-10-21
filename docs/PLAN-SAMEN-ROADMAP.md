@@ -31,8 +31,12 @@ Een toegankelijke planningsapp voor Android-telefoons en tablets waarmee cliënt
 5. De referentie-SQL bevat ontwerpconstraints tegen overlappende afspraken per cliënt, toegewezen begeleider en overlappende roosterdiensten per begeleider. Dit is alleen ontwerpcode en is niet op een database toegepast; overlap tussen een afspraak en een dienst is nog niet afgedekt.
 6. Controleer conflicten aan de serverkant binnen één atomaire databasetransactie. De clientcontrole alleen beschermt niet tegen gelijktijdige opslagen vanaf meerdere apparaten.
 7. Houd de database standaard gesloten totdat policies op basis van een vertrouwde identiteit, actieve cliënt-begeleiderrelaties en afzonderlijke ouder-/voogdetoestemming zijn geïmplementeerd en negatief getest. Trek relatie-toegang server-side en direct in bij intrekking.
-6. Werk uitzonderingen en het beheer van terugkerende afspraken uit voor een online gedeelde agenda.
-8. Voer tests uit op echte Android-telefoons en tablets en controleer afzonderlijke APK/AAB-builds voordat een release wordt gedeeld.
+8. Werk uitzonderingen en het beheer van terugkerende afspraken uit voor een online gedeelde agenda.
+9. Voer tests uit op echte Android-telefoons en tablets en controleer afzonderlijke APK/AAB-builds voordat een release wordt gedeeld.
+
+## Backend-scaffold status
+- De eerste Node.js API-grens staat in `backend/plansamen/server.mjs`. Alleen `GET /api/v1/healthz` geeft een minimale status; alle andere `/api/*`-routes geven `503 BACKEND_NOT_CONFIGURED` en nemen geen persoonsgegevens op in foutmeldingen.
+- Er zijn automatische HTTP-tests voor weigering van profiel-, relatie-, afspraak- en roosterverzoeken en voor beveiligingsheaders. Dit is nog geen authenticatie of productiebackend.
 
 ## Eerlijke status
 Dit blijft een lokale web/Capacitor-prototype. Echte online accounts, online gedeelde synchronisatie en server-side conflictcontrole zijn nog niet aangesloten. Het prototype is niet productierijp en mag nog niet worden gebruikt met echte gevoelige cliëntgegevens totdat authenticatie, serverbeveiliging, privacybeleid en relevante tests zijn afgerond. De automatische controles zijn zichtbaar bij de commits van de featurebranch. Een groene CI-run bewijst dat de gecontroleerde tests en verpakkingsstappen slagen; het bewijst niet dat de app productiegeschikt is. Er zijn in deze stap geen nieuwe APK- of AAB-bestanden gebouwd.
