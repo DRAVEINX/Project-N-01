@@ -190,3 +190,16 @@ test("PlanSamen reference database schema enables RLS and atomic client overlap 
   assert.match(schema, /Intentionally no client-facing policies yet/);
   assert.match(schema, /Never apply this to NovaLife/);
 });
+
+test("PlanSamen API contract specifies server-trusted identity, authorization and conflict behavior", async () => {
+  const api = await readFile(new URL("../docs/PLAN-SAMEN-API-CONTRACT.md", import.meta.url), "utf8");
+  const roadmap = await readFile(new URL("../docs/PLAN-SAMEN-ROADMAP.md", import.meta.url), "utf8");
+  assert.match(api, /Status: contract voor implementatie en review/i);
+  assert.match(api, /Vertrouw nooit een meegestuurde.*user_id.*role/i);
+  assert.match(api, /rol kan niet via dit endpoint worden gewijzigd/i);
+  assert.match(api, /APPOINTMENT_OVERLAP/);
+  assert.match(api, /RELATIONSHIP_NOT_ACTIVE/);
+  assert.match(api, /Twee gelijktijdige POST-verzoeken/);
+  assert.match(api, /Gebruik of wijzig NovaLife niet/i);
+  assert.match(roadmap, /PLAN-SAMEN-API-CONTRACT\.md/);
+});
