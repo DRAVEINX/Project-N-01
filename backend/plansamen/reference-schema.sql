@@ -123,8 +123,30 @@ ALTER TABLE plansamen_audit_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plansamen_audit_events FORCE ROW LEVEL SECURITY;
 
 -- Intentionally no client-facing policies yet. RLS denies access by default.
--- Before use, add and test policies tied to the selected trusted auth provider,
--- active caregiver/client relationships, and server-validated role assignment.
+-- The policy design below is NOT safe to enable until each relationship and
+-- role mutation is performed by a trusted server path and verified by tests.
 -- Never expose a service-role/database-owner credential to the mobile client.
+--
+-- Next implementation gate (design only, not executable policies):
+-- 1. Protect profile role fields from self-promotion; clients must not UPDATE role.
+-- 2. Allow a client to see only their own profile and active/pending relationship
+--    metadata relevant to that client; a caregiver sees only relationships where
+--    auth.uid() is the caregiver and status is active (pending only to respond).
+-- 3. Appointments: client can read/write rows with client_user_id = auth.uid();
+--    caregiver can read/write only while an active relationship exists. Guardian
+--    and parent access must be separately consented, scoped, and revocable.
+-- 4. assigned_caregiver_user_id must be NULL or match an active relationship for
+--    the same client; validate on every INSERT/UPDATE, not just in the UI.
+-- 5. Roster shifts: caregiver can manage only their own shifts; clients can read
+--    only shifts linked through an active relationship. Avoid exposing free-text
+--    labels across unrelated profiles.
+-- 6. Audit events: clients must never read raw audit logs; write via trusted,
+--    append-only server code with no free-text medical/personal notes.
+-- 7. Relationship revocation must be atomic and take effect on every subsequent
+--    request; do not trust stale client role/relationship flags.
+--
+-- Why policies are not enabled here: a half-complete policy set can leak client
+-- data or let users change roles. Keep default-deny until the trusted auth model,
+-- policy helpers, and integration tests are ready.
 
 COMMIT;
