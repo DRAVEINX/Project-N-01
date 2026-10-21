@@ -896,3 +896,19 @@ test("PlanSamen homepage offers accessible client and caregiver shortcuts withou
   assert.match(css, /@media\(max-width:600px\)\{\.role-entry-grid\{grid-template-columns:1fr\}/);
   assert.match(css, /\.role-entry-card:focus-visible|button:focus-visible/);
 });
+
+test("PlanSamen blocks appointment overlaps per profile but allows back-to-back appointments", () => {
+  const overlapStart = js.indexOf("  function overlap(a,b) {");
+  const conflictStart = js.indexOf("  function appointmentConflict(candidate, pool) {", overlapStart);
+  const conflictEnd = js.indexOf("\n  }", conflictStart);
+  assert.notEqual(overlapStart, -1, "missing interval overlap helper");
+  assert.notEqual(conflictStart, -1, "missing appointment conflict helper");
+  assert.ok(conflictEnd > conflictStart, "appointment conflict helper should have a complete body");
+  const overlapHelper = js.slice(overlapStart, conflictStart);
+  const conflictHelper = js.slice(conflictStart, conflictEnd + 4);
+  assert.match(overlapHelper, /minutes\(a\.start\) < minutes\(b\.end\)/);
+  assert.match(overlapHelper, /minutes\(b\.start\) < minutes\(a\.end\)/);
+  assert.match(conflictHelper, /if \(a\.id === candidate\.id\) return false/);
+  assert.match(conflictHelper, /a\.profileId \|\| "self"/);
+  assert.match(conflictHelper, /a\.start === candidate\.start \|\| overlap\(a,candidate\)/);
+});
