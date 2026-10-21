@@ -1074,3 +1074,16 @@ test("PlanSamen backend reference schema documents least-privilege role and rela
     assert.match(schema, new RegExp("ALTER TABLE " + table + " FORCE ROW LEVEL SECURITY"));
   }
 });
+
+test("PlanSamen API contract specifies authenticated routes, safe errors, revocation and negative security tests", async () => {
+  const contract = await readFile(new URL("../docs/PLAN-SAMEN-API-CONTRACT.md", import.meta.url), "utf8");
+  assert.match(contract, /PATCH \| `\/api\/v1\/me` \|[^\n]*rol en user-ID zijn niet wijzigbaar/);
+  assert.match(contract, /\/api\/v1\/relationships\/\{id\}\/revoke/);
+  assert.match(contract, /\/api\/v1\/clients\/\{clientId\}\/appointments/);
+  assert.match(contract, /APPOINTMENT_OVERLAP/);
+  assert.match(contract, /RELATIONSHIP_NOT_ACTIVE/);
+  assert.match(contract, /geen toegang met een oud relatie-ID/);
+  assert.match(contract, /Twee gelijktijdige overlappende verzoeken/);
+  assert.match(contract, /Geen service-role-sleutel in clientbundel/);
+  assert.match(contract, /Geen productiegebruik met echte cliëntgegevens/);
+});
