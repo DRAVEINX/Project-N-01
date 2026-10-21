@@ -901,7 +901,7 @@ test("PlanSamen homepage offers accessible client and caregiver shortcuts withou
 test("PlanSamen blocks appointment overlaps per profile but allows back-to-back appointments", () => {
   const overlapStart = lifeSuite.indexOf("  function overlap(a,b) {");
   const conflictStart = lifeSuite.indexOf("  function appointmentConflict(candidate, pool) {", overlapStart);
-  const conflictEnd = js.indexOf("\n  }", conflictStart);
+  const conflictEnd = lifeSuite.indexOf("\n    function formData", conflictStart);
   assert.notEqual(overlapStart, -1, "missing interval overlap helper");
   assert.notEqual(conflictStart, -1, "missing appointment conflict helper");
   assert.ok(conflictEnd > conflictStart, "appointment conflict helper should have a complete body");
