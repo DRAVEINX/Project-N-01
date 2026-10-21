@@ -45,6 +45,11 @@ Deze testset beschrijft zowel de uitvoerbare prototypecontroles als de vereisten
 | CONFLICT-02 | Afspraak A eindigt om 10:30 en afspraak B begint om 10:30 zonder buffer | Beide afspraken kunnen bestaan. |
 | CONFLICT-03 | Twee afspraken overlappen voor dezelfde toegewezen begeleider | Opslaan wordt geblokkeerd als het productbeleid bepaalt dat de begeleider niet tegelijk beschikbaar kan zijn. |
 | PRIV-01 | Controleer databasepolicies voor iedere blootgestelde tabel | RLS en policies beperken toegang op basis van eigenaarschap en geldige relatie. |
+| PRIV-03 | Cliënt A probeert de rol in het eigen profiel te wijzigen naar begeleider of beheerder | De database/API weigert de wijziging; de rol komt nooit uit een wijzigbare clientclaim. |
+| PRIV-04 | Een niet-gekoppelde of ingetrokken begeleider vraagt cliëntgegevens op | Er worden geen cliëntgegevens teruggegeven, ook niet met een eerder bewaarde relatie-ID. |
+| PRIV-05 | Een begeleider wordt toegewezen aan een cliënt zonder actieve relatie | De server weigert de afspraak; een client-side selectie alleen is niet voldoende. |
+| PRIV-06 | Een ouder of voogd probeert cliëntgegevens te openen zonder expliciete, actuele toestemming | Toegang wordt geweigerd en kan na intrekking niet opnieuw worden gebruikt. |
+| PRIV-07 | Een cliënt probeert ruwe auditgebeurtenissen te lezen of te wijzigen | Lezen wordt geweigerd en auditregistratie blijft append-only via een vertrouwde serverroute. |
 | PRIV-02 | Controleer Android-bundel en repository op geheime serverkeys | Geen service-role- of andere geheime backend-sleutels in de client of gitgeschiedenis. |
 
 ## C. Handmatige toegankelijkheidscontrole
