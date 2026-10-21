@@ -28,7 +28,8 @@ Een toegankelijke planningsapp voor Android-telefoons en tablets waarmee cliënt
 2. Kies en autoriseer een afzonderlijke PlanSamen-hosting- en identity-provider; wijzig of hergebruik NovaLife niet.
 3. Bouw echte accounts en server-side rolgebaseerde autorisatie. Lokale profielen zijn geen afzonderlijke accounts en geven geen veilige toegang tussen apparaten.
 4. Voeg beveiligde online synchronisatie en auditregistratie toe voor wijzigingen door begeleiding.
-5. Controleer conflicten aan de serverkant binnen één atomaire databasetransactie. De clientcontrole alleen beschermt niet tegen gelijktijdige opslagen vanaf meerdere apparaten.
+5. De referentie-SQL bevat ontwerpconstraints tegen overlappende afspraken per cliënt, toegewezen begeleider en overlappende roosterdiensten per begeleider. Dit is alleen ontwerpcode en is niet op een database toegepast; overlap tussen een afspraak en een dienst is nog niet afgedekt.
+6. Controleer conflicten aan de serverkant binnen één atomaire databasetransactie. De clientcontrole alleen beschermt niet tegen gelijktijdige opslagen vanaf meerdere apparaten.
 6. Werk uitzonderingen en het beheer van terugkerende afspraken uit voor een online gedeelde agenda.
 7. Voer tests uit op echte Android-telefoons en tablets en controleer afzonderlijke APK/AAB-builds voordat een release wordt gedeeld.
 
