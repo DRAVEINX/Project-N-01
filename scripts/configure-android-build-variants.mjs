@@ -65,8 +65,8 @@ if (!androidBlock.includes('applicationIdSuffix ".phone"') || !androidBlock.incl
 }
 
 const labels = [
-  ["phone", "Project N-01 Telefoon"],
-  ["tablet", "Project N-01 Tablet"]
+  ["phone", "PlanSamen Telefoon"],
+  ["tablet", "PlanSamen Tablet"]
 ];
 for (const [flavor, label] of labels) {
   const valuesDir = join(root, "android", "app", "src", flavor, "res", "values");
