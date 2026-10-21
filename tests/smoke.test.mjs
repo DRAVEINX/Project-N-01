@@ -906,7 +906,7 @@ test("PlanSamen blocks appointment overlaps per profile but allows back-to-back 
   assert.notEqual(conflictStart, -1, "missing appointment conflict helper");
   assert.ok(conflictEnd > conflictStart, "appointment conflict helper should have a complete body");
   const overlapHelper = lifeSuite.slice(overlapStart, conflictStart);
-  const conflictHelper = lifeSuite.slice(conflictStart, conflictEnd + 4);
+  const conflictHelper = lifeSuite.slice(conflictStart, conflictEnd);
   assert.match(overlapHelper, /minutes\(a\.start\) < minutes\(b\.end\)/);
   assert.match(overlapHelper, /minutes\(b\.start\) < minutes\(a\.end\)/);
   assert.match(conflictHelper, /if \(a\.id === candidate\.id\) return false/);
