@@ -184,6 +184,9 @@ test("PlanSamen reference database schema enables RLS and atomic client overlap 
   assert.match(schema, /ALTER TABLE plansamen_profiles ENABLE ROW LEVEL SECURITY/);
   assert.match(schema, /ALTER TABLE plansamen_relationships ENABLE ROW LEVEL SECURITY/);
   assert.match(schema, /ALTER TABLE plansamen_appointments ENABLE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_profiles FORCE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_relationships FORCE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_appointments FORCE ROW LEVEL SECURITY/);
   assert.match(schema, /Intentionally no client-facing policies yet/);
   assert.match(schema, /Never apply this to NovaLife/);
 });
