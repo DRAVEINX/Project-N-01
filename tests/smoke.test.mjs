@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+const lifeSuite = await readFile(new URL("../src/life-suite.js", import.meta.url), "utf8");
 
 
 test("daily task and built-in routine progress persists locally for the current day", () => {
@@ -898,14 +899,14 @@ test("PlanSamen homepage offers accessible client and caregiver shortcuts withou
 });
 
 test("PlanSamen blocks appointment overlaps per profile but allows back-to-back appointments", () => {
-  const overlapStart = js.indexOf("  function overlap(a,b) {");
-  const conflictStart = js.indexOf("  function appointmentConflict(candidate, pool) {", overlapStart);
+  const overlapStart = lifeSuite.indexOf("  function overlap(a,b) {");
+  const conflictStart = lifeSuite.indexOf("  function appointmentConflict(candidate, pool) {", overlapStart);
   const conflictEnd = js.indexOf("\n  }", conflictStart);
   assert.notEqual(overlapStart, -1, "missing interval overlap helper");
   assert.notEqual(conflictStart, -1, "missing appointment conflict helper");
   assert.ok(conflictEnd > conflictStart, "appointment conflict helper should have a complete body");
-  const overlapHelper = js.slice(overlapStart, conflictStart);
-  const conflictHelper = js.slice(conflictStart, conflictEnd + 4);
+  const overlapHelper = lifeSuite.slice(overlapStart, conflictStart);
+  const conflictHelper = lifeSuite.slice(conflictStart, conflictEnd + 4);
   assert.match(overlapHelper, /minutes\(a\.start\) < minutes\(b\.end\)/);
   assert.match(overlapHelper, /minutes\(b\.start\) < minutes\(a\.end\)/);
   assert.match(conflictHelper, /if \(a\.id === candidate\.id\) return false/);
