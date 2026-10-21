@@ -1,6 +1,6 @@
 # PlanSamen — acceptatietests voor gedeelde planning
 
-Deze testset is een voorbereidingsdocument. De huidige prototypeversie gebruikt lokale gegevens; tests voor accounts, online synchronisatie en databasebeveiliging kunnen pas slagen wanneer de aparte backend bestaat.
+Deze testset is een voorbereidingsdocument. De huidige prototypeversie gebruikt lokale gegevens; tests voor accounts, online synchronisatie en databasebeveiliging kunnen pas slagen wanneer de aparte backend bestaat. Het voorgestelde endpoint- en foutcodecontract staat in [PLAN-SAMEN-API-CONTRACT.md](./PLAN-SAMEN-API-CONTRACT.md).
 
 ## A. Huidige prototype (uitvoerbaar zodra de webtests draaien)
 
@@ -14,7 +14,7 @@ Deze testset is een voorbereidingsdocument. De huidige prototypeversie gebruikt 
 | CAL-02 | Voeg een afspraak toe van 10:15 tot 10:45 voor dezelfde cliënt | Opslaan wordt geblokkeerd met een begrijpelijke melding |
 | CAL-03 | Voeg een afspraak toe van 10:30 tot 11:00 | Toegestaan: afspraken die elkaar exact raken overlappen niet |
 | CAL-04 | Probeer een eindtijd gelijk aan of eerder dan de begintijd | Afspraak wordt geweigerd |
-| ACC-01 | Vergrendel de kluis en probeer privégegevens te openen | Gegevens blijven afgeschermd tot de juiste wachtzin is ingevoerd |
+| ACC-01 | Vergrendel de kluis en probeer privégegevens te openen | Gegevens blijven afgeschermd tot de juiste wachtzin is ingevoerd |\n| API-01 | Cliënt A vraagt afspraak van cliënt B op | Server weigert toegang zonder gegevenslek |\n| API-02 | Begeleiderrelatie wordt ingetrokken | Nieuwe verzoeken van die begeleider worden geweigerd |\n| API-03 | Client probeert via profielupdate de eigen rol te verhogen | Server weigert rolwijziging |\n| API-04 | Twee gelijktijdige verzoeken maken overlappende afspraken | Maximaal één afspraak wordt opgeslagen; de andere krijgt een conflictmelding |\n| API-05 | Een afspraak begint precies wanneer de vorige eindigt | Beide afspraken kunnen bestaan |\n| API-06 | Anoniem verzoek naar een afgeschermd endpoint | Verzoek wordt geweigerd zonder privégegevens terug te sturen |
 
 ## B. Vereist vóór online pilot (backend nog niet aangesloten)
 
