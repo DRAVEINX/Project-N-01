@@ -23,6 +23,8 @@ Deze testset beschrijft zowel de uitvoerbare prototypecontroles als de vereisten
 | CAL-09 | Verwijder de hoofdafspraak van een weekreeks of een losse reeksafspraak | De bevestiging vermeldt expliciet of de hele reeks of alleen die afspraak wordt verwijderd. |
 | CAL-10 | Wijs een begeleider toe aan een afspraak en open die opnieuw | De naam van de begeleider verschijnt bij de afspraak. |
 | CAL-11 | Test overlappende afspraken die dezelfde begeleidersidentiteit delen | De overlap wordt geblokkeerd, ook als de afspraken aan verschillende profielen zijn gekoppeld. |
+| CAL-12 | Maak een conflict met een afspraak in hetzelfde profiel | De melding benoemt de conflicterende afspraak en tijd, zodat die eenvoudig te herkennen is. |
+| CAL-13 | Maak een conflict met een toegewezen begeleider uit een ander profiel | De melding geeft aan dat de begeleider bezet is, maar toont geen titel of privégegevens van de andere cliënt. |
 | ROSTER-01 | Plan twee overlappende diensten voor dezelfde begeleider op dezelfde datum | De tweede dienst wordt geweigerd met een begrijpelijke melding. |
 | ROSTER-02 | Plan aansluitende diensten of diensten van verschillende begeleiders | Beide diensten zijn toegestaan. |
 | ROSTER-03 | Verwijder een begeleider die aan afspraken gekoppeld is | Na bevestiging blijven de afspraken bestaan, wordt de koppeling verwijderd en verdwijnen de diensten van die begeleider. |
