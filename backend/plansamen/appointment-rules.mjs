@@ -13,12 +13,34 @@ export class AppointmentRuleError extends Error {
 }
 
 function parseInstant(value, field) {
-  if (typeof value !== "string" || value.trim() === "") {
-    throw new AppointmentRuleError("VALIDATION_ERROR", `${field} must be an ISO timestamp.`);
+  const isoTimestamp = typeof value === "string" &&
+    /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?(?:Z|[+-]\\d{2}:\\d{2})$/.test(value);
+  if (!isoTimestamp) {
+    throw new AppointmentRuleError(
+      "VALIDATION_ERROR",
+      `${field} must be an ISO timestamp with an explicit timezone.`
+    );
   }
+
+  const parts = /^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})/.exec(value);
+  const [, year, month, day, hour, minute, second] = parts;
+  const calendarDate = new Date(0);
+  calendarDate.setUTCFullYear(Number(year), Number(month) - 1, Number(day));
+  calendarDate.setUTCHours(0, 0, 0, 0);
+  if (
+    calendarDate.getUTCFullYear() !== Number(year) ||
+    calendarDate.getUTCMonth() !== Number(month) - 1 ||
+    calendarDate.getUTCDate() !== Number(day) ||
+    Number(hour) > 23 ||
+    Number(minute) > 59 ||
+    Number(second) > 59
+  ) {
+    throw new AppointmentRuleError("VALIDATION_ERROR", `${field} must be a valid ISO timestamp.`);
+  }
+
   const time = Date.parse(value);
   if (!Number.isFinite(time)) {
-    throw new AppointmentRuleError("VALIDATION_ERROR", `${field} must be a valid timestamp.`);
+    throw new AppointmentRuleError("VALIDATION_ERROR", `${field} must be a valid ISO timestamp.`);
   }
   return time;
 }
