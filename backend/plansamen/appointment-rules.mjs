@@ -38,6 +38,13 @@ function parseInstant(value, field) {
     throw new AppointmentRuleError("VALIDATION_ERROR", `${field} must be a valid ISO timestamp.`);
   }
 
+  // Validate the numeric timezone offset explicitly. Date.parse behavior for
+  // malformed offsets can vary between runtimes, so never rely on it alone.
+  const offset = /([+-])(\\d{2}):(\\d{2})$/.exec(value);
+  if (offset && (Number(offset[2]) > 23 || Number(offset[3]) > 59)) {
+    throw new AppointmentRuleError("VALIDATION_ERROR", `${field} must use a valid timezone offset.`);
+  }
+
   const time = Date.parse(value);
   if (!Number.isFinite(time)) {
     throw new AppointmentRuleError("VALIDATION_ERROR", `${field} must be a valid ISO timestamp.`);
