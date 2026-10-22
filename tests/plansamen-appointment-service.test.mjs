@@ -171,3 +171,15 @@ test("caregiver relationship is rechecked inside the write transaction", async (
   }), "FORBIDDEN");
   assert.equal(repo.inserted.length, 0);
 });
+
+
+test("guardian, parent, and admin roles cannot bypass the client/caregiver appointment boundary", async () => {
+  for (const role of ["guardian", "parent", "admin", "developer", "unknown"]) {
+    const repo = repository({ relationships: ["caregiver-1:client-1"] });
+    await expectCode(createAppointmentService(repo).create({
+      actor: { userId: "privileged-looking-user", role },
+      input: { ...appointment, clientId: "client-1" }
+    }), "FORBIDDEN");
+    assert.equal(repo.inserted.length, 0, `${role} must not create appointments through this service`);
+  }
+});
