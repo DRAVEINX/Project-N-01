@@ -122,3 +122,34 @@ test("invalid calendar dates are rejected instead of normalized by Date.parse", 
     error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR"
   );
 });
+
+
+test("timestamps with different timezone offsets are compared as the same instant", () => {
+  const existing = {
+    ...base,
+    startsAt: "2026-10-22T12:00:00+02:00",
+    endsAt: "2026-10-22T13:00:00+02:00"
+  };
+  const candidate = {
+    ...base,
+    startsAt: "2026-10-22T10:30:00Z",
+    endsAt: "2026-10-22T11:30:00Z"
+  };
+  assert.deepEqual(findAppointmentConflict(candidate, [existing]), {
+    code: "APPOINTMENT_OVERLAP",
+    scope: "client"
+  });
+});
+
+test("malformed timezone offsets are rejected", () => {
+  for (const startsAt of [
+    "2026-10-22T10:00:00+25:00",
+    "2026-10-22T10:00:00+01:99",
+    "2026-10-22T10:00:00+99:99"
+  ]) {
+    assert.throws(
+      () => validateAppointmentInterval({ ...base, startsAt }),
+      error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR"
+    );
+  }
+});
