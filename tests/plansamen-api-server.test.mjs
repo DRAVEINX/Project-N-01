@@ -103,3 +103,21 @@ test("nested API paths remain unavailable until authentication and storage are c
     assert.equal(payload.error.message, "Online functies zijn nog niet beschikbaar.");
   });
 });
+
+
+test("all API write verbs remain fail-closed until trusted auth and storage exist", async () => {
+  await withServer(async baseUrl => {
+    for (const method of ["PUT", "PATCH", "DELETE"]) {
+      const response = await fetch(`${baseUrl}/api/v1/appointments/example`, {
+        method,
+        headers: { "content-type": "application/json" },
+        body: method === "DELETE" ? undefined : JSON.stringify({ title: "Must not persist" })
+      });
+      assert.equal(response.status, 503, `${method} must not be accepted by the prototype API`);
+      const payload = await response.json();
+      assert.equal(payload.error.code, "BACKEND_NOT_CONFIGURED");
+      assert.equal(payload.error.message, "Online functies zijn nog niet beschikbaar.");
+      assert.match(payload.error.requestId, /^[0-9a-f-]{36}$/i);
+    }
+  });
+});
