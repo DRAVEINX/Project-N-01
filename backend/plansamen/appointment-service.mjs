@@ -9,8 +9,7 @@ import { AppointmentRuleError, findAppointmentConflict, validateAppointmentInter
  * intentionally not connected to the current API scaffold.
  */
 export function createAppointmentService(repository) {
-  if (!repository || typeof repository.withTransaction !== "function" ||
-      typeof repository.hasActiveRelationship !== "function") {
+  if (!repository || typeof repository.withTransaction !== "function") {
     throw new TypeError("A transactional repository adapter is required.");
   }
 
@@ -36,22 +35,8 @@ export function createAppointmentService(repository) {
         if (actor.userId !== candidate.clientId) {
           throw new AppointmentRuleError("FORBIDDEN", "You cannot plan for this client.");
         }
-      } else if (actor.role === "caregiver") {
-        const active = await repository.hasActiveRelationship(actor.userId, candidate.clientId);
-        if (!active) {
-          throw new AppointmentRuleError("FORBIDDEN", "An active client relationship is required.");
-        }
-      } else {
+      } else if (actor.role !== "caregiver") {
         throw new AppointmentRuleError("FORBIDDEN", "This role cannot create appointments.");
-      }
-
-      if (candidate.caregiverId !== null) {
-        const assignmentAllowed = candidate.caregiverId === actor.userId
-          ? actor.role === "caregiver"
-          : await repository.hasActiveRelationship(candidate.caregiverId, candidate.clientId);
-        if (!assignmentAllowed) {
-          throw new AppointmentRuleError("RELATIONSHIP_NOT_ACTIVE", "The assigned caregiver is not authorized.");
-        }
       }
 
       // Match the reference schema's constraints before opening a transaction.
@@ -71,6 +56,26 @@ export function createAppointmentService(repository) {
 
       try {
         return await repository.withTransaction(async transaction => {
+          // Relationship checks and the write share one transaction so a
+          // revoked caregiver relationship cannot be accepted from a stale
+          // pre-transaction check. The adapter must lock/revalidate relationship
+          // rows under its transaction isolation policy.
+          if (typeof transaction.hasActiveRelationship !== "function") {
+            throw new TypeError("Transaction must provide hasActiveRelationship.");
+          }
+          if (actor.role === "caregiver" &&
+              !await transaction.hasActiveRelationship(actor.userId, candidate.clientId)) {
+            throw new AppointmentRuleError("FORBIDDEN", "An active client relationship is required.");
+          }
+          if (candidate.caregiverId !== null) {
+            const assignmentAllowed = candidate.caregiverId === actor.userId
+              ? actor.role === "caregiver"
+              : await transaction.hasActiveRelationship(candidate.caregiverId, candidate.clientId);
+            if (!assignmentAllowed) {
+              throw new AppointmentRuleError("RELATIONSHIP_NOT_ACTIVE", "The assigned caregiver is not authorized.");
+            }
+          }
+
           const existing = await transaction.findPotentialConflicts({
             clientId: candidate.clientId,
             caregiverId: candidate.caregiverId,
