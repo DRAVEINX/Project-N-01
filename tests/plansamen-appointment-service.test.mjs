@@ -140,3 +140,22 @@ test("appointment content is trimmed and stored within documented limits", async
   assert.equal(result.pictogram, "📅");
   assert.equal(repo.inserted.length, 1);
 });
+
+
+test("Unicode character limits count emoji as characters rather than UTF-16 code units", async () => {
+  const repo = repository();
+  const service = createAppointmentService(repo);
+  const actor = { userId: "client-1", role: "client" };
+  const result = await service.create({
+    actor,
+    input: {
+      ...appointment,
+      caregiverId: null,
+      title: "😀".repeat(200),
+      notes: "🧩".repeat(4000)
+    }
+  });
+  assert.equal([...result.title].length, 200);
+  assert.equal([...result.notes].length, 4000);
+  assert.equal(repo.inserted.length, 1);
+});
