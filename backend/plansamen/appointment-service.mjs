@@ -59,13 +59,13 @@ export function createAppointmentService(repository) {
       const title = typeof input.title === "string" ? input.title.trim() : "";
       const pictogram = typeof input.pictogram === "string" ? input.pictogram : "📅";
       const notes = typeof input.notes === "string" ? input.notes : "";
-      if (title.length < 1 || title.length > 200) {
+      if ([...title].length < 1 || [...title].length > 200) {
         throw new AppointmentRuleError("VALIDATION_ERROR", "title must contain 1 to 200 characters.");
       }
       if ([...pictogram].length > 16) {
         throw new AppointmentRuleError("VALIDATION_ERROR", "pictogram must contain at most 16 characters.");
       }
-      if (notes.length > 4000) {
+      if ([...notes].length > 4000) {
         throw new AppointmentRuleError("VALIDATION_ERROR", "notes must contain at most 4000 characters.");
       }
 
