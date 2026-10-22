@@ -80,3 +80,26 @@ test("conflict responses never contain private appointment fields", () => {
   assert.equal(Object.hasOwn(result, "title"), false);
   assert.equal(Object.hasOwn(result, "notes"), false);
 });
+
+test("overlap detection still works when unsaved appointments have no IDs", () => {
+  const existing = { ...base };
+  const candidate = {
+    ...base,
+    startsAt: "2026-10-22T10:30:00.000Z"
+  };
+  assert.deepEqual(findAppointmentConflict(candidate, [existing]), {
+    code: "APPOINTMENT_OVERLAP",
+    scope: "client"
+  });
+});
+
+test("appointments for different clients and caregivers may overlap", () => {
+  const existing = { ...base, caregiverId: null };
+  const candidate = {
+    ...base,
+    clientId: "client-b",
+    caregiverId: "caregiver-b",
+    startsAt: "2026-10-22T10:30:00.000Z"
+  };
+  assert.equal(findAppointmentConflict(candidate, [existing]), null);
+});
