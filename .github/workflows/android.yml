@@ -17,6 +17,8 @@ on:
       - "package.json"
       - "capacitor.config.json"
       - ".github/workflows/android.yml"
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
