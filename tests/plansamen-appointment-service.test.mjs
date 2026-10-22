@@ -115,3 +115,28 @@ test("database exclusion violation is translated to a safe conflict error", asyn
     input: { ...appointment, caregiverId: null }
   }), "APPOINTMENT_OVERLAP");
 });
+
+
+test("appointment content limits match the database schema and reject invalid input before writing", async () => {
+  const repo = repository();
+  const service = createAppointmentService(repo);
+  const actor = { userId: "client-1", role: "client" };
+
+  await expectCode(service.create({ actor, input: { ...appointment, caregiverId: null, title: "   " } }), "VALIDATION_ERROR");
+  await expectCode(service.create({ actor, input: { ...appointment, caregiverId: null, title: "x".repeat(201) } }), "VALIDATION_ERROR");
+  await expectCode(service.create({ actor, input: { ...appointment, caregiverId: null, notes: "x".repeat(4001) } }), "VALIDATION_ERROR");
+  await expectCode(service.create({ actor, input: { ...appointment, caregiverId: null, pictogram: "📅".repeat(17) } }), "VALIDATION_ERROR");
+  assert.equal(repo.inserted.length, 0);
+});
+
+test("appointment content is trimmed and stored within documented limits", async () => {
+  const repo = repository();
+  const result = await createAppointmentService(repo).create({
+    actor: { userId: "client-1", role: "client" },
+    input: { ...appointment, caregiverId: null, title: "  Weekplanning  ", notes: "notitie" }
+  });
+  assert.equal(result.title, "Weekplanning");
+  assert.equal(result.notes, "notitie");
+  assert.equal(result.pictogram, "📅");
+  assert.equal(repo.inserted.length, 1);
+});
