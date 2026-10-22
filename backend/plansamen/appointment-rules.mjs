@@ -40,7 +40,7 @@ function parseInstant(value, field) {
 
   // Validate the numeric timezone offset explicitly. Date.parse behavior for
   // malformed offsets can vary between runtimes, so never rely on it alone.
-  const offset = /([+-])(\\d{2}):(\\d{2})$/.exec(value);
+  const offset = /([+-])(\d{2}):(\d{2})$/.exec(value);
   if (offset && (Number(offset[2]) > 23 || Number(offset[3]) > 59)) {
     throw new AppointmentRuleError("VALIDATION_ERROR", `${field} must use a valid timezone offset.`);
   }
