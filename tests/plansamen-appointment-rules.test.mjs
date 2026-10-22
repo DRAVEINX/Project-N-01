@@ -77,6 +77,6 @@ test("conflict responses never contain private appointment fields", () => {
   };
   const result = findAppointmentConflict(base, [existing]);
   assert.deepEqual(result, { code: "APPOINTMENT_OVERLAP", scope: "client" });
-  assert.doesNotHaveProperty(result, "title");
-  assert.doesNotHaveProperty(result, "notes");
+  assert.equal(Object.hasOwn(result, "title"), false);
+  assert.equal(Object.hasOwn(result, "notes"), false);
 });
