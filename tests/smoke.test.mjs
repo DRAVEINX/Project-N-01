@@ -209,7 +209,7 @@ test("preferences persist locally without persisting private notes", () => {
   assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
 });
 
-test("drawing pad provides a bilingual PNG export without storing the drawing", () => {
+test("drawing pad provides a bilingual PNG export and saves drawings locally", () => {
   assert.match(html, /id="export-sketch"/);
   assert.match(js, /\$\("#export-sketch"\)\.addEventListener\("click"/);
   assert.match(js, /sketchCanvas\.toBlob\(blob =>/);
@@ -217,11 +217,11 @@ test("drawing pad provides a bilingual PNG export without storing the drawing", 
   assert.match(js, /sketchEmpty:/);
   assert.match(js, /sketchExportError:/);
   assert.match(js, /sketchExported:/);
-  assert.match(js, /De tekening wordt niet opgeslagen/);
-  assert.match(js, /The drawing is not saved/);
+  assert.match(js, /saveSketchLocally\(\)/);
+  assert.match(js, /tekening wordt lokaal opgeslagen|drawing is saved locally/i);
 });
 
-test("drawing pad supports pointer and keyboard input without persistent storage", () => {
+test("drawing pad supports pointer and keyboard input with local persistence", () => {
   assert.match(html, /id="sketch-canvas"/);
   assert.match(html, /data-i18n="sketchTitle"/);
   assert.match(html, /id="clear-sketch"/);
@@ -229,7 +229,9 @@ test("drawing pad supports pointer and keyboard input without persistent storage
   assert.match(js, /addEventListener\("pointermove"/);
   assert.match(js, /addEventListener\("keydown"/);
   assert.match(js, /clearRect\(0, 0, sketchCanvas\.width, sketchCanvas\.height\)/);
-  assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*sketch/i);
+  assert.match(js, /localStorage\.setItem\(sketchStorageKey/);
+  assert.match(js, /restoreSketchLocally\(\)/);
+  assert.match(js, /localStorage\.removeItem\(sketchStorageKey\)/);
 });
 
 test("language changes update all translated placeholders and accessible labels", () => {
