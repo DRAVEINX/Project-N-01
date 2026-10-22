@@ -31,6 +31,7 @@ Een controle in de app is handig voor directe feedback, maar kan gelijktijdige w
 - Dwing overlapvrijheid af op cliëntniveau met een PostgreSQL exclusion constraint op cliënt-ID en tijdsrange.
 - Dwing overlapvrijheid ook af op toegewezen begeleider via een aparte exclusion constraint. Roosterdiensten krijgen een eigen tabel en dezelfde halfopen-tijdcontrole. Deze constraints voorkomen races tussen gelijktijdige schrijfacties binnen dezelfde tabel; afspraken en diensten worden nog niet onderling tegen elkaar vergeleken. Daarvoor is een aparte atomaire transactie-/triggerstrategie nodig voordat productiegebruik.
 - Bepaal vóór implementatie ook het beleid voor begeleiders die meerdere cliënten tegelijk begeleiden: als een begeleider niet op twee plekken tegelijk kan zijn, is een tweede constraint nodig voor toegewezen begeleiders. Dit kan betekenen dat afspraken met meerdere begeleiders later een aparte koppeltabel nodig hebben.
+- Controleer de actieve cliënt-begeleiderrelatie opnieuw binnen dezelfde transactie als de afspraakinsert. De repository-adapter moet de relatie onder een passende lock/isolation opnieuw valideren; een voorafgaande controle alleen kan een ingetrokken relatie-race niet uitsluiten.
 - Behandel een databaseconflict als een duidelijke gebruikersmelding; sla de conflicterende afspraak niet op.
 
 ## Privacy en toegankelijkheid
