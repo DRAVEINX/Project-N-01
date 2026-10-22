@@ -66,7 +66,7 @@ export function findAppointmentConflict(candidate, existingAppointments) {
   if (candidate.status === "cancelled") return null;
 
   for (const existing of existingAppointments) {
-    if (!existing || existing.status === "cancelled" || existing.id === candidate.id) continue;
+    if (!existing || existing.status === "cancelled" || (candidate.id != null && existing.id === candidate.id)) continue;
     const existingInterval = validateAppointmentInterval(existing);
     const overlaps = candidateInterval.start < existingInterval.end &&
       existingInterval.start < candidateInterval.end;
