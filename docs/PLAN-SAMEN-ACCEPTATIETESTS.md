@@ -25,6 +25,8 @@ Deze testset beschrijft zowel de uitvoerbare prototypecontroles als de vereisten
 | CAL-11 | Test overlappende afspraken die dezelfde begeleidersidentiteit delen | De overlap wordt geblokkeerd, ook als de afspraken aan verschillende profielen zijn gekoppeld. |
 | CAL-12 | Maak een conflict met een afspraak in hetzelfde profiel | De melding benoemt de conflicterende afspraak en tijd, zodat die eenvoudig te herkennen is. |
 | CAL-13 | Maak een conflict met een toegewezen begeleider uit een ander profiel | De melding geeft aan dat de begeleider bezet is, maar toont geen titel of privégegevens van de andere cliënt. |
+| CAL-14 | Voer dezelfde afspraak in met verschillende geldige tijdzone-offsets | De server vergelijkt de absolute tijdstippen en blokkeert echte overlap. |
+| CAL-15 | Gebruik een ongeldige tijdzone-offset, zoals `+25:00` | De afspraak wordt geweigerd met een veilige validatiefout. |
 | ROSTER-01 | Plan twee overlappende diensten voor dezelfde begeleider op dezelfde datum | De tweede dienst wordt geweigerd met een begrijpelijke melding. |
 | ROSTER-02 | Plan aansluitende diensten of diensten van verschillende begeleiders | Beide diensten zijn toegestaan. |
 | ROSTER-03 | Verwijder een begeleider die aan afspraken gekoppeld is | Na bevestiging blijven de afspraken bestaan, wordt de koppeling verwijderd en verdwijnen de diensten van die begeleider. |
@@ -39,6 +41,7 @@ Deze testset beschrijft zowel de uitvoerbare prototypecontroles als de vereisten
 | AUTH-02 | Een niet-gekoppelde begeleider probeert een cliënt te openen | Toegang wordt geweigerd. |
 | AUTH-03 | Een cliënt probeert via een profielverzoek de eigen rol te verhogen | De server weigert de rolwijziging. |
 | AUTH-04 | Een cliënt trekt de toegang van een begeleider in | Nieuwe verzoeken van die begeleider worden geweigerd. |
+| AUTH-05 | Een account met een niet-ondersteunde rol probeert afspraken aan te maken | De server weigert het verzoek zonder een afspraak op te slaan. |
 | SYNC-01 | Maak een afspraak op een telefoon en open de agenda op een tablet | De afspraak verschijnt na succesvolle beveiligde synchronisatie. |
 | SYNC-02 | Twee apparaten wijzigen niet-overlappende afspraken tegelijk | Beide wijzigingen blijven behouden. |
 | CONFLICT-01 | Twee gelijktijdige verzoeken maken overlappende afspraken voor dezelfde cliënt | Maximaal één transactie slaagt; de andere krijgt een conflictmelding. |
