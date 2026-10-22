@@ -123,3 +123,63 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .role-entry-notice{margin:1rem 0 0;padding:.75rem .9rem;border-left:4px solid var(--mint);border-radius:0 10px 10px 0;background:rgba(130,210,190,.08);font-size:.9rem;line-height:1.55;color:var(--text)}
 @media(max-width:600px){.role-entry-grid{grid-template-columns:1fr}.role-entry-card{min-height:76px}.role-entry-icon{flex-basis:2.75rem;width:2.75rem;height:2.75rem}}
 @media(prefers-reduced-motion:reduce){.role-entry-card{transition:none}}
+
+
+/* PlanSamen identity refresh — independent accessible design, separate from NovaLife. */
+:root{
+ color-scheme:light;
+ --bg:#f4f8f7;--panel:#ffffff;--panel-2:#eaf3f1;--line:#d6e5e1;
+ --text:#153c43;--muted:#526f73;--lilac:#087e83;--mint:#d4f2df;--pink:#f7e5ca;
+ --radius:20px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);line-height:1.55}
+button,input,select,textarea{accent-color:#087e83}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #087e83;outline-offset:3px}
+.skip-link{background:#087e83;color:white}
+.app-shell{background:var(--bg)}
+.sidebar{background:#fff;border-right:1px solid var(--line);backdrop-filter:none;box-shadow:4px 0 24px #173f4308}
+.brand{margin-bottom:34px}
+.brand-mark{position:relative;overflow:hidden;background:linear-gradient(145deg,#087eaa,#0a9b83);box-shadow:none;border-radius:14px}
+.brand-mark:before{content:"";position:absolute;inset:7px;border:2px solid #ffffffbd;border-radius:8px}
+.brand-mark span{position:relative;z-index:1;background:#fff;width:3px}
+.nav-list{gap:6px}
+.nav-item{border-radius:14px;color:#526f73;transition:background .15s,color .15s}
+.nav-item:hover,.nav-item.active{background:#e4f5ee;color:#075c62}
+.nav-item.active{box-shadow:inset 4px 0 #0b9287;font-weight:750}
+.privacy-note{color:#526f73}
+.main-content{padding-bottom:32px}
+.topbar{height:76px}
+.language-control select,.setting-row select{background:#fff;border:1px solid var(--line);border-radius:12px;color:var(--text)}
+.avatar-button{border:0;background:#d9f1e4;color:#075c62}
+.welcome-panel{min-height:240px;border:1px solid #c7e4dc;border-radius:28px;background:linear-gradient(112deg,#e1f5ec 0%,#f4fbf8 58%,#e0f3f6 100%);padding:clamp(25px,4vw,44px);box-shadow:0 10px 30px #164c4510}
+.eyebrow{color:#087e83}
+.welcome-panel h1{color:#153c43;letter-spacing:-.04em}
+.welcome-panel p:not(.eyebrow){color:#426469}
+.primary-button{background:#087e83;color:#fff;box-shadow:0 5px 14px #087e8325;border-radius:13px}
+.primary-button:hover{filter:brightness(1.08)}
+.secondary-button{background:#fff;border-color:#cfe1dc;color:#17484d;border-radius:13px}
+.secondary-button:hover{background:#eaf7f1;border-color:#72b9a6}
+.orb-scene{opacity:.8}
+.orb-halo{background:#7dd8b51c}
+.orb{background:radial-gradient(circle at 32% 26%,#d8fff0 0,#8fe1c3 20%,#20a79b 52%,#087e83 78%,#07545e 100%);box-shadow:inset -14px -18px 30px #064c4b40,inset 9px 8px 20px #ffffff70,0 0 45px #36a99528}
+.orb-ring{border-color:#0b95845c!important}
+.panel,.metric-card,.routine-card,.feature-card,.role-entry-card,.note-card,.setting-card,.calendar-card,.life-card{background:#fff;border-color:var(--line);box-shadow:0 5px 18px #164c4508}
+h2,h3,h4{color:#153c43;letter-spacing:-.025em}
+p,.muted,.section-description{color:var(--muted)}
+.date-pill,.status-pill{background:#e5f5ed;color:#075c62;border:1px solid #c5e6d8}
+input,textarea,select{background:#fff;color:var(--text);border-color:#c8ddd7}
+input::placeholder,textarea::placeholder{color:#71898b}
+.view{scroll-margin-top:16px}
+.bottom-nav,.mobile-nav{background:#fff;border-top:1px solid var(--line)}
+@media(max-width:760px){
+ .app-shell{background:var(--bg)}
+ .sidebar{background:#fff}
+ .main-content{padding-left:16px;padding-right:16px}
+ .welcome-panel{min-height:230px}
+ .orb-scene{right:-48px;opacity:.24}
+ .welcome-copy{max-width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
