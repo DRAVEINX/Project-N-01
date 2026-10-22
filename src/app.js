@@ -915,11 +915,34 @@ window.addEventListener("pagehide", () => {
   }
 }, {once:true});
 
-// In-memory drawing pad: nothing is stored or uploaded.
+// PlanSamen drawing pad. Store only on this device; no drawing is uploaded.
 const sketchCanvas = $("#sketch-canvas");
 const sketchContext = sketchCanvas.getContext("2d");
+const sketchStorageKey = "plansamen-drawing-v1";
 let sketchDrawing = false;
 let sketchPointer = {x: sketchCanvas.width / 2, y: sketchCanvas.height / 2};
+function saveSketchLocally() {
+  try {
+    localStorage.setItem(sketchStorageKey, sketchCanvas.toDataURL("image/png"));
+    $("#sketch-status").textContent = t("sketchDrawn");
+    return true;
+  } catch {
+    $("#sketch-status").textContent = t("sketchExportError");
+    return false;
+  }
+}
+function restoreSketchLocally() {
+  try {
+    const saved = localStorage.getItem(sketchStorageKey);
+    if (!saved || !saved.startsWith("data:image/png;base64,")) return;
+    const image = new Image();
+    image.onload = () => sketchContext.drawImage(image, 0, 0, sketchCanvas.width, sketchCanvas.height);
+    image.src = saved;
+  } catch {
+    $("#sketch-status").textContent = t("sketchExportError");
+  }
+}
+restoreSketchLocally();
 function sketchPoint(event) {
   const rect = sketchCanvas.getBoundingClientRect();
   return {
@@ -949,7 +972,7 @@ sketchCanvas.addEventListener("pointermove", event => {
   sketchPointer = next;
   $("#sketch-status").textContent = t("sketchDrawn");
 });
-function endSketchPointer() { sketchDrawing = false; }
+function endSketchPointer() { if (sketchDrawing) saveSketchLocally(); sketchDrawing = false; }
 sketchCanvas.addEventListener("pointerup", endSketchPointer);
 sketchCanvas.addEventListener("pointercancel", endSketchPointer);
 sketchCanvas.addEventListener("keydown", event => {
@@ -967,6 +990,7 @@ sketchCanvas.addEventListener("keydown", event => {
 });
 $("#clear-sketch").addEventListener("click", () => {
   sketchContext.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+  try { localStorage.removeItem(sketchStorageKey); } catch {}
   $("#sketch-status").textContent = t("sketchCleared");
   sketchCanvas.focus();
 });
@@ -982,6 +1006,7 @@ $("#export-sketch").addEventListener("click", () => {
       sketchCanvas.focus();
       return;
     }
+    saveSketchLocally();
     sketchCanvas.toBlob(blob => {
       if (!blob) {
         $("#sketch-status").textContent = t("sketchExportError");
