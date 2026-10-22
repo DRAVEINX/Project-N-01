@@ -1222,11 +1222,11 @@ test("PlanSamen appointment service requires trusted identity and an active rela
   }));
   const calls = [];
   const repository = {
-    hasActiveRelationship: async (caregiverId, clientId) => {
-      calls.push(["relationship", caregiverId, clientId]);
-      return caregiverId === "worker-1" && clientId === "client-a";
-    },
     withTransaction: async callback => callback({
+      hasActiveRelationship: async (caregiverId, clientId) => {
+        calls.push(["relationship", caregiverId, clientId]);
+        return caregiverId === "worker-1" && clientId === "client-a";
+      },
       findPotentialConflicts: async () => [],
       insertAppointment: async row => ({ id: "new-appointment", ...row })
     })
@@ -1244,7 +1244,7 @@ test("PlanSamen appointment service requires trusted identity and an active rela
     error => error instanceof AppointmentRuleError && error.code === "FORBIDDEN");
   await assert.rejects(service.create({ actor: { userId: "worker-2", role: "caregiver" }, input }),
     error => error instanceof AppointmentRuleError && error.code === "FORBIDDEN");
-  assert.ok(calls.some(call => call[0] === "relationship" && call[1] === "worker-2"));
+  assert.ok(calls.some(call => call[0] === "relationship" && call[1] === "worker-2" && call[2] === "client-a"));
 });
 
 test("PlanSamen appointment service sets creator from trusted actor and blocks overlaps", async () => {
