@@ -54,6 +54,21 @@ export function createAppointmentService(repository) {
         }
       }
 
+      // Match the reference schema's constraints before opening a transaction.
+      // Reject invalid content consistently instead of relying on DB errors.
+      const title = typeof input.title === "string" ? input.title.trim() : "";
+      const pictogram = typeof input.pictogram === "string" ? input.pictogram : "📅";
+      const notes = typeof input.notes === "string" ? input.notes : "";
+      if (title.length < 1 || title.length > 200) {
+        throw new AppointmentRuleError("VALIDATION_ERROR", "title must contain 1 to 200 characters.");
+      }
+      if ([...pictogram].length > 16) {
+        throw new AppointmentRuleError("VALIDATION_ERROR", "pictogram must contain at most 16 characters.");
+      }
+      if (notes.length > 4000) {
+        throw new AppointmentRuleError("VALIDATION_ERROR", "notes must contain at most 4000 characters.");
+      }
+
       try {
         return await repository.withTransaction(async transaction => {
           const existing = await transaction.findPotentialConflicts({
@@ -72,9 +87,9 @@ export function createAppointmentService(repository) {
             caregiverId: candidate.caregiverId,
             startsAt: candidate.startsAt,
             endsAt: candidate.endsAt,
-            title: typeof input.title === "string" ? input.title.trim() : "",
-            pictogram: typeof input.pictogram === "string" ? input.pictogram : "📅",
-            notes: typeof input.notes === "string" ? input.notes : "",
+            title,
+            pictogram,
+            notes,
             status: "scheduled",
             createdByUserId: actor.userId
           });
