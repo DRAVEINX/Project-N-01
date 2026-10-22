@@ -65,3 +65,41 @@ test("unknown non-API paths return a safe not-found response", async () => {
     assert.match(payload.error.requestId, /^[0-9a-f-]{36}$/i);
   });
 });
+
+
+test("health endpoint is read-only and does not bypass the API guard for other methods", async () => {
+  await withServer(async baseUrl => {
+    const response = await fetch(`${baseUrl}/api/v1/healthz`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ clientName: "Example person" })
+    });
+
+    assert.equal(response.status, 503);
+    const payload = await response.json();
+    assert.equal(payload.error.code, "BACKEND_NOT_CONFIGURED");
+    assert.match(payload.error.requestId, /^[0-9a-f-]{36}$/i);
+  });
+});
+
+test("health endpoint handles query strings and a trailing slash without changing its safe response", async () => {
+  await withServer(async baseUrl => {
+    const response = await fetch(`${baseUrl}/api/v1/healthz/?check=1`);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      status: "prototype",
+      backendConfigured: false,
+      acceptsPersonalData: false
+    });
+  });
+});
+
+test("nested API paths remain unavailable until authentication and storage are configured", async () => {
+  await withServer(async baseUrl => {
+    const response = await fetch(`${baseUrl}/api/v1/clients/example/appointments`);
+    assert.equal(response.status, 503);
+    const payload = await response.json();
+    assert.equal(payload.error.code, "BACKEND_NOT_CONFIGURED");
+    assert.equal(payload.error.message, "Online functies zijn nog niet beschikbaar.");
+  });
+});
