@@ -2,7 +2,7 @@
 
 ## Implemented in the browser prototype
 
-- **Calendar and appointments:** day, week and month views; add, edit and delete appointments; date/time validation; exact same-start collision is blocked; partial time overlaps ask for confirmation; preparation notes, location, reminders and a weekly-repeat option are provided.
+- **Calendar and appointments:** day, week and month views; add, edit and delete appointments; date/time validation; exact same-start duplicates and all time overlaps are blocked for the same profile or assigned support worker; preparation notes, location, reminders and a weekly-repeat option are provided. Adjacent appointments are allowed when the first appointment ends exactly as the next begins, unless a configured buffer applies.
 - **Support roster:** support-worker names, roles and resized profile photos; dated shifts; day/week views; add, edit and delete shifts.
 - **Mood, journal and drawings:** five-step emoji mood check-in, saved entries and audio attachments, a keyboard/pointer drawing canvas, saved drawings, review and delete.
 - **Step-by-step guides:** create instructions with steps, a resized photo and an audio attachment; mark steps complete and retain progress.
