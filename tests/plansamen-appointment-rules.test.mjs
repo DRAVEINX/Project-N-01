@@ -103,3 +103,22 @@ test("appointments for different clients and caregivers may overlap", () => {
   };
   assert.equal(findAppointmentConflict(candidate, [existing]), null);
 });
+
+
+test("timestamps must include an explicit timezone", () => {
+  assert.throws(
+    () => validateAppointmentInterval({ ...base, startsAt: "2026-10-22T10:00:00" }),
+    error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR"
+  );
+  assert.throws(
+    () => validateAppointmentInterval({ ...base, startsAt: "2026-10-22" }),
+    error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR"
+  );
+});
+
+test("invalid calendar dates are rejected instead of normalized by Date.parse", () => {
+  assert.throws(
+    () => validateAppointmentInterval({ ...base, startsAt: "2026-02-30T10:00:00.000Z" }),
+    error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR"
+  );
+});
