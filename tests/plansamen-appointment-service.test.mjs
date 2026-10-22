@@ -16,9 +16,9 @@ function repository({ existing = [], relationships = [] } = {}) {
   const inserted = [];
   return {
     inserted,
-    hasActiveRelationship: async (caregiverId, clientId) =>
-      relationships.includes(`${caregiverId}:${clientId}`),
     withTransaction: async callback => callback({
+      hasActiveRelationship: async (caregiverId, clientId) =>
+        relationships.includes(`${caregiverId}:${clientId}`),
       findPotentialConflicts: async () => existing,
       insertAppointment: async record => {
         inserted.push(record);
@@ -158,4 +158,16 @@ test("Unicode character limits count emoji as characters rather than UTF-16 code
   assert.equal([...result.title].length, 200);
   assert.equal([...result.notes].length, 4000);
   assert.equal(repo.inserted.length, 1);
+});
+
+
+test("caregiver relationship is rechecked inside the write transaction", async () => {
+  const repo = repository({ relationships: [] });
+  // The transaction adapter returns the current relationship state. A revoked
+  // relationship must be denied before conflict lookup or insertion.
+  await expectCode(createAppointmentService(repo).create({
+    actor: { userId: "caregiver-1", role: "caregiver" },
+    input: appointment
+  }), "FORBIDDEN");
+  assert.equal(repo.inserted.length, 0);
 });
