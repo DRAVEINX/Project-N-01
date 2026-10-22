@@ -14,7 +14,7 @@ export class AppointmentRuleError extends Error {
 
 function parseInstant(value, field) {
   const isoTimestamp = typeof value === "string" &&
-    /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?(?:Z|[+-]\\d{2}:\\d{2})$/.test(value);
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(value);
   if (!isoTimestamp) {
     throw new AppointmentRuleError(
       "VALIDATION_ERROR",
@@ -22,7 +22,7 @@ function parseInstant(value, field) {
     );
   }
 
-  const parts = /^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})/.exec(value);
+  const parts = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/.exec(value);
   const [, year, month, day, hour, minute, second] = parts;
   const calendarDate = new Date(0);
   calendarDate.setUTCFullYear(Number(year), Number(month) - 1, Number(day));
