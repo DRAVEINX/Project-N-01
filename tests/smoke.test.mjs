@@ -1253,7 +1253,7 @@ test("PlanSamen appointment service sets creator from trusted actor and blocks o
   const base = {
     clientId: "client-a", caregiverId: null,
     startsAt: "2026-10-22T10:00:00Z", endsAt: "2026-10-22T10:30:00Z",
-    status: "cancelled", createdByUserId: "spoofed-user"
+    title: "Afspraak", status: "cancelled", createdByUserId: "spoofed-user"
   };
   let inserted = null;
   let shouldConflict = false;
