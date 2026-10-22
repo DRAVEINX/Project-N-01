@@ -1258,8 +1258,8 @@ test("PlanSamen appointment service sets creator from trusted actor and blocks o
   let inserted = null;
   let shouldConflict = false;
   const repository = {
-    hasActiveRelationship: async () => false,
     withTransaction: async callback => callback({
+      hasActiveRelationship: async () => false,
       findPotentialConflicts: async () => shouldConflict ? [{
         id: "other", clientId: "client-a", caregiverId: null,
         startsAt: "2026-10-22T10:15:00Z", endsAt: "2026-10-22T10:45:00Z",
@@ -1285,8 +1285,8 @@ test("PlanSamen appointment service maps database exclusion violations to a safe
   const { createAppointmentService } = await import("../backend/plansamen/appointment-service.mjs");
   const { AppointmentRuleError } = await import("../backend/plansamen/appointment-rules.mjs");
   const repository = {
-    hasActiveRelationship: async () => true,
     withTransaction: async callback => callback({
+      hasActiveRelationship: async () => true,
       findPotentialConflicts: async () => [],
       insertAppointment: async () => { throw Object.assign(new Error("private SQL details"), { code: "23P01" }); }
     })
