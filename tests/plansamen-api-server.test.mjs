@@ -48,13 +48,10 @@ test("PlanSamen API routes fail closed instead of accepting personal data", asyn
     });
 
     assert.equal(response.status, 503);
-    assert.deepEqual(await response.json(), {
-      error: {
-        code: "BACKEND_NOT_CONFIGURED",
-        message: "Online functies zijn nog niet beschikbaar.",
-        requestId: assert.match
-      }
-    });
+    const payload = await response.json();
+    assert.equal(payload.error.code, "BACKEND_NOT_CONFIGURED");
+    assert.equal(payload.error.message, "Online functies zijn nog niet beschikbaar.");
+    assert.match(payload.error.requestId, /^[0-9a-f-]{36}$/i);
   });
 });
 
