@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101320">
-  <meta name="description" content="PlanSamen: een toegankelijke planning met pictogrammen voor cliënten en begeleiding.">
+  <meta name="description" content="PlanSamen: een moderne, toegankelijke dagplanner voor cliënten.">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <title>PlanSamen — overzichtelijke planning voor iedereen</title>
+  <title>PlanSamen — mijn dag, mijn overzicht</title>
   <link rel="stylesheet" href="src/styles.css">
   <link rel="stylesheet" href="src/life-suite.css">
   <script src="src/app.js" defer></script>
@@ -62,24 +62,10 @@
           <div><p class="eyebrow" data-i18n="yourOverview">JOUW OVERZICHT</p><h2 id="home-title" data-i18n="todayTitle">Vandaag, stap voor stap</h2></div>
           <span class="date-pill" id="today-date"></span>
         </div>
-        <section class="panel role-entry-panel" aria-labelledby="role-entry-title">
-          <div class="panel-heading">
-            <div><h3 id="role-entry-title">Waar wil je naartoe?</h3><p>Kies wat je wilt bekijken.</p></div>
-            <span class="panel-symbol" aria-hidden="true">🗓️</span>
-          </div>
-          <div class="role-entry-grid">
-            <button class="role-entry-card" type="button" data-view="life">
-              <span class="role-entry-icon" aria-hidden="true">🙂</span>
-              <span class="role-entry-copy"><strong>Ik ben cliënt</strong><small>Bekijk mijn planning en afspraken.</small></span>
-              <span class="role-entry-arrow" aria-hidden="true">→</span>
-            </button>
-            <button class="role-entry-card" type="button" data-view="life">
-              <span class="role-entry-icon" aria-hidden="true">🤝</span>
-              <span class="role-entry-copy"><strong>Ik ben begeleider</strong><small>Bekijk het rooster en de begeleiding.</small></span>
-              <span class="role-entry-arrow" aria-hidden="true">→</span>
-            </button>
-          </div>
-          <p class="role-entry-notice" role="note"><strong>Let op:</strong> dit is nog een prototype. Beide knoppen openen dezelfde lokale omgeving. Echte aparte accounts en gedeelde online gegevens worden nog gebouwd.</p>
+        <section class="client-focus-strip" aria-label="Snelle acties">
+          <a class="client-focus-card" href="#view-life" data-view="life"><span class="client-focus-icon" aria-hidden="true">🗓️</span><span><strong>Mijn planning</strong><small>Bekijk mijn afspraken en dagindeling</small></span><span aria-hidden="true">↗</span></a>
+          <a class="client-focus-card" href="#view-routines" data-view="routines"><span class="client-focus-icon" aria-hidden="true">✓</span><span><strong>Mijn routines</strong><small>Stap voor stap door mijn dag</small></span><span aria-hidden="true">↗</span></a>
+          <a class="client-focus-card" href="#view-communicate" data-view="communicate"><span class="client-focus-icon" aria-hidden="true">💬</span><span><strong>Laat zien wat ik nodig heb</strong><small>Gebruik een zin of communicatiehulp</small></span><span aria-hidden="true">↗</span></a>
         </section>
         <div class="stats-grid">
           <article class="stat-card"><span class="stat-icon lilac">◷</span><div><span class="stat-label" data-i18n="tasksDone">Taken afgerond</span><strong id="task-count">0 / 3</strong></div><div class="progress-track"><span id="progress-fill"></span></div></article>
