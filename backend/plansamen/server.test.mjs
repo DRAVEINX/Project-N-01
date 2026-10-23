@@ -63,3 +63,36 @@ test("unknown non-API paths return a safe 404 response", async () => {
     assert.equal((await response.json()).error.code, "NOT_FOUND");
   });
 });
+
+test("disabled health route rejects non-GET methods and keeps security headers", async () => {
+  await withServer(async baseUrl => {
+    for (const method of ["POST", "PUT", "PATCH", "DELETE", "OPTIONS"]) {
+      const response = await fetch(`${baseUrl}/api/v1/healthz`, {
+        method,
+        headers: { "content-type": "application/json" },
+        body: ["POST", "PUT", "PATCH", "DELETE"].includes(method) ? JSON.stringify({ personalData: "must not be accepted" }) : undefined
+      });
+      assert.equal(response.status, 503, `${method} must not expose the health handler as a write route`);
+      assert.equal(response.headers.get("cache-control"), "no-store");
+      assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+      assert.equal(response.headers.get("x-frame-options"), "DENY");
+      assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+      const body = await response.text();
+      assert.doesNotMatch(body, /must not be accepted/);
+    }
+  });
+});
+
+test("API routes remain disabled with query strings and trailing slashes", async () => {
+  await withServer(async baseUrl => {
+    for (const path of [
+      "/api/v1/appointments?clientId=example",
+      "/api/v1/appointments/",
+      "/api/?debug=true"
+    ]) {
+      const response = await fetch(`${baseUrl}${path}`);
+      assert.equal(response.status, 503, `${path} must remain disabled`);
+      assert.equal((await response.json()).error.code, "BACKEND_NOT_CONFIGURED");
+    }
+  });
+});
