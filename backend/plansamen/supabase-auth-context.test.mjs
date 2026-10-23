@@ -62,5 +62,5 @@ test("invalid role fails closed and does not create an actor", async () => {
       : jsonResponse([{ role: "superuser" }])
   });
 
-  await assert.rejects(auth.authenticate(`Bearer ${token}`), { code: "FORBIDDEN" });
+  await assert.rejects(auth.authenticate(`Bearer ${token}`), { code: "AUTHORIZATION_STATE_UNAVAILABLE" });
 });
