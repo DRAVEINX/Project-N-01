@@ -261,8 +261,10 @@ test("client cannot assign a caregiver without an active relationship", async ()
 });
 
 test("client can assign only a caregiver confirmed by the transactional relationship lookup", async () => {
+  const relationshipCalls = [];
   const repository = repositoryWith({
     async hasActiveRelationship(caregiverId, clientId) {
+      relationshipCalls.push([caregiverId, clientId]);
       return caregiverId === "caregiver-1" && clientId === "client-1";
     }
   });
@@ -274,9 +276,5 @@ test("client can assign only a caregiver confirmed by the transactional relation
   });
 
   assert.equal(result.assignedCaregiverUserId ?? result.caregiverId, "caregiver-1");
-  assert.ok(repository.calls.some(call =>
-    call[0] === "relationship" &&
-    call[1] === "caregiver-1" &&
-    call[2] === "client-1"
-  ));
+  assert.deepEqual(relationshipCalls, [["caregiver-1", "client-1"]]);
 });
