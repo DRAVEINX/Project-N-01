@@ -147,3 +147,60 @@ test("invalid appointment input is rejected before opening a transaction", async
   );
   assert.deepEqual(repository.calls, []);
 });
+
+test("unsupported roles cannot create appointments", async () => {
+  const repository = repositoryWith();
+  const service = createAppointmentService(repository);
+
+  await assert.rejects(
+    service.create({ actor: { userId: "admin-1", role: "admin" }, input: validInput }),
+    error => error instanceof AppointmentRuleError && error.code === "FORBIDDEN"
+  );
+  assert.deepEqual(repository.calls, []);
+});
+
+test("caregiver cannot assign another caregiver without an active relationship", async () => {
+  let relationshipChecks = 0;
+  const repository = repositoryWith({
+    async hasActiveRelationship() {
+      relationshipChecks += 1;
+      return relationshipChecks === 1;
+    }
+  });
+  const service = createAppointmentService(repository);
+
+  await assert.rejects(
+    service.create({
+      actor: { userId: "caregiver-1", role: "caregiver" },
+      input: { ...validInput, caregiverId: "caregiver-2" }
+    }),
+    error => error instanceof AppointmentRuleError && error.code === "RELATIONSHIP_NOT_ACTIVE"
+  );
+  assert.equal(repository.calls.some(call => call[0] === "insert"), false);
+  assert.equal(repository.calls.at(-1)[0], "rollback");
+});
+
+test("oversized notes are rejected before opening a transaction", async () => {
+  const repository = repositoryWith();
+  const service = createAppointmentService(repository);
+
+  await assert.rejects(
+    service.create({
+      actor: { userId: "client-1", role: "client" },
+      input: { ...validInput, notes: "x".repeat(4001) }
+    }),
+    error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR"
+  );
+  assert.deepEqual(repository.calls, []);
+});
+
+test("missing verified actor is rejected without touching the repository", async () => {
+  const repository = repositoryWith();
+  const service = createAppointmentService(repository);
+
+  await assert.rejects(
+    service.create({ actor: null, input: validInput }),
+    error => error instanceof AppointmentRuleError && error.code === "UNAUTHENTICATED"
+  );
+  assert.deepEqual(repository.calls, []);
+});
