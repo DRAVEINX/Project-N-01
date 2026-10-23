@@ -8,17 +8,20 @@
     "test": "node --test",
     "serve": "node scripts/serve.mjs",
     "build:mobile": "node scripts/prepare-mobile.mjs",
-    "android:sync": "npm run build:mobile && cap sync android"
+    "android:sync": "npm run build:mobile && cap sync android",
+    "serve:plansamen-api": "node backend/plansamen/start.mjs"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
-    "@capacitor/core": "8.5.3"
+    "@capacitor/core": "8.5.3",
+    "@capgo/capacitor-speech-recognition": "8.4.4"
   },
   "devDependencies": {
     "@capacitor/android": "8.5.3",
     "@capacitor/cli": "8.5.3",
-    "@capacitor/ios": "8.5.3"
+    "@capacitor/ios": "8.5.3",
+    "esbuild": "0.25.11"
   }
 }

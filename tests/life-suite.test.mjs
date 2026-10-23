@@ -27,14 +27,20 @@ test("life suite is wired into the existing app without replacing its core views
   }
 });
 
-test("calendar validates times, blocks exact duplicates and asks before overlaps", () => {
+test("calendar validates times and hard-blocks exact duplicates and every overlap", () => {
   assert.match(js, /function overlap\(a,b\)/);
   assert.match(js, /function appointmentConflict\(candidate/);
   assert.match(js, /exactDuplicate/);
-  assert.match(js, /window\.confirm\(t\("overlap"\)/);
+  assert.match(js, /overlapBlocked/);
+  assert.match(js, /if\(foundConflicts\.length\)/);
+  assert.doesNotMatch(js, /window\.confirm\(t\("overlap"\)/);
   assert.match(js, /calendarMode === "month"/);
   assert.match(js, /mode-week/);
   assert.match(js, /edit-appointment/);
+  assert.match(js, /ls-pictogram-picker/);
+  assert.match(js, /pictogram:v\.pictogram\|\|"📅"/);
+  assert.match(js, /ls-appointment-icon/);
+  assert.match(css, /\.ls-pictogram-choice:focus-within/);
 });
 
 test("roster includes support-worker photos and editable dated shifts", () => {
@@ -136,8 +142,8 @@ test("sensitive module never writes readable personal records as standalone loca
 test("Android phone and tablet have separate installable build variants and responsive tablet layout", () => {
   assert.match(androidVariantScript, /applicationIdSuffix "\.phone"/);
   assert.match(androidVariantScript, /applicationIdSuffix "\.tablet"/);
-  assert.match(androidVariantScript, /Project N-01 Telefoon/);
-  assert.match(androidVariantScript, /Project N-01 Tablet/);
+  assert.match(androidVariantScript, /PlanSamen Telefoon/);
+  assert.match(androidVariantScript, /PlanSamen Tablet/);
   assert.match(androidWorkflow, /assemblePhoneDebug assembleTabletDebug/);
   assert.match(androidWorkflow, /assemblePhoneRelease bundlePhoneRelease assembleTabletRelease bundleTabletRelease/);
   assert.match(androidWorkflow, /project-n-01-phone-release-candidate/);
@@ -159,4 +165,41 @@ test("Windows desktop MSI and iOS archive pipelines are configured separately", 
   assert.match(iosWorkflow, /CODE_SIGNING_ALLOWED=NO/);
   assert.match(iosWorkflow, /project-n-01-ios-unsigned-archive/);
   assert.equal(packageConfig.devDependencies["@capacitor/ios"], "8.5.3");
+});
+
+test("PlanSamen acceptance checklist covers honest, accessible client/caregiver entry", async () => {
+  const acceptance = await readFile(new URL("../docs/PLAN-SAMEN-ACCEPTATIETESTS.md", import.meta.url), "utf8");
+  assert.match(acceptance, /UI-05[\s\S]*aparte accounts/i);
+  assert.match(acceptance, /UI-06[\s\S]*horizontale overloop/i);
+  assert.match(acceptance, /dezelfde lokale omgeving openen/i);
+});
+
+test("PlanSamen reference database schema enables RLS and atomic client overlap prevention", async () => {
+  const schema = await readFile(new URL("../backend/plansamen/reference-schema.sql", import.meta.url), "utf8");
+  assert.match(schema, /NOT a deployed migration/);
+  assert.match(schema, /CREATE EXTENSION IF NOT EXISTS btree_gist/);
+  assert.match(schema, /plansamen_client_appointments_no_overlap/);
+  assert.match(schema, /tstzrange\(starts_at, ends_at, '\[\)'\) WITH &&/);
+  assert.match(schema, /CHECK \(ends_at > starts_at\)/);
+  assert.match(schema, /ALTER TABLE plansamen_profiles ENABLE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_relationships ENABLE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_appointments ENABLE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_profiles FORCE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_relationships FORCE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_appointments FORCE ROW LEVEL SECURITY/);
+  assert.match(schema, /Intentionally no client-facing policies yet/);
+  assert.match(schema, /Never apply this to NovaLife/);
+});
+
+test("PlanSamen API contract specifies server-trusted identity, authorization and conflict behavior", async () => {
+  const api = await readFile(new URL("../docs/PLAN-SAMEN-API-CONTRACT.md", import.meta.url), "utf8");
+  const roadmap = await readFile(new URL("../docs/PLAN-SAMEN-ROADMAP.md", import.meta.url), "utf8");
+  assert.match(api, /Status: contract voor implementatie en review/i);
+  assert.match(api, /Vertrouw nooit een meegestuurde.*user_id.*role/i);
+  assert.match(api, /rol kan niet via dit endpoint worden gewijzigd/i);
+  assert.match(api, /APPOINTMENT_OVERLAP/);
+  assert.match(api, /RELATIONSHIP_NOT_ACTIVE/);
+  assert.match(api, /Twee gelijktijdige POST-verzoeken/);
+  assert.match(api, /Gebruik of wijzig NovaLife niet/i);
+  assert.match(roadmap, /PLAN-SAMEN-API-CONTRACT\.md/);
 });

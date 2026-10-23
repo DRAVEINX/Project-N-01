@@ -4,6 +4,18 @@ import { readFile } from "node:fs/promises";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+const lifeSuite = await readFile(new URL("../src/life-suite.js", import.meta.url), "utf8");
+
+test("drawing strokes made with keyboard controls are saved locally too", () => {
+  const keyboardHandler = js.indexOf('sketchCanvas.addEventListener("keydown"');
+  const clearHandler = js.indexOf('$("#clear-sketch").addEventListener');
+  assert.ok(keyboardHandler >= 0 && clearHandler > keyboardHandler);
+  const keyboardBlock = js.slice(keyboardHandler, clearHandler);
+  assert.match(keyboardBlock, /saveSketchLocally\(\)/);
+  assert.match(js, /localStorage\.setItem\(sketchStorageKey, sketchCanvas\.toDataURL\("image\/png"\)\)/);
+  assert.match(js, /function restoreSketchLocally\(\)/);
+});
+
 
 
 test("daily task and built-in routine progress persists locally for the current day", () => {
@@ -184,7 +196,7 @@ test("prototype does not depend on external runtime scripts or styles", () => {
 
 test("install metadata and offline assets are present", () => {
   const parsed = JSON.parse(manifest);
-  assert.equal(parsed.name.startsWith("Project N-01"), true);
+  assert.equal(parsed.name.startsWith("PlanSamen"), true);
   assert.equal(parsed.display, "standalone");
   assert.ok(parsed.icons.some(icon => icon.src === "/assets/app-icon.svg"));
   for (const asset of ["/index.html", "/src/styles.css", "/src/app.js", "/src/secure-storage.js", "/src/encrypted-vault.js", "/src/routine-migration.js", "/offline.html"]) {
@@ -208,7 +220,7 @@ test("preferences persist locally without persisting private notes", () => {
   assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*note/i);
 });
 
-test("drawing pad provides a bilingual PNG export without storing the drawing", () => {
+test("drawing pad provides a bilingual PNG export and saves drawings locally", () => {
   assert.match(html, /id="export-sketch"/);
   assert.match(js, /\$\("#export-sketch"\)\.addEventListener\("click"/);
   assert.match(js, /sketchCanvas\.toBlob\(blob =>/);
@@ -216,11 +228,11 @@ test("drawing pad provides a bilingual PNG export without storing the drawing", 
   assert.match(js, /sketchEmpty:/);
   assert.match(js, /sketchExportError:/);
   assert.match(js, /sketchExported:/);
-  assert.match(js, /De tekening wordt niet opgeslagen/);
-  assert.match(js, /The drawing is not saved/);
+  assert.match(js, /saveSketchLocally\(\)/);
+  assert.match(js, /tekening wordt lokaal opgeslagen|drawing is saved locally/i);
 });
 
-test("drawing pad supports pointer and keyboard input without persistent storage", () => {
+test("drawing pad supports pointer and keyboard input with local persistence", () => {
   assert.match(html, /id="sketch-canvas"/);
   assert.match(html, /data-i18n="sketchTitle"/);
   assert.match(html, /id="clear-sketch"/);
@@ -228,7 +240,9 @@ test("drawing pad supports pointer and keyboard input without persistent storage
   assert.match(js, /addEventListener\("pointermove"/);
   assert.match(js, /addEventListener\("keydown"/);
   assert.match(js, /clearRect\(0, 0, sketchCanvas\.width, sketchCanvas\.height\)/);
-  assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*sketch/i);
+  assert.match(js, /localStorage\.setItem\(sketchStorageKey/);
+  assert.match(js, /restoreSketchLocally\(\)/);
+  assert.match(js, /localStorage\.removeItem\(sketchStorageKey\)/);
 });
 
 test("language changes update all translated placeholders and accessible labels", () => {
@@ -817,14 +831,15 @@ test("leaving the app stops microphone tracks and revokes temporary voice audio"
 
 test("speech recognition errors show feedback and restore dictation controls when ended", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
-  const start = app.indexOf('dictationStart.addEventListener("click", () => {');
+  const start = app.indexOf('dictationStart.addEventListener("click", async () => {');
   const end = app.indexOf('\n});', start);
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
   const handler = app.slice(start, end);
-  assert.match(handler, /dictationRecognition\.addEventListener\("error", event => \{[\s\S]*?dictationPermissionError[\s\S]*?dictationError/);
-  assert.match(handler, /dictationRecognition\.addEventListener\("end", \(\) => \{\s*setDictationButtons\(false\)/);
-  assert.match(app, /function setDictationButtons\(listening\) \{\s*dictationStart\.disabled = listening \|\| !SpeechRecognitionAPI;\s*dictationStop\.disabled = !listening;/);
+  assert.match(handler, /dictationPermissionError[\s\S]*?dictationError/);
+  assert.match(handler, /setDictationButtons\(false\)/);
+  assert.match(app, /function setDictationButtons\(listening\) \{\s*dictationStart\.disabled = listening \|\| dictationStarting \|\| \(!useNativeDictation && !BrowserSpeechRecognition\);\s*dictationStop\.disabled = !listening && !dictationStarting;/);
+  assert.match(app, /NativeSpeechRecognition\.requestPermissions\(\)/);
 });
 
 test("starting a new voice note clears the previous temporary recording first", async () => {
@@ -838,14 +853,17 @@ test("starting a new voice note clears the previous temporary recording first", 
   assert.match(app, /function clearVoiceObjectUrl\(\) \{\s*if \(voiceObjectUrl\) URL\.revokeObjectURL\(voiceObjectUrl\);\s*voiceObjectUrl = null;/);
 });
 
-test("leaving the app aborts speech recognition and releases its reference", async () => {
+test("leaving the app stops native or browser speech recognition and releases its reference", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
-  const start = app.indexOf('window.addEventListener("pagehide", () => {', app.indexOf("// Optional browser speech recognition"));
+  const start = app.indexOf('window.addEventListener("pagehide", () => {', app.indexOf("// Speech-to-text uses the native Capacitor recognizer"));
   const end = app.indexOf('\n});', start);
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
   const handler = app.slice(start, end);
-  assert.match(handler, /if \(dictationRecognition\) \{\s*try \{ dictationRecognition\.abort\(\); \} catch \{\}\s*dictationRecognition = null;/);
+  assert.match(handler, /if \(useNativeDictation && dictationRecognition\)/);
+  assert.match(handler, /NativeSpeechRecognition\.stop\(\)\.catch\(\(\) => \{\}\)/);
+  assert.match(handler, /dictationRecognition\.abort\(\)/);
+  assert.match(handler, /dictationRecognition = null/);
   assert.match(handler, /\{once:true\}/);
 });
 
@@ -882,4 +900,419 @@ test("daily progress restoration accepts only explicit completed booleans", asyn
   assert.match(restore, /input\.checked = progress\.tasks\[index\] === true/);
   assert.match(restore, /if \(!Array\.isArray\(saved\)\) continue/);
   assert.match(restore, /input\.checked = saved\[index\] === true/);
+});
+
+
+test("PlanSamen homepage is client-first and uses a modern responsive layout", () => {
+  assert.doesNotMatch(html, /role-entry-panel|Ik ben begeleider|Ik ben cliënt/);
+  assert.match(html, /Mijn planning/);
+  assert.match(html, /Mijn routines/);
+  assert.match(html, /Laat zien wat ik nodig heb/);
+  assert.match(html, /cliënten/i);
+  assert.match(css, /--bg:#f5f7fb/);
+  assert.match(css, /\.client-focus-strip\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(css, /@media\(max-width:900px\)/);
+  assert.match(css, /prefers-reduced-motion:reduce/);
+  assert.match(css, /button:focus-visible/);
+});
+
+test("PlanSamen blocks appointment overlaps per profile but allows back-to-back appointments", () => {
+  const minutesStart = lifeSuite.indexOf("  function minutes(value) {");
+  const conflictStart = lifeSuite.indexOf("  function appointmentConflict(candidate, pool) {", minutesStart);
+  const conflictEnd = lifeSuite.indexOf("\n    function formData", conflictStart);
+  assert.notEqual(minutesStart, -1, "missing time-to-minutes helper");
+  assert.notEqual(conflictStart, -1, "missing appointment conflict helper");
+  assert.ok(conflictEnd > conflictStart, "appointment conflict helper should have a complete body");
+  const overlapHelper = lifeSuite.slice(minutesStart, conflictStart);
+  const conflictHelper = lifeSuite.slice(conflictStart, conflictEnd);
+  assert.match(overlapHelper, /appointmentStartMinutes\(a\) < appointmentEndMinutes\(b\)/);
+  assert.match(overlapHelper, /appointmentStartMinutes\(b\) < appointmentEndMinutes\(a\)/);
+  assert.match(conflictHelper, /if \(a\.id === candidate\.id\) return false/);
+  assert.match(conflictHelper, /a\.profileId \|\| "self"/);
+  assert.match(conflictHelper, /\(a\.date === candidate\.date && a\.start === candidate\.start\) \|\| overlap\(a,candidate\)/);
+
+  const createHelpers = new Function("state", "visibleItems", `${overlapHelper}\n${conflictHelper}\nreturn { overlap, appointmentConflict };`);
+  const helpers = createHelpers({ currentProfileId: "client-1" }, () => []);
+  const base = { id: "candidate", profileId: "client-1", date: "2026-10-22", start: "10:30", end: "11:30" };
+  const existing = { id: "existing", profileId: "client-1", date: "2026-10-22", start: "10:00", end: "11:00" };
+  assert.equal(helpers.appointmentConflict(base, [existing])?.id, "existing", "overlapping appointments for the same profile must conflict");
+  assert.equal(helpers.appointmentConflict({ ...base, start: "11:00", end: "12:00" }, [existing]), null, "appointments that touch at the end time must be allowed");
+  assert.equal(helpers.appointmentConflict({ ...base, profileId: "client-2" }, [existing]), null, "appointments belonging to another profile must not conflict");
+  assert.equal(helpers.appointmentConflict({ ...base, profileId: "client-2", workerId: "shared-worker" }, [{ ...existing, workerId: "shared-worker" }])?.id, "existing", "the same assigned support worker must not be double-booked across profiles when the worker identity is shared");
+  assert.equal(helpers.appointmentConflict({ ...base, profileId: "client-2", workerId: "worker-2" }, [{ ...existing, workerId: "worker-1" }]), null, "different profiles with different assigned workers may have simultaneous appointments");
+  assert.equal(helpers.appointmentConflict({ ...base, start: "10:00", end: "10:45" }, [existing])?.id, "existing", "identical start times must conflict");
+
+  const buffered = { ...existing, id: "buffered", start: "10:00", end: "10:30", bufferMins: 15 };
+  const afterBuffer = { ...base, id: "after-buffer", start: "10:40", end: "11:00" };
+  assert.equal(helpers.appointmentConflict(afterBuffer, [buffered])?.id, "buffered", "an appointment must be blocked during another appointment's transition buffer");
+  assert.equal(helpers.appointmentConflict({ ...afterBuffer, start: "10:45" }, [buffered]), null, "the exact end of a transition buffer must be available");
+  const withOwnBuffer = { ...base, start: "10:00", end: "10:30", bufferMins: 15 };
+  const laterAppointment = { ...existing, id: "later", start: "10:40", end: "11:00" };
+  assert.equal(helpers.appointmentConflict(withOwnBuffer, [laterAppointment])?.id, "later", "a new appointment's own transition buffer must also reserve time");
+
+  const late = { ...existing, id: "late", date: "2026-10-22", start: "23:30", end: "23:45", bufferMins: 30 };
+  const nextDay = { ...base, id: "next-day", date: "2026-10-23", start: "00:10", end: "00:30" };
+  assert.equal(helpers.appointmentConflict(nextDay, [late])?.id, "late", "a buffer that runs past midnight must block a too-early next-day appointment");
+  assert.equal(helpers.appointmentConflict({ ...nextDay, start: "00:15" }, [late]), null, "the exact next-day buffer boundary must remain available");
+  assert.match(lifeSuite, /select\(t\("bufferAfter"\),"bufferMins"/, "the appointment form should expose the accessible buffer choice");
+  assert.match(lifeSuite, /bufferMins:Number\(v\.bufferMins\)\|\|0/, "the chosen transition buffer must be saved with the appointment");
+});
+
+
+test("weekly appointment series clearly explains edit and deletion scope", () => {
+  const noticeStart = lifeSuite.indexOf("  function appointmentSeriesNotice(a) {");
+  const noticeEnd = lifeSuite.indexOf("  function agendaView()", noticeStart);
+  assert.notEqual(noticeStart, -1, "missing appointment series notice");
+  assert.ok(noticeEnd > noticeStart, "appointment series notice should have a complete body");
+  const noticeSource = lifeSuite.slice(noticeStart, noticeEnd);
+  const createNotice = new Function("t", "esc", noticeSource + "\nreturn appointmentSeriesNotice;");
+  const notice = createNotice(
+    key => key === "seriesRootHint" ? "Whole series" : "Only this appointment",
+    value => String(value)
+  );
+  assert.match(notice({ id: "weekly-root", seriesId: "weekly-root", repeat: "weekly" }), /Whole series/);
+  assert.match(notice({ id: "occurrence", seriesId: "weekly-root", repeat: "none" }), /Only this appointment/);
+  assert.equal(notice(null), "");
+  assert.ok(lifeSuite.includes('esc(t("seriesOccurrence"))'), "series occurrences should be identified in the appointment list");
+  assert.ok(lifeSuite.includes('const seriesOccurrence=Boolean(target.seriesId&&!seriesRoot);const confirmation=seriesRoot?t("deleteWholeSeriesConfirm"):(seriesOccurrence?t("deleteSeriesOccurrenceConfirm"):t("deleteItem"));if(!window.confirm(confirmation))return;'), "deletion should confirm whether one appointment or the whole series is removed");
+  assert.ok(lifeSuite.includes("De rest van de weekreeks blijft staan."), "Dutch occurrence deletion guidance should be available");
+  assert.ok(lifeSuite.includes("The rest of the weekly series will stay."), "English occurrence deletion guidance should be available");
+  assert.ok(lifeSuite.includes("Dit is één afspraak uit een wekelijkse reeks."), "Dutch editing guidance should be available");
+  assert.ok(lifeSuite.includes("This is one appointment in a weekly series."), "English editing guidance should be available");
+});
+
+test("appointment conflict messages explain reserved buffer time in Dutch and English", () => {
+  assert.ok(lifeSuite.includes("gereserveerde reistijd/rust vallen niet op"), "Dutch guidance should mention reserved transition time");
+  assert.ok(lifeSuite.includes("gereserveerde vrije tijd"), "Dutch conflict message should explain buffer conflicts");
+  assert.ok(lifeSuite.includes("reserved travel/rest time"), "English guidance should mention reserved transition time");
+  assert.ok(lifeSuite.includes("reserved buffer time"), "English conflict message should explain buffer conflicts");
+});
+
+test("PlanSamen blocks overlapping shifts for the same support worker", () => {
+  const minutesStart = lifeSuite.indexOf("  function minutes(value) {");
+  const minutesEnd = lifeSuite.indexOf("function bufferMinutes(", minutesStart);
+  const conflictStart = lifeSuite.indexOf("  function shiftConflict(candidate, pool) {");
+  const conflictEnd = lifeSuite.indexOf("function formData(", conflictStart);
+  assert.notEqual(minutesStart, -1, "missing time-to-minutes helper");
+  assert.ok(minutesEnd > minutesStart, "time-to-minutes helper should have a complete body");
+  assert.notEqual(conflictStart, -1, "missing shift conflict helper");
+  assert.ok(conflictEnd > conflictStart, "shift conflict helper should have a complete body");
+  const minutesHelper = lifeSuite.slice(minutesStart, minutesEnd);
+  const shiftHelper = lifeSuite.slice(conflictStart, conflictEnd);
+  const createConflict = new Function("visibleItems", minutesHelper + "\n" + shiftHelper + "\nreturn shiftConflict;");
+  const shiftConflict = createConflict(() => []);
+  const existing = { id: "shift-1", workerId: "worker-1", date: "2026-10-22", start: "10:00", end: "11:00" };
+  const candidate = { id: "shift-2", workerId: "worker-1", date: "2026-10-22", start: "10:30", end: "11:30" };
+  assert.equal(shiftConflict(candidate, [existing])?.id, "shift-1", "overlapping shifts for the same support worker must conflict");
+  assert.equal(shiftConflict({ ...candidate, start: "11:00", end: "12:00" }, [existing]), null, "back-to-back shifts must be allowed");
+  assert.equal(shiftConflict({ ...candidate, workerId: "worker-2" }, [existing]), null, "different support workers may work at the same time");
+  assert.equal(shiftConflict({ ...candidate, date: "2026-10-23" }, [existing]), null, "the same support worker may work at a different time on another date");
+  assert.equal(shiftConflict({ ...existing, end: "12:00" }, [existing]), null, "editing the same shift must not conflict with itself");
+  assert.ok(lifeSuite.includes('const shiftOverlap=shiftConflict(item,visibleItems("shifts","roster"));if(shiftOverlap){setStatus(t("shiftOverlap"),true);return;}'), "shift saving must be blocked before existing data is changed");
+  assert.ok(lifeSuite.includes("Deze begeleider heeft op deze datum al een dienst die overlapt."), "Dutch conflict feedback should be available");
+  assert.ok(lifeSuite.includes("This support worker already has an overlapping shift on this date."), "English conflict feedback should be available");
+});
+
+test("client appointment form does not expose caregiver assignment", () => {
+  assert.ok(!lifeSuite.includes('select(t("appointmentWorker"),"workerId"'), "client appointment form must not offer a caregiver selector");
+  assert.ok(!lifeSuite.includes('esc(t("assignedTo")) + ": " + esc(worker.name)'), "client appointment cards must not display caregiver assignment");
+  assert.ok(lifeSuite.includes('workerId:""'), "new client appointments should not be assigned to a caregiver");
+  assert.ok(lifeSuite.includes("const sameWorker = Boolean(candidate.workerId && a.workerId && a.workerId === candidate.workerId)"), "internal conflict protection should remain available for legacy records");
+});
+
+test("deleting a support worker keeps appointment links consistent and permission-safe", () => {
+  assert.ok(lifeSuite.includes('const linkedAppointments=state.appointments.filter(a=>a.workerId===id)'), "worker deletion should find linked appointments");
+  assert.ok(lifeSuite.includes('const linkedShifts=state.shifts.filter(s=>s.workerId===id)'), "worker deletion should find linked roster shifts");
+  assert.ok(lifeSuite.includes('linkedAppointments.some(a=>!canModify("calendar",a))||linkedShifts.some(s=>!canModify("roster",s))'), "worker deletion should respect permissions for linked records");
+  assert.ok(lifeSuite.includes('state.appointments=state.appointments.map(a=>a.workerId===id?Object.assign({},a,{workerId:"",updatedAt:now}):a)'), "appointments should remain but lose a removed worker assignment");
+  assert.ok(lifeSuite.includes('state.shifts=state.shifts.filter(s=>s.workerId!==id)'), "roster shifts for the removed worker should be deleted");
+  assert.ok(lifeSuite.includes("Bestaande afspraken blijven bestaan, maar de koppeling met deze begeleider wordt verwijderd."), "Dutch confirmation should explain what happens to assigned appointments");
+  assert.ok(lifeSuite.includes("Existing appointments will remain, but their assignment to this support worker will be cleared."), "English confirmation should explain what happens to assigned appointments");
+  assert.ok(lifeSuite.includes("waarvoor je geen wijzigtoestemming hebt"), "Dutch permission feedback should explain why linked records block deletion");
+  assert.ok(lifeSuite.includes("you do not have permission to change"), "English permission feedback should explain why linked records block deletion");
+});
+
+test("appointment conflict feedback is specific within a profile and private across profiles", () => {
+  const helperStart = lifeSuite.indexOf("  function appointmentConflictFeedback(candidate, conflict, exactDuplicate) {");
+  const helperEnd = lifeSuite.indexOf("  function shiftConflict(", helperStart);
+  assert.notEqual(helperStart, -1, "missing appointment conflict feedback helper");
+  assert.ok(helperEnd > helperStart, "appointment conflict feedback helper should have a complete body");
+  const helperSource = lifeSuite.slice(helperStart, helperEnd);
+  const createFeedback = new Function("state", "t", "prettyDate", helperSource + "\nreturn appointmentConflictFeedback;");
+  const translations = {
+    exactDuplicate: "Exact duplicate",
+    overlapBlocked: "Overlapping appointment",
+    conflictWith: "Conflicts with",
+    workerBusyConflict: "Assigned support worker is busy; private details are hidden"
+  };
+  const feedback = createFeedback({ currentProfileId: "client-1" }, key => translations[key] || key, date => date);
+  const ownConflict = { profileId: "client-1", title: "Doctor appointment", date: "2026-10-22", start: "10:00", end: "10:30" };
+  const specific = feedback({ profileId: "client-1" }, ownConflict, false);
+  assert.match(specific, /Overlapping appointment/);
+  assert.match(specific, /Conflicts with: Doctor appointment/);
+  assert.match(specific, /2026-10-22 · 10:00–10:30/);
+  const otherProfileConflict = { ...ownConflict, profileId: "client-2", title: "Private support meeting" };
+  const privateMessage = feedback({ profileId: "client-1" }, otherProfileConflict, false);
+  assert.equal(privateMessage, translations.workerBusyConflict);
+  assert.ok(!privateMessage.includes("Private support meeting"), "cross-profile feedback must not disclose another client's appointment title");
+  assert.equal(feedback({ profileId: "client-1" }, ownConflict, true).startsWith("Exact duplicate"), true);
+  assert.equal(feedback({ profileId: "client-1" }, null, false), "");
+  assert.ok(lifeSuite.includes('const exactDuplicate=foundConflicts.find(item=>item.conflict.date===item.candidate.date&&item.conflict.start===item.candidate.start);'), "an exact duplicate must match both date and start time");
+  assert.ok(lifeSuite.includes("appointmentConflictFeedback(first.candidate,first.conflict,false)"), "normal overlap feedback should name the existing appointment only in the same profile");
+  assert.ok(lifeSuite.includes("Details of that appointment are hidden."), "English cross-profile feedback should explain the privacy boundary");
+  assert.ok(lifeSuite.includes("De gegevens van die afspraak worden niet getoond."), "Dutch cross-profile feedback should explain the privacy boundary");
+});
+
+test("PlanSamen backend reference schema blocks overlapping caregiver appointments and shifts", async () => {
+  const schema = await readFile(new URL("../backend/plansamen/reference-schema.sql", import.meta.url), "utf8");
+  assert.match(schema, /CONSTRAINT plansamen_client_appointments_no_overlap[\s\S]*?EXCLUDE USING gist/);
+  assert.match(schema, /CONSTRAINT plansamen_caregiver_appointments_no_overlap[\s\S]*?EXCLUDE USING gist[\s\S]*?assigned_caregiver_user_id WITH =/);
+  assert.match(schema, /WHERE \(status = 'scheduled' AND assigned_caregiver_user_id IS NOT NULL\)/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS plansamen_roster_shifts/);
+  assert.match(schema, /CONSTRAINT plansamen_caregiver_shifts_no_overlap[\s\S]*?EXCLUDE USING gist[\s\S]*?caregiver_user_id WITH =/);
+  assert.match(schema, /tstzrange\(starts_at, ends_at, '\[\)'\)/);
+  assert.match(schema, /ALTER TABLE plansamen_roster_shifts ENABLE ROW LEVEL SECURITY/);
+  assert.match(schema, /ALTER TABLE plansamen_roster_shifts FORCE ROW LEVEL SECURITY/);
+  assert.match(schema, /Intentionally no client-facing policies yet/);
+});
+
+test("PlanSamen backend reference schema documents least-privilege role and relationship gates", async () => {
+  const schema = await readFile(new URL("../backend/plansamen/reference-schema.sql", import.meta.url), "utf8");
+  assert.match(schema, /Protect profile role fields from self-promotion/);
+  assert.match(schema, /active relationship exists/);
+  assert.match(schema, /assigned_caregiver_user_id must be NULL or match an active relationship/);
+  assert.match(schema, /Relationship revocation must be atomic/);
+  assert.match(schema, /clients must never read raw audit logs/);
+  assert.match(schema, /Keep default-deny until the trusted auth model/);
+  for (const table of ["plansamen_profiles", "plansamen_relationships", "plansamen_appointments", "plansamen_roster_shifts", "plansamen_audit_events"]) {
+    assert.match(schema, new RegExp("ALTER TABLE " + table + " ENABLE ROW LEVEL SECURITY"));
+    assert.match(schema, new RegExp("ALTER TABLE " + table + " FORCE ROW LEVEL SECURITY"));
+  }
+});
+
+test("PlanSamen API contract specifies authenticated routes, safe errors, revocation and negative security tests", async () => {
+  const contract = await readFile(new URL("../docs/PLAN-SAMEN-API-CONTRACT.md", import.meta.url), "utf8");
+  assert.match(contract, /PATCH \| `\/api\/v1\/me` \|[^\n]*rol en user-ID zijn niet wijzigbaar/);
+  assert.match(contract, /\/api\/v1\/relationships\/\{id\}\/revoke/);
+  assert.match(contract, /\/api\/v1\/clients\/\{clientId\}\/appointments/);
+  assert.match(contract, /APPOINTMENT_OVERLAP/);
+  assert.match(contract, /RELATIONSHIP_NOT_ACTIVE/);
+  assert.match(contract, /geen toegang met een oud relatie-ID/);
+  assert.match(contract, /Twee gelijktijdige overlappende verzoeken/);
+  assert.match(contract, /Geen service-role-sleutel in clientbundel/);
+  assert.match(contract, /Geen productiegebruik met echte cliëntgegevens/);
+});
+
+test("PlanSamen API scaffold fails closed until authentication and database are configured", async (t) => {
+  const { createPlanSamenApiServer } = await import("../backend/plansamen/server.mjs");
+  const server = createPlanSamenApiServer();
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  t.after(() => new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve())));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  const health = await fetch(`${baseUrl}/api/v1/healthz`);
+  assert.equal(health.status, 200);
+  assert.equal(health.headers.get("cache-control"), "no-store");
+  assert.deepEqual(await health.json(), {
+    status: "prototype",
+    backendConfigured: false,
+    acceptsPersonalData: false
+  });
+
+  const protectedAttempt = await fetch(`${baseUrl}/api/v1/clients/other-user/appointments`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ title: "private appointment", client_user_id: "other-user" })
+  });
+  assert.equal(protectedAttempt.status, 503);
+  const failure = await protectedAttempt.json();
+  assert.equal(failure.error.code, "BACKEND_NOT_CONFIGURED");
+  assert.equal(JSON.stringify(failure).includes("private appointment"), false);
+
+  const unknown = await fetch(`${baseUrl}/not-an-api-route`);
+  assert.equal(unknown.status, 404);
+});
+
+test("PlanSamen API boundary returns secure headers and rejects all data routes without a backend", async (t) => {
+  const { createPlanSamenApiServer } = await import("../backend/plansamen/server.mjs");
+  const server = createPlanSamenApiServer();
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  t.after(() => new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve())));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  for (const [method, path] of [
+    ["GET", "/api/v1/me"],
+    ["POST", "/api/v1/auth/register"],
+    ["POST", "/api/v1/clients/client-a/appointments"],
+    ["PATCH", "/api/v1/clients/client-a/appointments/appointment-a"],
+    ["DELETE", "/api/v1/clients/client-a/appointments/appointment-a"],
+    ["POST", "/api/v1/relationships/relationship-a/revoke"],
+    ["POST", "/api/v1/me/roster-shifts"]
+  ]) {
+    const response = await fetch(baseUrl + path, { method });
+    assert.equal(response.status, 503, `${method} ${path} must fail closed`);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(response.headers.get("x-frame-options"), "DENY");
+    assert.equal(response.headers.get("content-security-policy"), "default-src 'none'; frame-ancestors 'none'");
+    const body = await response.json();
+    assert.equal(body.error.code, "BACKEND_NOT_CONFIGURED");
+    assert.ok(body.error.requestId);
+    assert.equal(JSON.stringify(body).includes("client-a"), false);
+  }
+
+  const wrongMethod = await fetch(baseUrl + "/api/v1/healthz", { method: "POST" });
+  assert.equal(wrongMethod.status, 503);
+  const unknown = await fetch(baseUrl + "/outside");
+  assert.equal(unknown.status, 404);
+  assert.equal((await unknown.json()).error.code, "NOT_FOUND");
+});
+
+test("PlanSamen appointment rules validate intervals and allow adjacent appointments", async () => {
+  const { validateAppointmentInterval, intervalsOverlap, AppointmentRuleError } =
+    await import("../backend/plansamen/appointment-rules.mjs");
+  const first = {
+    id: "a1", clientId: "client-a", caregiverId: "worker-1",
+    startsAt: "2026-10-22T10:00:00Z", endsAt: "2026-10-22T10:30:00Z",
+    status: "scheduled"
+  };
+  const adjacent = { ...first, id: "a2", startsAt: first.endsAt, endsAt: "2026-10-22T11:00:00Z" };
+  assert.deepEqual(validateAppointmentInterval(first), {
+    start: Date.parse(first.startsAt), end: Date.parse(first.endsAt)
+  });
+  assert.equal(intervalsOverlap(first, adjacent), false);
+  assert.throws(() => validateAppointmentInterval({ ...first, endsAt: first.startsAt }),
+    error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR");
+  assert.throws(() => validateAppointmentInterval({ ...first, startsAt: "not-a-date" }),
+    error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR");
+});
+
+test("PlanSamen appointment rules detect client and caregiver conflicts without leaking private data", async () => {
+  const { findAppointmentConflict } = await import("../backend/plansamen/appointment-rules.mjs");
+  const existing = {
+    id: "existing", clientId: "client-a", caregiverId: "worker-1",
+    startsAt: "2026-10-22T10:00:00Z", endsAt: "2026-10-22T10:30:00Z",
+    status: "scheduled", title: "Private medical appointment", notes: "private notes"
+  };
+  const sameClient = { ...existing, id: "candidate", startsAt: "2026-10-22T10:15:00Z", endsAt: "2026-10-22T10:45:00Z" };
+  const clientConflict = findAppointmentConflict(sameClient, [existing]);
+  assert.deepEqual(clientConflict, { code: "APPOINTMENT_OVERLAP", scope: "client" });
+  assert.equal(JSON.stringify(clientConflict).includes("Private medical appointment"), false);
+  assert.equal(JSON.stringify(clientConflict).includes("private notes"), false);
+
+  const otherClientSameWorker = {
+    ...sameClient, clientId: "client-b", caregiverId: "worker-1"
+  };
+  assert.deepEqual(findAppointmentConflict(otherClientSameWorker, [existing]),
+    { code: "APPOINTMENT_OVERLAP", scope: "caregiver" });
+});
+
+test("PlanSamen appointment rules ignore cancelled entries and the appointment being updated", async () => {
+  const { findAppointmentConflict } = await import("../backend/plansamen/appointment-rules.mjs");
+  const existing = {
+    id: "a1", clientId: "client-a", caregiverId: null,
+    startsAt: "2026-10-22T10:00:00Z", endsAt: "2026-10-22T10:30:00Z",
+    status: "scheduled"
+  };
+  const candidate = { ...existing, startsAt: "2026-10-22T10:10:00Z", endsAt: "2026-10-22T10:20:00Z" };
+  assert.equal(findAppointmentConflict(candidate, [{ ...existing, status: "cancelled" }]), null);
+  assert.equal(findAppointmentConflict(candidate, [existing]), null, "updating the same row must not conflict with itself");
+  assert.equal(findAppointmentConflict({ ...candidate, status: "cancelled" }, [existing]), null);
+  assert.throws(() => findAppointmentConflict(candidate, null), /existingAppointments must be an array/);
+});
+
+
+test("PlanSamen appointment service requires trusted identity and an active relationship", async () => {
+  const { createAppointmentService, AppointmentRuleError } = await import("../backend/plansamen/appointment-service.mjs").then(async service => ({
+    ...service,
+    AppointmentRuleError: (await import("../backend/plansamen/appointment-rules.mjs")).AppointmentRuleError
+  }));
+  const calls = [];
+  const repository = {
+    withTransaction: async callback => callback({
+      hasActiveRelationship: async (caregiverId, clientId) => {
+        calls.push(["relationship", caregiverId, clientId]);
+        return caregiverId === "worker-1" && clientId === "client-a";
+      },
+      findPotentialConflicts: async () => [],
+      insertAppointment: async row => ({ id: "new-appointment", ...row })
+    })
+  };
+  const service = createAppointmentService(repository);
+  const input = {
+    clientId: "client-a", caregiverId: "worker-1",
+    startsAt: "2026-10-22T10:00:00Z", endsAt: "2026-10-22T10:30:00Z",
+    title: "Check-in"
+  };
+
+  await assert.rejects(service.create({ actor: null, input }),
+    error => error instanceof AppointmentRuleError && error.code === "UNAUTHENTICATED");
+  await assert.rejects(service.create({ actor: { userId: "client-b", role: "client" }, input }),
+    error => error instanceof AppointmentRuleError && error.code === "FORBIDDEN");
+  await assert.rejects(service.create({ actor: { userId: "worker-2", role: "caregiver" }, input }),
+    error => error instanceof AppointmentRuleError && error.code === "FORBIDDEN");
+  assert.ok(calls.some(call => call[0] === "relationship" && call[1] === "worker-2" && call[2] === "client-a"));
+});
+
+test("PlanSamen appointment service sets creator from trusted actor and blocks overlaps", async () => {
+  const { createAppointmentService } = await import("../backend/plansamen/appointment-service.mjs");
+  const { AppointmentRuleError } = await import("../backend/plansamen/appointment-rules.mjs");
+  const base = {
+    clientId: "client-a", caregiverId: null,
+    startsAt: "2026-10-22T10:00:00Z", endsAt: "2026-10-22T10:30:00Z",
+    title: "Afspraak"
+  };
+  let inserted = null;
+  let shouldConflict = false;
+  const repository = {
+    withTransaction: async callback => callback({
+      hasActiveRelationship: async () => false,
+      findPotentialConflicts: async () => shouldConflict ? [{
+        id: "other", clientId: "client-a", caregiverId: null,
+        startsAt: "2026-10-22T10:15:00Z", endsAt: "2026-10-22T10:45:00Z",
+        status: "scheduled", title: "Confidential"
+      }] : [],
+      insertAppointment: async row => (inserted = { id: "new", ...row })
+    })
+  };
+  const service = createAppointmentService(repository);
+  const actor = { userId: "client-a", role: "client" };
+  const created = await service.create({ actor, input: { ...base, title: "  afspraak  " } });
+  assert.equal(created.createdByUserId, "client-a");
+  assert.equal(created.status, "scheduled");
+  assert.equal(created.title, "afspraak");
+  assert.equal(inserted.createdByUserId, "client-a");
+
+  shouldConflict = true;
+  await assert.rejects(service.create({ actor, input: base }),
+    error => error instanceof AppointmentRuleError && error.code === "APPOINTMENT_OVERLAP");
+});
+
+test("PlanSamen appointment service maps database exclusion violations to a safe conflict error", async () => {
+  const { createAppointmentService } = await import("../backend/plansamen/appointment-service.mjs");
+  const { AppointmentRuleError } = await import("../backend/plansamen/appointment-rules.mjs");
+  const repository = {
+    withTransaction: async callback => callback({
+      hasActiveRelationship: async () => true,
+      findPotentialConflicts: async () => [],
+      insertAppointment: async () => { throw Object.assign(new Error("private SQL details"), { code: "23P01" }); }
+    })
+  };
+  const service = createAppointmentService(repository);
+  await assert.rejects(service.create({
+    actor: { userId: "client-a", role: "client" },
+    input: {
+      clientId: "client-a", startsAt: "2026-10-22T10:00:00Z",
+      endsAt: "2026-10-22T10:30:00Z", title: "Afspraak"
+    }
+  }), error => error instanceof AppointmentRuleError &&
+    error.code === "APPOINTMENT_OVERLAP" && !error.message.includes("private SQL details"));
 });

@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101320">
-  <meta name="description" content="Een rustige, toegankelijke plek voor overzicht, routines en communicatie.">
+  <meta name="description" content="PlanSamen: een moderne, toegankelijke dagplanner voor cliënten.">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <title>Project N-01 — jouw dag, op jouw manier</title>
+  <title>PlanSamen — mijn dag, mijn overzicht</title>
   <link rel="stylesheet" href="src/styles.css">
   <link rel="stylesheet" href="src/life-suite.css">
   <script src="src/app.js" defer></script>
@@ -17,9 +17,9 @@
   <a class="skip-link" href="#main" data-i18n="skip">Ga naar de inhoud</a>
   <div class="app-shell">
     <aside class="sidebar" aria-label="Hoofdnavigatie" data-i18n-aria-label="mainNavigationLabel">
-      <a class="brand" href="#home" aria-label="Project N-01 startpagina">
+      <a class="brand" href="#home" aria-label="PlanSamen startpagina">
         <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span><strong>Project N-01</strong><small data-i18n="brandline">Ruimte voor jouw dag</small></span>
+        <span><strong>PlanSamen</strong><small data-i18n="brandline">Ruimte voor jouw dag</small></span>
       </a>
       <nav class="nav-list">
         <button class="nav-item active" data-view="home" aria-current="page"><span aria-hidden="true">◈</span><span data-i18n="navToday">Mijn dag</span></button>
@@ -37,7 +37,7 @@
 
     <main id="main" class="main-content" tabindex="-1">
       <header class="topbar">
-        <div class="mobile-brand"><span class="brand-mark small" aria-hidden="true"><span></span><span></span><span></span></span><strong>Project N-01</strong></div>
+        <div class="mobile-brand"><span class="brand-mark small" aria-hidden="true"><span></span><span></span><span></span></span><strong>PlanSamen</strong></div>
         <div class="topbar-spacer"></div>
         <label class="language-control"><span class="sr-only" data-i18n="language">Taal</span>
           <select id="language" aria-label="Taal kiezen" data-i18n-aria-label="languageSelectLabel">
@@ -62,6 +62,11 @@
           <div><p class="eyebrow" data-i18n="yourOverview">JOUW OVERZICHT</p><h2 id="home-title" data-i18n="todayTitle">Vandaag, stap voor stap</h2></div>
           <span class="date-pill" id="today-date"></span>
         </div>
+        <section class="client-focus-strip" aria-label="Snelle acties">
+          <a class="client-focus-card" href="#view-life" data-view="life"><span class="client-focus-icon" aria-hidden="true">🗓️</span><span><strong>Mijn planning</strong><small>Bekijk mijn afspraken en dagindeling</small></span><span aria-hidden="true">↗</span></a>
+          <a class="client-focus-card" href="#view-routines" data-view="routines"><span class="client-focus-icon" aria-hidden="true">✓</span><span><strong>Mijn routines</strong><small>Stap voor stap door mijn dag</small></span><span aria-hidden="true">↗</span></a>
+          <a class="client-focus-card" href="#view-communicate" data-view="communicate"><span class="client-focus-icon" aria-hidden="true">💬</span><span><strong>Laat zien wat ik nodig heb</strong><small>Gebruik een zin of communicatiehulp</small></span><span aria-hidden="true">↗</span></a>
+        </section>
         <div class="stats-grid">
           <article class="stat-card"><span class="stat-icon lilac">◷</span><div><span class="stat-label" data-i18n="tasksDone">Taken afgerond</span><strong id="task-count">0 / 3</strong></div><div class="progress-track"><span id="progress-fill"></span></div></article>
           <article class="stat-card"><span class="stat-icon mint">✧</span><div><span class="stat-label" data-i18n="pace">Jouw tempo</span><strong data-i18n="noRush">Geen haast</strong></div><p class="stat-foot" data-i18n="paceFoot">Pauze nemen mag altijd.</p></article>
@@ -209,7 +214,7 @@
         </section>
       </section>
 
-      <footer class="app-footer"><span>✦ Project N-01</span><span data-i18n="footerText">Een kleine stap is ook een stap.</span></footer>
+      <footer class="app-footer"><span>✦ PlanSamen</span><span data-i18n="footerText">Een kleine stap is ook een stap.</span></footer>
           <section class="view" id="view-life" aria-labelledby="life-title">
         <div class="section-heading"><div><p class="eyebrow">PROJECT N-01</p><h2 id="life-title" data-i18n="navLife">Mijn leven</h2><p class="section-subtitle" data-i18n="lifeSuiteIntro">Agenda, begeleiders, stemming, hulp en veilige persoonlijke gegevens.</p></div></div>
         <div id="life-suite-root"><p class="inline-status" role="status">Persoonlijke module wordt geladen…</p></div>

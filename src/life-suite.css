@@ -142,3 +142,19 @@
 .ls-plan-summary small { color:var(--mint); }
 @media(min-width:760px) { .ls-weekplan-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(min-width:1180px) { .ls-weekplan-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+
+
+/* PlanSamen: clear, large and keyboard-accessible appointment pictograms */
+.ls-appointment-card { display:grid; grid-template-columns:4.25rem minmax(0,1fr); gap:.85rem; align-items:start; }
+.ls-appointment-icon { display:grid; place-items:center; min-height:4.25rem; border-radius:1rem; background:var(--panel, #eef3f8); font-size:2.35rem; line-height:1; }
+.ls-appointment-content { min-width:0; }
+.ls-pictogram-picker { min-width:0; margin:0; padding:.9rem; border:1px solid var(--line); border-radius:1rem; }
+.ls-pictogram-picker legend { padding:0 .25rem; font-weight:750; font-size:1.05rem; }
+.ls-pictogram-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.6rem; }
+.ls-pictogram-choice { position:relative; display:flex; min-width:0; min-height:6rem; flex-direction:column; align-items:center; justify-content:center; gap:.4rem; padding:.55rem .35rem; border:2px solid var(--line); border-radius:.85rem; text-align:center; cursor:pointer; font-size:.92rem; line-height:1.25; }
+.ls-pictogram-choice input { width:1.3rem; height:1.3rem; margin:0; accent-color:var(--mint); }
+.ls-pictogram-choice:has(input:checked) { border-color:var(--mint); background:color-mix(in srgb, var(--mint) 12%, transparent); }
+.ls-pictogram-choice:focus-within { outline:3px solid var(--mint); outline-offset:2px; }
+.ls-pictogram-symbol { font-size:2rem; line-height:1.1; }
+@media(min-width:650px) { .ls-pictogram-options { grid-template-columns:repeat(5,minmax(0,1fr)); } }
+@media(max-width:380px) { .ls-pictogram-options { grid-template-columns:repeat(2,minmax(0,1fr)); } .ls-appointment-card { grid-template-columns:3.4rem minmax(0,1fr); gap:.6rem; } .ls-appointment-icon { min-height:3.4rem; font-size:1.9rem; } }
