@@ -50,6 +50,15 @@ export function createAppointmentService(repository) {
 
       // Match the reference schema's constraints before opening a transaction.
       // Reject invalid content consistently instead of relying on DB errors.
+      if (input.title !== undefined && typeof input.title !== "string") {
+        throw new AppointmentRuleError("VALIDATION_ERROR", "title must be text.");
+      }
+      if (input.pictogram !== undefined && typeof input.pictogram !== "string") {
+        throw new AppointmentRuleError("VALIDATION_ERROR", "pictogram must be text.");
+      }
+      if (input.notes !== undefined && typeof input.notes !== "string") {
+        throw new AppointmentRuleError("VALIDATION_ERROR", "notes must be text.");
+      }
       const title = typeof input.title === "string" ? input.title.trim() : "";
       const pictogram = typeof input.pictogram === "string" ? input.pictogram : "📅";
       const notes = typeof input.notes === "string" ? input.notes : "";
