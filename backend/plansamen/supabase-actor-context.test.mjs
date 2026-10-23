@@ -63,3 +63,48 @@ test("Supabase user metadata cannot grant a role when profile lookup fails", asy
     return true;
   });
 });
+
+
+test("invalid access token stops before trusted role lookup", async () => {
+  const calls = [];
+  const context = createSupabaseActorContext({
+    supabaseUrl: "https://example.supabase.co",
+    publishableKey: "sb_publishable_synthetic_test_key",
+    fetchImpl: async url => {
+      calls.push(String(url));
+      return new Response(JSON.stringify({ message: "invalid token" }), {
+        status: 401, headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  await assert.rejects(context.resolveActor(`Bearer ${TOKEN}`), error => {
+    assert.equal(error.code, "UNAUTHENTICATED");
+    return true;
+  });
+  assert.equal(calls.length, 1);
+  assert.match(calls[0], /\/auth\/v1\/user$/);
+});
+
+test("unknown database role is rejected even when the access token is valid", async () => {
+  const calls = [];
+  const context = createSupabaseActorContext({
+    supabaseUrl: "https://example.supabase.co",
+    publishableKey: "sb_publishable_synthetic_test_key",
+    fetchImpl: async url => {
+      calls.push(String(url));
+      const body = String(url).includes("/auth/v1/user")
+        ? { id: USER_ID, user_metadata: { role: "admin" } }
+        : [{ role: "superuser" }];
+      return new Response(JSON.stringify(body), {
+        status: 200, headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  await assert.rejects(context.resolveActor(`Bearer ${TOKEN}`), error => {
+    assert.equal(error.code, "FORBIDDEN");
+    return true;
+  });
+  assert.equal(calls.length, 2);
+});
