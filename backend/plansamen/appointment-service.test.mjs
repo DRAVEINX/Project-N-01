@@ -223,3 +223,19 @@ test("client-supplied trusted fields and unknown fields are rejected before tran
     assert.deepEqual(repository.calls, []);
   }
 });
+
+test("non-text appointment fields are rejected before transaction", async () => {
+  for (const input of [
+    { ...validInput, title: { text: "Dagplanning" } },
+    { ...validInput, pictogram: ["📅"] },
+    { ...validInput, notes: { private: "not text" } }
+  ]) {
+    const repository = repositoryWith();
+    const service = createAppointmentService(repository);
+    await assert.rejects(
+      service.create({ actor: { userId: "client-1", role: "client" }, input }),
+      error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR"
+    );
+    assert.deepEqual(repository.calls, []);
+  }
+});
