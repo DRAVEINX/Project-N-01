@@ -1013,14 +1013,12 @@ test("PlanSamen blocks overlapping shifts for the same support worker", () => {
   assert.ok(lifeSuite.includes("This support worker already has an overlapping shift on this date."), "English conflict feedback should be available");
 });
 
-test("appointments can be assigned to a support worker and show the assignment", () => {
-  assert.ok(lifeSuite.includes('select(t("appointmentWorker"),"workerId"'), "appointment form should offer a support worker selector");
-  assert.ok(lifeSuite.includes("workerId:v.workerId||\"\""), "the selected support worker should be stored with the appointment");
-  assert.ok(lifeSuite.includes('const worker = a.workerId ? state.workers.find(w => w.id === a.workerId'), "appointment cards should resolve the assigned support worker");
-  assert.ok(lifeSuite.includes('esc(t("assignedTo")) + ": " + esc(worker.name)'), "appointment cards should show the assigned support worker's name");
-  assert.ok(lifeSuite.includes("Begeleider voor deze afspraak"), "Dutch assignment label should be available");
-  assert.ok(lifeSuite.includes("Support worker for this appointment"), "English assignment label should be available");
-  assert.ok(lifeSuite.includes("const sameWorker = Boolean(candidate.workerId && a.workerId && a.workerId === candidate.workerId)"), "appointment conflict checks should consider a shared assigned worker across profiles");
+test("client appointment form does not expose caregiver assignment", () => {
+  assert.ok(!lifeSuite.includes('select(t("appointmentWorker"),"workerId"'), "client appointment form must not offer a caregiver selector");
+  assert.ok(!lifeSuite.includes("Begeleider voor deze afspraak"), "client UI must not show caregiver assignment labels");
+  assert.ok(!lifeSuite.includes("Support worker for this appointment"), "client UI must not show caregiver assignment labels in English");
+  assert.ok(lifeSuite.includes('workerId:""'), "new client appointments should not be assigned to a caregiver");
+  assert.ok(lifeSuite.includes("const sameWorker = Boolean(candidate.workerId && a.workerId && a.workerId === candidate.workerId)"), "internal conflict protection should remain available for legacy records");
 });
 
 test("deleting a support worker keeps appointment links consistent and permission-safe", () => {
