@@ -1015,8 +1015,7 @@ test("PlanSamen blocks overlapping shifts for the same support worker", () => {
 
 test("client appointment form does not expose caregiver assignment", () => {
   assert.ok(!lifeSuite.includes('select(t("appointmentWorker"),"workerId"'), "client appointment form must not offer a caregiver selector");
-  assert.ok(!lifeSuite.includes("Begeleider voor deze afspraak"), "client UI must not show caregiver assignment labels");
-  assert.ok(!lifeSuite.includes("Support worker for this appointment"), "client UI must not show caregiver assignment labels in English");
+  assert.ok(!lifeSuite.includes('esc(t("assignedTo")) + ": " + esc(worker.name)'), "client appointment cards must not display caregiver assignment");
   assert.ok(lifeSuite.includes('workerId:""'), "new client appointments should not be assigned to a caregiver");
   assert.ok(lifeSuite.includes("const sameWorker = Boolean(candidate.workerId && a.workerId && a.workerId === candidate.workerId)"), "internal conflict protection should remain available for legacy records");
 });
