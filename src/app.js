@@ -831,35 +831,80 @@ window.addEventListener("pagehide", () => {
 }, {once:true});
 
 
-// Optional browser speech recognition. Recognition may use a browser/provider service;
-// only final recognized text is appended to the note field, never auto-saved by this prototype.
+// Speech-to-text uses the native Capacitor recognizer on Android and falls back to
+// browser Web Speech where available. Only final recognized text is added to the note.
 const dictationStart = $("#start-speech-to-text");
 const dictationStop = $("#stop-speech-to-text");
 const dictationStatus = $("#speech-to-text-status");
 const noteTextField = $("#note-text");
-const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+const NativeSpeechRecognition = window.PlanSamenSpeechRecognition;
+const BrowserSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const useNativeDictation = Boolean(NativeSpeechRecognition && window.Capacitor?.isNativePlatform?.());
 let dictationRecognition = null;
+let dictationListener = null;
 let dictationHadResult = false;
+let dictationStarting = false;
+
 function setDictationButtons(listening) {
-  dictationStart.disabled = listening || !SpeechRecognitionAPI;
-  dictationStop.disabled = !listening;
+  dictationStart.disabled = listening || dictationStarting || (!useNativeDictation && !BrowserSpeechRecognition);
+  dictationStop.disabled = !listening && !dictationStarting;
 }
-if (!SpeechRecognitionAPI) {
+function appendDictationText(text) {
+  const addition = String(text || "").trim();
+  if (!addition) return;
+  noteTextField.value = noteTextField.value.trim()
+    ? noteTextField.value.replace(/\\s+$/, "") + " " + addition
+    : addition;
+  noteTextField.dispatchEvent(new Event("input", {bubbles:true}));
+  dictationHadResult = true;
+  dictationStatus.textContent = t("dictationAdded");
+}
+if (!useNativeDictation && !BrowserSpeechRecognition) {
   dictationStart.disabled = true;
   dictationStatus.textContent = t("dictationUnsupported");
 }
-dictationStart.addEventListener("click", () => {
-  if (!SpeechRecognitionAPI) {
-    dictationStatus.textContent = t("dictationUnsupported");
-    return;
-  }
+dictationStart.addEventListener("click", async () => {
+  if (dictationStarting || dictationRecognition) return;
+  dictationStarting = true;
+  dictationHadResult = false;
+  setDictationButtons(false);
+  dictationStatus.textContent = t("dictationStarted");
   try {
-    dictationRecognition = new SpeechRecognitionAPI();
+    if (useNativeDictation) {
+      const permission = await NativeSpeechRecognition.requestPermissions();
+      if (permission?.speechRecognition === "denied" || permission?.microphone === "denied") {
+        throw new Error("permission-denied");
+      }
+      const availability = await NativeSpeechRecognition.available();
+      if (!availability?.available) throw new Error("unavailable");
+      dictationListener = await NativeSpeechRecognition.addListener("partialResults", event => {
+        const matches = Array.isArray(event?.matches) ? event.matches : [];
+        const transcript = matches[0]?.trim();
+        if (transcript) {
+          // The plugin emits interim and final snapshots. Replace the latest partial
+          // while listening, and commit once when the user presses Stop.
+          dictationRecognition = { transcript };
+          dictationStatus.textContent = transcript;
+        }
+      });
+      await NativeSpeechRecognition.start({
+        language: language === "nl" ? "nl-NL" : "en-GB",
+        maxResults: 1,
+        partialResults: true,
+        popup: false
+      });
+      dictationRecognition = dictationRecognition || { transcript: "" };
+      dictationStarting = false;
+      setDictationButtons(true);
+      dictationStatus.textContent = t("dictationStarted");
+      return;
+    }
+    dictationRecognition = new BrowserSpeechRecognition();
     dictationRecognition.lang = language === "nl" ? "nl-NL" : "en-GB";
     dictationRecognition.continuous = true;
     dictationRecognition.interimResults = false;
-    dictationHadResult = false;
     dictationRecognition.addEventListener("start", () => {
+      dictationStarting = false;
       setDictationButtons(true);
       dictationStatus.textContent = t("dictationStarted");
     });
@@ -871,15 +916,7 @@ dictationStart.addEventListener("click", () => {
           if (transcript) phrases.push(transcript);
         }
       }
-      if (phrases.length) {
-        const addition = phrases.join(" ");
-        noteTextField.value = noteTextField.value.trim()
-          ? noteTextField.value.replace(/\s+$/, "") + " " + addition
-          : addition;
-        noteTextField.dispatchEvent(new Event("input", {bubbles:true}));
-        dictationHadResult = true;
-        dictationStatus.textContent = t("dictationAdded");
-      }
+      if (phrases.length) appendDictationText(phrases.join(" "));
     });
     dictationRecognition.addEventListener("error", event => {
       dictationStatus.textContent = event.error === "not-allowed" || event.error === "service-not-allowed"
@@ -887,29 +924,51 @@ dictationStart.addEventListener("click", () => {
     });
     dictationRecognition.addEventListener("end", () => {
       setDictationButtons(false);
-      if (!dictationHadResult && !dictationStatus.textContent.includes(t("dictationPermissionError")) &&
-          !dictationStatus.textContent.includes(t("dictationError"))) {
-        dictationStatus.textContent = t("dictationNoResult");
-      } else if (dictationHadResult && dictationStatus.textContent === t("dictationStarted")) {
-        dictationStatus.textContent = t("dictationStopped");
-      }
+      if (!dictationHadResult && dictationStatus.textContent === t("dictationStarted")) dictationStatus.textContent = t("dictationNoResult");
+      else if (dictationHadResult && dictationStatus.textContent === t("dictationStarted")) dictationStatus.textContent = t("dictationStopped");
       dictationRecognition = null;
     });
     dictationRecognition.start();
-  } catch {
-    setDictationButtons(false);
-    dictationStatus.textContent = t("dictationPermissionError");
+  } catch (error) {
+    dictationStarting = false;
     dictationRecognition = null;
+    setDictationButtons(false);
+    dictationStatus.textContent = error?.message === "permission-denied"
+      ? t("dictationPermissionError") : error?.message === "unavailable" ? t("dictationUnsupported") : t("dictationError");
+    if (dictationListener) {
+      try { await dictationListener.remove(); } catch {}
+      dictationListener = null;
+    }
   }
 });
-dictationStop.addEventListener("click", () => {
-  if (dictationRecognition) {
-    dictationRecognition.stop();
-    dictationStop.disabled = true;
+dictationStop.addEventListener("click", async () => {
+  try {
+    if (useNativeDictation && dictationRecognition) {
+      await NativeSpeechRecognition.stop();
+      const transcript = dictationRecognition.transcript;
+      if (transcript) appendDictationText(transcript);
+      if (dictationListener) await dictationListener.remove();
+      dictationListener = null;
+      dictationRecognition = null;
+      setDictationButtons(false);
+      dictationStatus.textContent = dictationHadResult ? t("dictationStopped") : t("dictationNoResult");
+    } else if (dictationRecognition) {
+      dictationRecognition.stop();
+      dictationStop.disabled = true;
+    }
+  } catch {
+    dictationRecognition = null;
+    setDictationButtons(false);
+    dictationStatus.textContent = t("dictationError");
   }
 });
 window.addEventListener("pagehide", () => {
-  if (dictationRecognition) {
+  if (useNativeDictation && dictationRecognition) {
+    NativeSpeechRecognition.stop().catch(() => {});
+    dictationListener?.remove().catch(() => {});
+    dictationRecognition = null;
+    dictationListener = null;
+  } else if (dictationRecognition) {
     try { dictationRecognition.abort(); } catch {}
     dictationRecognition = null;
   }
