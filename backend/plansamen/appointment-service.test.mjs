@@ -277,4 +277,9 @@ test("client can assign only a caregiver confirmed by the transactional relation
 
   assert.equal(result.assignedCaregiverUserId ?? result.caregiverId, "caregiver-1");
   assert.deepEqual(relationshipCalls, [["caregiver-1", "client-1"]]);
+  const transactionSteps = repository.calls.map(call => call[0]);
+  assert.ok(transactionSteps.indexOf("begin") < transactionSteps.indexOf("conflicts"));
+  assert.ok(transactionSteps.indexOf("relationship") < transactionSteps.indexOf("conflicts"));
+  assert.ok(transactionSteps.indexOf("conflicts") < transactionSteps.indexOf("insert"));
+  assert.equal(transactionSteps.at(-1), "commit");
 });
