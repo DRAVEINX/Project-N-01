@@ -239,3 +239,44 @@ test("non-text appointment fields are rejected before transaction", async () => 
     assert.deepEqual(repository.calls, []);
   }
 });
+
+
+test("client cannot assign a caregiver without an active relationship", async () => {
+  const repository = repositoryWith({
+    async hasActiveRelationship() {
+      return false;
+    }
+  });
+  const service = createAppointmentService(repository);
+
+  await assert.rejects(
+    service.create({
+      actor: { userId: "client-1", role: "client" },
+      input: { ...validInput, caregiverId: "caregiver-unlinked" }
+    }),
+    error => error instanceof AppointmentRuleError && error.code === "RELATIONSHIP_NOT_ACTIVE"
+  );
+  assert.equal(repository.calls.some(call => call[0] === "insert"), false);
+  assert.equal(repository.calls.at(-1)[0], "rollback");
+});
+
+test("client can assign only a caregiver confirmed by the transactional relationship lookup", async () => {
+  const repository = repositoryWith({
+    async hasActiveRelationship(caregiverId, clientId) {
+      return caregiverId === "caregiver-1" && clientId === "client-1";
+    }
+  });
+  const service = createAppointmentService(repository);
+
+  const result = await service.create({
+    actor: { userId: "client-1", role: "client" },
+    input: { ...validInput, caregiverId: "caregiver-1" }
+  });
+
+  assert.equal(result.assignedCaregiverUserId ?? result.caregiverId, "caregiver-1");
+  assert.ok(repository.calls.some(call =>
+    call[0] === "relationship" &&
+    call[1] === "caregiver-1" &&
+    call[2] === "client-1"
+  ));
+});
