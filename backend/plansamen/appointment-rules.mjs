@@ -40,8 +40,13 @@ function parseInstant(value, field) {
 
   // Validate the numeric timezone offset explicitly. Date.parse behavior for
   // malformed offsets can vary between runtimes, so never rely on it alone.
-  const offset = /([+-])(\d{2}):(\d{2})$/.exec(value);
-  if (offset && (Number(offset[2]) > 23 || Number(offset[3]) > 59)) {
+  const offset = /([+-])(\\d{2}):(\\d{2})$/.exec(value);
+  const offsetHours = offset ? Number(offset[2]) : 0;
+  const offsetMinutes = offset ? Number(offset[3]) : 0;
+  // ISO 8601 civil offsets are bounded at 14:00; accepting larger offsets
+  // can silently shift appointments to an unintended calendar day.
+  if (offset && (offsetHours > 14 || offsetMinutes > 59 ||
+      (offsetHours === 14 && offsetMinutes !== 0))) {
     throw new AppointmentRuleError("VALIDATION_ERROR", `${field} must use a valid timezone offset.`);
   }
 
