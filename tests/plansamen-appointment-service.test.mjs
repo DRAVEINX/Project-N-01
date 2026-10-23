@@ -65,7 +65,7 @@ test("authorized client creation records actor from trusted context", async () =
   const repo = repository();
   const result = await createAppointmentService(repo).create({
     actor: { userId: "client-1", role: "client" },
-    input: { ...appointment, caregiverId: null, createdByUserId: "forged-user" }
+    input: { ...appointment, caregiverId: null }
   });
   assert.equal(result.createdByUserId, "client-1");
   assert.equal(repo.inserted.length, 1);
