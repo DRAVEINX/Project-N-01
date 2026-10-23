@@ -903,16 +903,17 @@ test("daily progress restoration accepts only explicit completed booleans", asyn
 });
 
 
-test("PlanSamen homepage offers accessible client and caregiver shortcuts without claiming real accounts", () => {
-  assert.match(html, /class="[^"]*\brole-entry-panel\b[^"]*"/);
-  assert.match(html, /id="role-entry-title"/);
-  assert.match(html, /Ik ben cliënt/);
-  assert.match(html, /Ik ben begeleider/);
-  assert.match(html, /class="role-entry-card"[^>]*data-view="life"/);
-  assert.match(html, /beide knoppen openen dezelfde lokale omgeving/i);
-  assert.match(css, /\.role-entry-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(css, /@media\(max-width:600px\)\{\.role-entry-grid\{grid-template-columns:1fr\}/);
-  assert.match(css, /\.role-entry-card:focus-visible|button:focus-visible/);
+test("PlanSamen homepage is client-first and uses a modern responsive layout", () => {
+  assert.doesNotMatch(html, /role-entry-panel|Ik ben begeleider|Ik ben cliënt/);
+  assert.match(html, /Mijn planning/);
+  assert.match(html, /Mijn routines/);
+  assert.match(html, /Laat zien wat ik nodig heb/);
+  assert.match(html, /cliënten/i);
+  assert.match(css, /--bg:#f5f7fb/);
+  assert.match(css, /\.client-focus-strip\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(css, /@media\(max-width:900px\)/);
+  assert.match(css, /prefers-reduced-motion:reduce/);
+  assert.match(css, /button:focus-visible/);
 });
 
 test("PlanSamen blocks appointment overlaps per profile but allows back-to-back appointments", () => {
