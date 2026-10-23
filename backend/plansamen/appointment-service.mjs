@@ -22,6 +22,15 @@ export function createAppointmentService(repository) {
         throw new AppointmentRuleError("VALIDATION_ERROR", "Appointment input is required.");
       }
 
+      // Strict allowlist: trusted fields such as role, status and createdByUserId
+      // must come from server/database state, never from request input.
+      const allowedInputKeys = new Set([
+        "clientId", "caregiverId", "startsAt", "endsAt", "title", "pictogram", "notes"
+      ]);
+      if (Object.keys(input).some(key => !allowedInputKeys.has(key))) {
+        throw new AppointmentRuleError("VALIDATION_ERROR", "Appointment input contains unsupported fields.");
+      }
+
       const candidate = {
         clientId: input.clientId,
         caregiverId: input.caregiverId ?? null,
