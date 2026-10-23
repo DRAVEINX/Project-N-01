@@ -204,3 +204,22 @@ test("missing verified actor is rejected without touching the repository", async
   );
   assert.deepEqual(repository.calls, []);
 });
+
+test("client-supplied trusted fields and unknown fields are rejected before transaction", async () => {
+  const serviceCases = [
+    { ...validInput, role: "admin" },
+    { ...validInput, status: "cancelled" },
+    { ...validInput, createdByUserId: "attacker" },
+    { ...validInput, unexpected: true }
+  ];
+
+  for (const input of serviceCases) {
+    const repository = repositoryWith();
+    const service = createAppointmentService(repository);
+    await assert.rejects(
+      service.create({ actor: { userId: "client-1", role: "client" }, input }),
+      error => error instanceof AppointmentRuleError && error.code === "VALIDATION_ERROR"
+    );
+    assert.deepEqual(repository.calls, []);
+  }
+});
