@@ -986,7 +986,7 @@ sketchCanvas.addEventListener("keydown", event => {
   };
   if (!event.shiftKey) drawSketchLine(sketchPointer, next);
   sketchPointer = next;
-  $("#sketch-status").textContent = t("sketchDrawn");
+  saveSketchLocally();
 });
 $("#clear-sketch").addEventListener("click", () => {
   sketchContext.clearRect(0, 0, sketchCanvas.width, sketchCanvas.height);
