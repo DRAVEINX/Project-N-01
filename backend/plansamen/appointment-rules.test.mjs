@@ -53,6 +53,27 @@ test("invalid numeric timezone offsets are rejected", () => {
   }));
 });
 
+test("timezone offsets beyond the ISO 8601 civil limit are rejected", () => {
+  rejectsValidation(() => validateAppointmentInterval({
+    ...base,
+    startsAt: "2026-11-02T10:00:00+14:01"
+  }));
+  rejectsValidation(() => validateAppointmentInterval({
+    ...base,
+    startsAt: "2026-11-02T10:00:00-15:00"
+  }));
+  // The maximum valid offset remains accepted.
+  assert.equal(validateAppointmentInterval({
+    ...base,
+    startsAt: "2026-11-02T10:00:00+14:00",
+    endsAt: "2026-11-02T11:00:00+14:00"
+  }).end > validateAppointmentInterval({
+    ...base,
+    startsAt: "2026-11-02T10:00:00+14:00",
+    endsAt: "2026-11-02T11:00:00+14:00"
+  }).start, true);
+});
+
 test("empty identifiers and reversed intervals are rejected", () => {
   rejectsValidation(() => validateAppointmentInterval({ ...base, clientId: " " }));
   rejectsValidation(() => validateAppointmentInterval({ ...base, caregiverId: " " }));
