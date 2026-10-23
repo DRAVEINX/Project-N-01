@@ -9,9 +9,9 @@ export class AuthorizationError extends Error {
 }
 
 /**
- * Resolves an actor exclusively from a verified Auth identity and trusted
- * server-side role lookup. The lookup must read the authoritative profile
- * record; it must not use request JSON or user-editable user_metadata.
+ * Resolves an actor from verified Auth identity plus a role loaded from
+ * trusted server-side state. The Authorization header is forwarded only to
+ * the role loader, which uses it for an RLS-scoped own-profile query.
  */
 export function createAuthenticatedActorResolver({ verifyAccessToken, loadTrustedRole }) {
   if (typeof verifyAccessToken !== "function" || typeof loadTrustedRole !== "function") {
@@ -26,16 +26,12 @@ export function createAuthenticatedActorResolver({ verifyAccessToken, loadTruste
 
     let role;
     try {
-      role = await loadTrustedRole(identity.userId);
+      role = await loadTrustedRole(identity.userId, authorizationHeader);
     } catch {
-      // Fail closed without leaking database details.
       throw new AuthorizationError("AUTHORIZATION_STATE_UNAVAILABLE");
     }
 
-    if (!ALLOWED_ROLES.has(role)) {
-      throw new AuthorizationError("FORBIDDEN");
-    }
-
+    if (!ALLOWED_ROLES.has(role)) throw new AuthorizationError("FORBIDDEN");
     return Object.freeze({ userId: identity.userId, role });
   };
 }
