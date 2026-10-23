@@ -99,3 +99,49 @@ test("cancelled appointments do not block a new appointment", () => {
   assert.equal(findAppointmentConflict(base, [cancelled]), null);
   assert.equal(findAppointmentConflict({ ...base, status: "cancelled" }, [base]), null);
 });
+
+
+test("timestamps with equivalent offsets compare as the same instant", () => {
+  const utc = {
+    ...base,
+    startsAt: "2026-11-02T09:00:00Z",
+    endsAt: "2026-11-02T10:00:00Z"
+  };
+  assert.equal(intervalsOverlap(base, utc), true);
+});
+
+test("the same appointment is excluded from its own conflict scan", () => {
+  const current = { ...base, id: "appointment-123" };
+  assert.equal(findAppointmentConflict(current, [current]), null);
+});
+
+test("appointments for different clients and caregivers do not conflict", () => {
+  const other = {
+    ...base,
+    id: "appointment-other",
+    clientId: "client-b",
+    caregiverId: "caregiver-b",
+    startsAt: "2026-11-02T10:15:00+01:00",
+    endsAt: "2026-11-02T10:45:00+01:00"
+  };
+  assert.equal(findAppointmentConflict(base, [other]), null);
+});
+
+test("invalid values and arrays are rejected as appointment objects", () => {
+  rejectsValidation(() => validateAppointmentInterval(null));
+  rejectsValidation(() => validateAppointmentInterval([]));
+  rejectsValidation(() => validateAppointmentInterval("appointment"));
+  rejectsValidation(() => findAppointmentConflict(base, {}));
+});
+
+test("missing caregiver is allowed for a client-only appointment", () => {
+  const clientOnly = { ...base, caregiverId: null };
+  assert.equal(validateAppointmentInterval(clientOnly).end > validateAppointmentInterval(clientOnly).start, true);
+  assert.equal(findAppointmentConflict(clientOnly, [{
+    ...base,
+    clientId: "client-b",
+    caregiverId: "caregiver-a",
+    startsAt: "2026-11-02T10:15:00+01:00",
+    endsAt: "2026-11-02T10:45:00+01:00"
+  }]), null);
+});
