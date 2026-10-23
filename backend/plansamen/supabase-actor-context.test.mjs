@@ -103,7 +103,7 @@ test("unknown database role is rejected even when the access token is valid", as
   });
 
   await assert.rejects(context.resolveActor(`Bearer ${TOKEN}`), error => {
-    assert.equal(error.code, "FORBIDDEN");
+    assert.equal(error.code, "AUTHORIZATION_STATE_UNAVAILABLE");
     return true;
   });
   assert.equal(calls.length, 2);
