@@ -831,14 +831,15 @@ test("leaving the app stops microphone tracks and revokes temporary voice audio"
 
 test("speech recognition errors show feedback and restore dictation controls when ended", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
-  const start = app.indexOf('dictationStart.addEventListener("click", () => {');
+  const start = app.indexOf('dictationStart.addEventListener("click", async () => {');
   const end = app.indexOf('\n});', start);
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
   const handler = app.slice(start, end);
-  assert.match(handler, /dictationRecognition\.addEventListener\("error", event => \{[\s\S]*?dictationPermissionError[\s\S]*?dictationError/);
-  assert.match(handler, /dictationRecognition\.addEventListener\("end", \(\) => \{\s*setDictationButtons\(false\)/);
-  assert.match(app, /function setDictationButtons\(listening\) \{\s*dictationStart\.disabled = listening \|\| !SpeechRecognitionAPI;\s*dictationStop\.disabled = !listening;/);
+  assert.match(handler, /dictationPermissionError[\s\S]*?dictationError/);
+  assert.match(handler, /setDictationButtons\(false\)/);
+  assert.match(app, /function setDictationButtons\(listening\) \{\s*dictationStart\.disabled = listening \|\| dictationStarting \|\| \(!useNativeDictation && !BrowserSpeechRecognition\);\s*dictationStop\.disabled = !listening && !dictationStarting;/);
+  assert.match(app, /NativeSpeechRecognition\.requestPermissions\(\)/);
 });
 
 test("starting a new voice note clears the previous temporary recording first", async () => {
@@ -852,14 +853,17 @@ test("starting a new voice note clears the previous temporary recording first", 
   assert.match(app, /function clearVoiceObjectUrl\(\) \{\s*if \(voiceObjectUrl\) URL\.revokeObjectURL\(voiceObjectUrl\);\s*voiceObjectUrl = null;/);
 });
 
-test("leaving the app aborts speech recognition and releases its reference", async () => {
+test("leaving the app stops native or browser speech recognition and releases its reference", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
-  const start = app.indexOf('window.addEventListener("pagehide", () => {', app.indexOf("// Optional browser speech recognition"));
+  const start = app.indexOf('window.addEventListener("pagehide", () => {', app.indexOf("// Speech-to-text uses the native Capacitor recognizer"));
   const end = app.indexOf('\n});', start);
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
   const handler = app.slice(start, end);
-  assert.match(handler, /if \(dictationRecognition\) \{\s*try \{ dictationRecognition\.abort\(\); \} catch \{\}\s*dictationRecognition = null;/);
+  assert.match(handler, /if \(useNativeDictation && dictationRecognition\)/);
+  assert.match(handler, /NativeSpeechRecognition\.stop\(\)\.catch\(\(\) => \{\}\)/);
+  assert.match(handler, /dictationRecognition\.abort\(\)/);
+  assert.match(handler, /dictationRecognition = null/);
   assert.match(handler, /\{once:true\}/);
 });
 
