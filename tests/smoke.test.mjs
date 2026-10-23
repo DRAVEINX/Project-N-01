@@ -6,6 +6,17 @@ const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8"
 const js = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 const lifeSuite = await readFile(new URL("../src/life-suite.js", import.meta.url), "utf8");
 
+test("drawing strokes made with keyboard controls are saved locally too", () => {
+  const keyboardHandler = js.indexOf('sketchCanvas.addEventListener("keydown"');
+  const clearHandler = js.indexOf('$("#clear-sketch").addEventListener');
+  assert.ok(keyboardHandler >= 0 && clearHandler > keyboardHandler);
+  const keyboardBlock = js.slice(keyboardHandler, clearHandler);
+  assert.match(keyboardBlock, /saveSketchLocally\(\)/);
+  assert.match(js, /localStorage\.setItem\(sketchStorageKey, sketchCanvas\.toDataURL\("image\/png"\)\)/);
+  assert.match(js, /function restoreSketchLocally\(\)/);
+});
+
+
 
 test("daily task and built-in routine progress persists locally for the current day", () => {
   assert.match(js, /const dailyProgressKey = "project-n-01-daily-progress-v1"/);
